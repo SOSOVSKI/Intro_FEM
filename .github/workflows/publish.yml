@@ -36,8 +36,23 @@ jobs:
         uses: quarto-dev/quarto-actions/setup@v2
 
       # ── TeX (for the lecture-note PDF download) ─────────────────────────────
-      - name: Install TinyTeX
-        run: quarto install tinytex --no-prompt
+      # book/_quarto.yml pins `pdf-engine: pdflatex`, so install a full-ish
+      # TeX Live stack from apt rather than TinyTeX (TinyTeX's pdflatex has
+      # been flaky with some of the unicode / algorithm2e packages the book
+      # relies on). texlive-latex-extra pulls in algorithm2e, fvextra,
+      # pmboxdraw and newunicodechar; texlive-science covers bm + extra ams.
+      - name: Install TeX Live (pdflatex)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            texlive-latex-base \
+            texlive-latex-recommended \
+            texlive-latex-extra \
+            texlive-fonts-recommended \
+            texlive-fonts-extra \
+            texlive-science \
+            texlive-plain-generic \
+            lmodern
 
       # ── Build HTML ──────────────────────────────────────────────────────────
       - name: Render lecture-note book (HTML)
