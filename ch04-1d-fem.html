@@ -412,7 +412,7 @@ window.Quarto = {
 <p>Today we start solving our first PDE using the finite element method.</p>
 <p>As is often the case in real life problems, materials are not necessarily homogeneous. Moreover, the physical solution we are looking for is not necessarily smooth.</p>
 <p>Consider the 1D bar shown below, composed of two different elastic solids:</p>
-<div id="591dfb6c" class="cell" data-execution_count="2">
+<div id="76d01678" class="cell" data-execution_count="2">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
@@ -441,7 +441,7 @@ window.Quarto = {
 </section>
 <section id="strong-form" class="level2" data-number="5.4">
 <h2 data-number="5.4" class="anchored" data-anchor-id="strong-form"><span class="header-section-number">5.4</span> Strong Form</h2>
-<div id="ae16a68e" class="cell" data-execution_count="3">
+<div id="10d2f254" class="cell" data-execution_count="3">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
@@ -475,7 +475,7 @@ window.Quarto = {
 </div>
 </div>
 <p>Since we assume the body to be linearly elastic:</p>
-<div id="2c4f1432" class="cell" data-execution_count="4">
+<div id="25947338" class="cell" data-execution_count="4">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
@@ -497,7 +497,7 @@ window.Quarto = {
 </div>
 </div>
 <p>For 1D small displacements:</p>
-<div id="297485c0" class="cell" data-execution_count="5">
+<div id="d8b4e8bd" class="cell" data-execution_count="5">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
@@ -526,7 +526,7 @@ window.Quarto = {
 <section id="getting-the-weak-form" class="level2" data-number="5.5">
 <h2 data-number="5.5" class="anchored" data-anchor-id="getting-the-weak-form"><span class="header-section-number">5.5</span> Getting the Weak Form</h2>
 <p>To get the weak form we multiply by a test function <span class="math inline">\(v\)</span> and integrate over the domain <span class="math inline">\(\Omega\)</span>:</p>
-<div id="c194e0c0" class="cell" data-execution_count="6">
+<div id="1792d7a7" class="cell" data-execution_count="6">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
@@ -541,7 +541,7 @@ window.Quarto = {
 </div>
 </div>
 <p>Using integration by parts:</p>
-<div id="552ae21d" class="cell" data-execution_count="7">
+<div id="c425f910" class="cell" data-execution_count="7">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
@@ -566,7 +566,7 @@ window.Quarto = {
 <p><span class="math inline">\(\displaystyle v{\left(x \right)} \frac{d}{d x} \sigma{\left(x \right)} = - \sigma{\left(x \right)} \frac{d}{d x} v{\left(x \right)} + \frac{d}{d x} \sigma{\left(x \right)} v{\left(x \right)}\)</span></p>
 </div>
 </div>
-<div id="127abebc" class="cell" data-execution_count="8">
+<div id="1585f92d" class="cell" data-execution_count="8">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
@@ -584,7 +584,7 @@ window.Quarto = {
 </div>
 </div>
 <p>Requiring <span class="math inline">\(v|_{\Gamma_u}=0\)</span> and <span class="math inline">\(\sigma|_{\Gamma_t}=t^*\)</span>:</p>
-<div id="e9a0675f" class="cell" data-execution_count="9">
+<div id="e52bd69b" class="cell" data-execution_count="9">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
@@ -624,7 +624,7 @@ window.Quarto = {
 <section id="the-weak-form" class="level2" data-number="5.6">
 <h2 data-number="5.6" class="anchored" data-anchor-id="the-weak-form"><span class="header-section-number">5.6</span> The Weak Form</h2>
 <p>To get the final weak form in terms of the displacement <span class="math inline">\(u\)</span>, we introduce the constitutive and kinematic relations:</p>
-<div id="2cd5a63c" class="cell" data-execution_count="10">
+<div id="eb05dae4" class="cell" data-execution_count="10">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
@@ -696,7 +696,7 @@ window.Quarto = {
 </section>
 <section id="visualization-of-basis-functions" class="level3" data-number="5.9.2">
 <h3 data-number="5.9.2" class="anchored" data-anchor-id="visualization-of-basis-functions"><span class="header-section-number">5.9.2</span> Visualization of Basis Functions</h3>
-<div id="f850820b" class="cell" data-execution_count="11">
+<div id="95c85438" class="cell" data-execution_count="11">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
@@ -718,7 +718,7 @@ window.Quarto = {
 </div>
 </div>
 </div>
-<div id="87bc530b" class="cell" data-execution_count="12">
+<div id="2c2ea39d" class="cell" data-execution_count="12">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
@@ -741,7 +741,7 @@ window.Quarto = {
 </div>
 </div>
 </div>
-<div id="71c18fe5" class="cell" data-execution_count="13">
+<div id="d665a28d" class="cell" data-execution_count="13">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>

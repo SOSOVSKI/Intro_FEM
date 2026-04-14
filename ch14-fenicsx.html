@@ -492,7 +492,7 @@ a(u,v) = L(v) \quad \forall v \in V
 <p>You can find the installation instructions on the <a href="https://fenicsproject.org/download/">FEniCSx website</a>.</p>
 <p>You can also use google’s Colab to run FEniCSx notebooks without having to install anything on your local machine.</p>
 <p>Simply open a new notebook and run the following code to install FEniCSx:</p>
-<div id="32e9a29f" class="cell" data-execution_count="1">
+<div id="dd090606" class="cell" data-execution_count="1">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
@@ -519,7 +519,7 @@ Note
 <h2 data-number="14.8" class="anchored" data-anchor-id="simple-example-mesh-generation"><span class="header-section-number">14.8</span> Simple Example: Mesh generation</h2>
 <p>We will make use of the built-in meshe generator in FEniCSx to create a simple rectangular mesh for our beam.</p>
 <p>We also import numpy and mpi4py for numerical operations and parallel computing, respectively.</p>
-<div id="2f2ebf1f" class="cell" data-execution_count="2">
+<div id="4cdf49e4" class="cell" data-execution_count="2">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dolfinx <span class="im">import</span> mesh   </span>
@@ -545,7 +545,7 @@ Note
 <h2 data-number="14.9" class="anchored" data-anchor-id="simple-example-define-function-space"><span class="header-section-number">14.9</span> Simple Example: Define function space</h2>
 <p>Next, we define the function space for our problem.</p>
 <p>We will use a vector function space with Lagrange elements of degree 1 (P1) for the displacements with gdim=2 since this is a 2D problem and we have <span class="math inline">\(u_x,u_y\)</span>.</p>
-<div id="cedd34a9" class="cell" data-execution_count="3">
+<div id="0c96263b" class="cell" data-execution_count="3">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dolfinx <span class="im">import</span> fem</span>
@@ -569,7 +569,7 @@ Note
 <li><p>We will fix the left edge of the beam (x=0).</p>
 <p>We do so by defining a function that identifies the left boundary and applying a Dirichlet boundary condition with zero displacement.</p></li>
 </ol>
-<div id="cc07f098" class="cell" data-execution_count="4">
+<div id="7707ab1f" class="cell" data-execution_count="4">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define Dirichlet boundary condition (fixed left edge)</span></span>
@@ -584,7 +584,7 @@ Note
 <ol start="2" type="1">
 <li>We apply body force of <span class="math inline">\(f=(0,-\rho g)\)</span> on the beam, where <span class="math inline">\(\rho\)</span> is the density and <span class="math inline">\(g\)</span> is the gravitational acceleration.</li>
 </ol>
-<div id="549b8ae1" class="cell" data-execution_count="5">
+<div id="26460133" class="cell" data-execution_count="5">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dolfinx <span class="im">import</span> default_scalar_type</span>
@@ -599,7 +599,7 @@ Note
 <li><p>In our problem definition we did not define any traction boundary conditions.</p>
 <p>However, as an example, we show how to apply a spatially varying traction on the bottom surface of the beam.</p></li>
 </ol>
-<div id="25ba6c41" class="cell" data-execution_count="6">
+<div id="57f589e4" class="cell" data-execution_count="6">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> bottom_boundary(x):</span>
@@ -626,7 +626,7 @@ Note
 <h2 data-number="14.11" class="anchored" data-anchor-id="simple-example-construct-the-weak-form"><span class="header-section-number">14.11</span> Simple Example: Construct the weak form</h2>
 <p>Now we can construct the weak form of the problem using the UFL (Unified Form Language) in FEniCSx which we prevously imported.</p>
 <p>First, we need to define the integration measure for the boundary</p>
-<div id="3d79b161" class="cell" data-execution_count="7">
+<div id="4633ec39" class="cell" data-execution_count="7">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the integration measure for the boundary</span></span>
@@ -637,7 +637,7 @@ Note
 <p>In the bilinear form, we have the integral of the stress tensor <span class="math inline">\(\sigma(u)\)</span> multiplied by the symmetric gradient <span class="math inline">\(\epsilon(v)\)</span></p>
 <p>So we will use the <code>ufl</code> module to define the stress tensor and the symmetric gradient.</p>
 <p>Since we did not define the elastic properties of the material yet, we will do so now.</p>
-<div id="95a764d0" class="cell" data-execution_count="8">
+<div id="7bafb743" class="cell" data-execution_count="8">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define material properties</span></span>
@@ -657,7 +657,7 @@ Note
 </details>
 </div>
 <p>We can now define the bilinear form <span class="math inline">\(a(u,v)\)</span> and the linear form <span class="math inline">\(L(v)\)</span>.</p>
-<div id="8eabc922" class="cell" data-execution_count="9">
+<div id="21a23421" class="cell" data-execution_count="9">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the bilinear form a(u,v)</span></span>
@@ -678,14 +678,14 @@ Note
 <section id="simple-example-solve-the-linear-problem" class="level2" data-number="14.12">
 <h2 data-number="14.12" class="anchored" data-anchor-id="simple-example-solve-the-linear-problem"><span class="header-section-number">14.12</span> Simple Example: Solve the linear problem</h2>
 <p>FEniCSx contain has a “LinearProblem” class to handle the linear problem formulation.</p>
-<div id="187c20e7" class="cell" data-execution_count="10">
+<div id="3a8c05e5" class="cell" data-execution_count="10">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dolfinx.fem.petsc <span class="im">import</span> LinearProblem</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
 <p>We can now create a <code>LinearProblem</code> object and solve the problem.</p>
-<div id="ed35be94" class="cell" data-execution_count="11">
+<div id="3ea7eb84" class="cell" data-execution_count="11">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create the linear problem</span></span>
@@ -697,7 +697,7 @@ Note
 <p>We also specify some PETSc options for the solver, such as using a direct solver (<code>ksp_type: preonly</code>) and a LU factorization (<code>pc_type: lu</code>).</p>
 <p>PETSc is a powerful library for solving linear systems and provides various solvers and preconditioners.</p>
 <p>We can now solve the problem by calling the <code>solve</code> method of the <code>LinearProblem</code> object.</p>
-<div id="4bf32ece" class="cell" data-execution_count="12">
+<div id="3e6ee429" class="cell" data-execution_count="12">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Solve the linear problem</span></span>
@@ -710,7 +710,7 @@ Note
 <h2 data-number="14.13" class="anchored" data-anchor-id="simple-example-postprocessing"><span class="header-section-number">14.13</span> Simple Example: Postprocessing</h2>
 <p>After solving the problem, we can visualize the results and extract useful information.</p>
 <p>First, let’s visualize the displacements using the <code>pyvista</code> library, which is a powerful visualization library for Python.</p>
-<div id="a1d91df6" class="cell" data-execution_count="13">
+<div id="a25d7f2f" class="cell" data-execution_count="13">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pyvista <span class="im">as</span> pv</span>
@@ -747,7 +747,7 @@ Note
 <p><img src="displacements.png" class="img-fluid"></p>
 <p>As you recall, the displacements are defined on the nodes of the mesh. To visualize the stress we need to project it onto the appropriate function space.</p>
 <p>Let’s plot the Von Mises (or equivalent) stress.</p>
-<div id="b1859bf1" class="cell" data-execution_count="14">
+<div id="c90ddd7f" class="cell" data-execution_count="14">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute the stress from the solution</span></span>
@@ -769,7 +769,7 @@ Note
 </div>
 <p>Now we can visualize the Von Mises stress using the <code>pyvista</code> library.</p>
 <p>Note that now we assign values to the cells of the mesh (elements) instead of the nodes.</p>
-<div id="6e65de79" class="cell" data-execution_count="15">
+<div id="c2f2b183" class="cell" data-execution_count="15">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>warped.cell_data[<span class="st">"Von_Mises_Stress"</span>] <span class="op">=</span> VM_stress.x.array</span>
@@ -787,7 +787,7 @@ Note
 </section>
 <section id="all-together" class="level2" data-number="14.14">
 <h2 data-number="14.14" class="anchored" data-anchor-id="all-together"><span class="header-section-number">14.14</span> All together</h2>
-<div id="c7e3f0b4" class="cell" data-execution_count="16">
+<div id="55bff58a" class="cell" data-execution_count="16">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co">#%%</span></span>
