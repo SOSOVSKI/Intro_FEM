@@ -12,7 +12,7 @@ We multiply by a test function $\mathbf{v}$ and integrate over the domain $\Omeg
 
 $$\int_{\Omega} \left(\nabla\cdot \boldsymbol{\sigma}+\boldsymbol{f}\right)\cdot\mathbf{v} \, d\Omega = 0=\int_{\Omega}\boldsymbol{r}\cdot\boldsymbol{v}d\Omega$$
 
-![](images/3dElast.png)
+![Elasticity domain $\Omega$ with Neumann boundary $\Gamma_t$ (prescribed traction $\mathbf{t}=\mathbf{t}^*$, outward arrows) and Dirichlet boundary $\Gamma_u$ (prescribed displacement $\mathbf{u}=\mathbf{u}^*$, hatched).](images/3dElast.png){#fig-elasticity-domain}
 
 ## Product Rule and Integration by Parts
 

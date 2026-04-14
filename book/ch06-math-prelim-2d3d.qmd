@@ -252,7 +252,7 @@ $$\hat{\phi}_4 = \phi_4^e(\zeta_1, \zeta_2) = \frac{1}{4}(1-\zeta_1)(1+\zeta_2)$
 
 The term $\zeta_1\zeta_2$ makes it bi-linear (linear in both coordinates).
 
-![](images/GLmap.png)
+![Isoparametric mapping from the master element $\hat{\Omega}=[-1,1]^2$ in reference coordinates $(\zeta_1,\zeta_2)$ to a physical element $\Omega_e$ in global coordinates $(x,y)$ via the interpolation $\mathbf{x}=\sum_i N_i(\boldsymbol{\zeta})\,\mathbf{x}_i$.](images/GLmap.png){#fig-isoparametric-map}
 
 ## Jacobian and Coordinate Transformation
 
@@ -302,7 +302,7 @@ Where $\chi_{1i}$ are global x-coordinates and $\chi_{2i}$ are global y-coordina
 - Can cause singularities in stiffness matrix
 - Unacceptable
 
-![Element quality cases](images/elementscases.png)
+![Element validity: Cases 1 and 3 are valid (convex, CCW node ordering, $J>0$ everywhere). Case 2 fails due to clockwise node ordering ($J<0$). Case 4 fails because the concave (folded) shape causes $J<0$ inside the element.](images/elementscases.png){#fig-element-cases}
 
 **Key insight for linear elements:** The primary indicator of problematic elements is **non-convexity**, even with correct numbering.
 

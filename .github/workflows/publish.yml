@@ -1,0 +1,68 @@
+name: Build & Publish to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:   # allow manual trigger from GitHub UI
+
+permissions:
+  contents: write    # needed to push the gh-pages branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── Checkout ────────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── Python + package ────────────────────────────────────────────────────
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install symbolic_fem_workbench and dependencies
+        # fenics-dolfinx is conda-only; all other lecture deps install fine here.
+        # Book chapters 14 & 16 have #| eval: false so FEniCSx is never called.
+        run: uv pip install -e ".[lectures]" --system
+
+      # ── Quarto ──────────────────────────────────────────────────────────────
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      # ── Build HTML ──────────────────────────────────────────────────────────
+      - name: Render lecture-note book (HTML)
+        run: quarto render book --to html
+
+      - name: Render companion notebooks (HTML)
+        run: quarto render notebooks --to html
+
+      - name: Render package documentation (HTML)
+        run: quarto render docs
+
+      # ── Assemble site ───────────────────────────────────────────────────────
+      # Deployed layout:
+      #   /              → lecture-note book
+      #   /notebooks/    → companion notebooks
+      #   /docs/         → package documentation
+      - name: Assemble _site/
+        run: |
+          mkdir -p _site/notebooks _site/docs
+          cp -r book/_output/.    _site/
+          cp -r notebooks/_output/. _site/notebooks/
+          cp -r docs/_output/.    _site/docs/
+          touch _site/.nojekyll   # tell GitHub Pages not to process with Jekyll
+
+      # ── Deploy ──────────────────────────────────────────────────────────────
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site
+          publish_branch: gh-pages
+          commit_message: "deploy: ${{ github.event.head_commit.message }}"

@@ -12,6 +12,7 @@ venv/
 
 # ── Quarto build outputs ───────────────────────────────────────────────────────
 _output/
+_site/
 _freeze/
 _slides/
 *.tex

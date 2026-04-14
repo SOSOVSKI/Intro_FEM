@@ -38,9 +38,9 @@ website:
           - text: "codegen"
             href: api/codegen.qmd
       - text: "Lecture Notes"
-        href: ../book/_output/index.html
+        href: ../
       - text: "Companion Notebooks"
-        href: ../notebooks/_output/index.html
+        href: ../notebooks/
     right:
       - icon: github
         href: https://github.com/shmuelosovski/IntroFem

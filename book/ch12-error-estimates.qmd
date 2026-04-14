@@ -40,7 +40,7 @@ $$\text{Mark element } K \text{ if } \eta_K > \theta \cdot \eta_{\max} \quad (\t
 
 **5. Repeat:** Loop back to Step 1 and solve on the new, locally denser mesh.
 
-![](images/mref.png)
+![Adaptive mesh refinement driven by a local error indicator. (a) The mesh is refined automatically near the crack tip where the error indicator $\eta_e$ is large, while remaining coarse elsewhere. (b) The corresponding error indicator field, which drives the refinement loop.](images/mref.png){#fig-adaptive-refinement}
 
 ## A Posteriori Recovery Methods: The Core Idea
 
