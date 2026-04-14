@@ -35,9 +35,19 @@ jobs:
       - name: Set up Quarto
         uses: quarto-dev/quarto-actions/setup@v2
 
+      # ── TeX (for the lecture-note PDF download) ─────────────────────────────
+      - name: Install TinyTeX
+        run: quarto install tinytex --no-prompt
+
       # ── Build HTML ──────────────────────────────────────────────────────────
       - name: Render lecture-note book (HTML)
         run: quarto render book --to html
+
+      # Single-file PDF of the whole lecture book. Output lands in
+      # book/_output/Intro-FEM-Lecture-Notes.pdf and the HTML sidebar exposes
+      # it via `book.downloads: [pdf]` in book/_quarto.yml.
+      - name: Render lecture-note book (PDF)
+        run: quarto render book --to pdf
 
       - name: Render companion notebooks (HTML)
         run: quarto render notebooks --to html

@@ -6,7 +6,11 @@ These notebooks accompany the *Introduction to the Finite Element Method* lectur
 Each one is a hands-on exercise that lets you work through the key ideas symbolically and numerically using the `symbolic_fem_workbench` package.
 
 ::: {.content-visible when-format="html"}
-Return to the main [lecture notes](../) to see which notebook goes with which chapter — each chapter links to its companion notebooks at the top.
+Related resources:
+
+- **[Lecture Notes](../)** — each chapter links to its companion notebooks at the top, and a single-file [PDF download](../Intro-FEM-Lecture-Notes.pdf) of the whole book is available.
+- **[Package Documentation](../docs/)** — API reference for the `symbolic_fem_workbench` package used below.
+- **[Source Repository](https://github.com/SOSOVSKI/Intro_FEM)** — issues and edit-on-GitHub links on every notebook.
 :::
 
 | # | Notebook | Topic |
