@@ -79,6 +79,16 @@ docs:
 clean-docs:
 	rm -rf docs/_output
 
+# ── GitHub Pages (local preview of the assembled site) ────────────────────────
+## site-html : build HTML for all three projects and assemble into _site/
+site-html: book-html notebooks-html docs
+	mkdir -p _site/notebooks _site/docs
+	cp -r $(BOOK_DIR)/_output/. _site/
+	cp -r $(NB_DIR)/_output/.   _site/notebooks/
+	cp -r docs/_output/.        _site/docs/
+	touch _site/.nojekyll
+	@echo "Site assembled in _site/ — open _site/index.html to preview"
+
 # ── Clean ─────────────────────────────────────────────────────────────────────
 ## clean : remove all generated output
 clean: clean-notebooks clean-book clean-slides clean-docs
