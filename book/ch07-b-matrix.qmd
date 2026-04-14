@@ -2,6 +2,16 @@
 title: "The B Matrix"
 ---
 
+::: {.content-visible when-format="html"}
+::: {.callout-tip}
+## Companion notebooks
+Work through these hands-on notebooks alongside this chapter:
+
+- [05 – Reference Element Gallery](notebooks/05_reference_element_gallery.html)
+- [07 – Manual 2D Assembly](notebooks/07_manual_assembly_2d.html)
+:::
+:::
+
 ## Extension to 3D Vector Problems
 
 ### Linear Elasticity Example

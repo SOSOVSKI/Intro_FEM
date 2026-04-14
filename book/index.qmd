@@ -14,6 +14,18 @@ The chapters follow the lecture sequence. Each chapter contains:
 - Python code demonstrating the concepts computationally (click to expand code blocks)
 - Key definitions and results highlighted in callout boxes
 
+::: {.content-visible when-format="html"}
+## Companion Resources
+
+These lecture notes are part of a three-part site:
+
+- **[FEM Companion Notebooks](notebooks/)** — hands-on Jupyter notebooks that let you work through the key ideas symbolically and numerically using the `symbolic_fem_workbench` package. Relevant notebooks are linked at the top of each chapter.
+- **[Package Documentation](docs/)** — API reference and getting-started guide for the `symbolic_fem_workbench` Python package that powers all of the code examples.
+- **[Source Repository](https://github.com/SOSOVSKI/Intro_FEM)** — issues, source for the book, notebooks and package, and edit-on-GitHub links on every chapter.
+
+A single-file **[PDF of the entire lecture book](Intro-FEM-Lecture-Notes.pdf)** is also available (rebuilt on every push to `main`), and the sidebar carries a *Download PDF* shortcut.
+:::
+
 ## Prerequisites
 
 Students should be familiar with:

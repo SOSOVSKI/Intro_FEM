@@ -2,6 +2,17 @@
 title: "Galerkin's Method and 1D FEM"
 ---
 
+::: {.content-visible when-format="html"}
+::: {.callout-tip}
+## Companion notebooks
+Work through these hands-on notebooks alongside this chapter:
+
+- [03 – 1D Element Stiffness](notebooks/03_1d_element_stiffness.html)
+- [04 – Exact vs. Gauss Integration](notebooks/04_exact_vs_gauss_integration.html)
+- [08 – Boundary Conditions 1D](notebooks/08_boundary_conditions_1d.html)
+:::
+:::
+
 ## Setup
 
 ```{python}

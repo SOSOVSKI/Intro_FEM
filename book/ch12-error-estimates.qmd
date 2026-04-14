@@ -2,6 +2,15 @@
 title: "Error Estimation and Adaptivity"
 ---
 
+::: {.content-visible when-format="html"}
+::: {.callout-tip}
+## Companion notebooks
+Work through these hands-on notebooks alongside this chapter:
+
+- [14 – Error Analysis](notebooks/14_error_analysis.html)
+:::
+:::
+
 ## Simple Error Estimates for Vector Problems
 
 After computing a solution $\mathbf{u}_h$, we need to assess its quality.

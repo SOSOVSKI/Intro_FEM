@@ -2,6 +2,17 @@
 title: "FEM Implementation"
 ---
 
+::: {.content-visible when-format="html"}
+::: {.callout-tip}
+## Companion notebooks
+Work through these hands-on notebooks alongside this chapter:
+
+- [07 – Manual 2D Assembly](notebooks/07_manual_assembly_2d.html)
+- [09 – Boundary Conditions 2D](notebooks/09_boundary_conditions_2d.html)
+- [12 – Code Generation & Widgets](notebooks/12_iheartla_and_widgets.html)
+:::
+:::
+
 ## Discretize the Domain
 
 The first step in any Finite Element analysis is to move from the continuous domain Ω to a discrete one. We replace the single integral over the whole domain with a sum of integrals over small, simple subdomains called elements.

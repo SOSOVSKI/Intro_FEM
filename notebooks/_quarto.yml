@@ -6,6 +6,21 @@ book:
   title: "FEM Companion Notebooks"
   author: "Shmuel Osovski"
   date: "2025"
+  repo-url: https://github.com/SOSOVSKI/Intro_FEM
+  repo-branch: main
+  repo-subdir: notebooks
+  repo-actions: [edit, issue, source]
+  sidebar:
+    tools:
+      - icon: github
+        href: https://github.com/SOSOVSKI/Intro_FEM
+        text: "Source Repository"
+      - icon: book
+        href: ../
+        text: "Lecture Notes"
+      - icon: file-earmark-code
+        href: ../docs/
+        text: "Package Docs"
   chapters:
     - index.qmd
     - part: "Foundations"

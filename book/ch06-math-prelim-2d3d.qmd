@@ -2,6 +2,16 @@
 title: "From 1D to Multi-Dimensional FEM"
 ---
 
+::: {.content-visible when-format="html"}
+::: {.callout-tip}
+## Companion notebooks
+Work through these hands-on notebooks alongside this chapter:
+
+- [05 – Reference Element Gallery](notebooks/05_reference_element_gallery.html)
+- [06 – 2D Triangle Poisson](notebooks/06_2d_triangle_poisson.html)
+:::
+:::
+
 ## Mathematical Preliminaries
 
 Looking at the following equation:

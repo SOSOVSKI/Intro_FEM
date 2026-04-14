@@ -2,6 +2,15 @@
 title: "Deriving the Algebraic System and Galerkin's Method"
 ---
 
+::: {.content-visible when-format="html"}
+::: {.callout-tip}
+## Companion notebooks
+Work through these hands-on notebooks alongside this chapter:
+
+- [02 – Galerkin Discretization](notebooks/02_galerkin_discretization.html)
+:::
+:::
+
 ## Setup
 
 ```{python}

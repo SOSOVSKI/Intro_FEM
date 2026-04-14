@@ -3,6 +3,15 @@ title: "Function Spaces"
 subtitle: "Hilbert, L², and Sobolev Spaces"
 ---
 
+::: {.content-visible when-format="html"}
+::: {.callout-tip}
+## Companion notebooks
+Work through these hands-on notebooks alongside this chapter:
+
+- [01 – Strong to Weak Form](notebooks/01_strong_to_weak_form.html)
+:::
+:::
+
 ## Setup
 
 ```{python}

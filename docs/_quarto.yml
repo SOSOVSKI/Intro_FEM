@@ -41,9 +41,11 @@ website:
         href: ../
       - text: "Companion Notebooks"
         href: ../notebooks/
+      - text: "Download PDF"
+        href: ../Intro-FEM-Lecture-Notes.pdf
     right:
       - icon: github
-        href: https://github.com/shmuelosovski/IntroFem
+        href: https://github.com/SOSOVSKI/Intro_FEM
 
 format:
   html:
