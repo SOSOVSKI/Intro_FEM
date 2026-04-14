@@ -1,0 +1,1664 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.37">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>2&nbsp; Introduction and 1D Setup – Introduction to the Finite Element Method</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./ch02-algebraic-system.html" rel="next">
+<link href="./index.html" rel="prev">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-36bf55b16c7cb4b1420f41495cb5446a.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="custom.css">
+</head>
+
+<body class="nav-sidebar floating quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./ch01-introduction.html">Part I: Foundations</a></li><li class="breadcrumb-item"><a href="./ch01-introduction.html"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Introduction and 1D Setup</span></a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="./">Introduction to the Finite Element Method</a> 
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Preface</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part I: Foundations</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch01-introduction.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Introduction and 1D Setup</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch02-algebraic-system.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Deriving the Algebraic System and Galerkin’s Method</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch03-function-spaces.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Function Spaces</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part II: 1D Finite Elements</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch04-1d-fem.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Galerkin’s Method and 1D FEM</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch05-time-dependent.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">Time-Dependent 1D Problems</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part III: Multi-Dimensional FEM</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch06-math-prelim-2d3d.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">From 1D to Multi-Dimensional FEM</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch07-b-matrix.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">The B Matrix</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch08-heat-transfer-2d.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">2D Heat Transfer</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part IV: Elasticity</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch09-continuum-mechanics.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">Continuum Mechanics Fundamentals</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch10-elasticity-3d.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">Quasi-Static Elasticity in 3D</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part V: Implementation &amp; Error Analysis</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch11-fem-implementation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">12</span>&nbsp; <span class="chapter-title">FEM Implementation</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch12-error-estimates.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">13</span>&nbsp; <span class="chapter-title">Error Estimation and Adaptivity</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch14-fenicsx.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">14</span>&nbsp; <span class="chapter-title">FEniCSx Tutorial</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part VI: Structural Elements</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch15-beams-theory.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">15</span>&nbsp; <span class="chapter-title">Structural Elements: Beam Theory</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch16-beams-fenicsx.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">16</span>&nbsp; <span class="chapter-title">Beam Elements in FEniCSx</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#setup" id="toc-setup" class="nav-link active" data-scroll-target="#setup"><span class="header-section-number">2.1</span> Setup</a></li>
+  <li><a href="#the-strong-form" id="toc-the-strong-form" class="nav-link" data-scroll-target="#the-strong-form"><span class="header-section-number">2.2</span> The Strong Form</a></li>
+  <li><a href="#deriving-the-weak-form" id="toc-deriving-the-weak-form" class="nav-link" data-scroll-target="#deriving-the-weak-form"><span class="header-section-number">2.3</span> Deriving the Weak Form</a></li>
+  <li><a href="#shape-functions-for-discretization" id="toc-shape-functions-for-discretization" class="nav-link" data-scroll-target="#shape-functions-for-discretization"><span class="header-section-number">2.4</span> Shape Functions for Discretization</a></li>
+  <li><a href="#assembling-the-fem-system" id="toc-assembling-the-fem-system" class="nav-link" data-scroll-target="#assembling-the-fem-system"><span class="header-section-number">2.5</span> Assembling the FEM System</a></li>
+  <li><a href="#putting-it-all-together" id="toc-putting-it-all-together" class="nav-link" data-scroll-target="#putting-it-all-together"><span class="header-section-number">2.6</span> Putting It All Together</a></li>
+  <li><a href="#sec-convergence-example" id="toc-sec-convergence-example" class="nav-link" data-scroll-target="#sec-convergence-example"><span class="header-section-number">2.7</span> Example: Convergence with Mesh Refinement</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./ch01-introduction.html">Part I: Foundations</a></li><li class="breadcrumb-item"><a href="./ch01-introduction.html"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Introduction and 1D Setup</span></a></li></ol></nav>
+<div class="quarto-title">
+<div class="quarto-title-block"><div><h1 class="title"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Introduction and 1D Setup</span></h1><button type="button" class="btn code-tools-button dropdown-toggle" id="quarto-code-tools-menu" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi"></i> Code</button><ul class="dropdown-menu dropdown-menu-end" aria-labelelledby="quarto-code-tools-menu"><li><a id="quarto-show-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Show All Code</a></li><li><a id="quarto-hide-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Hide All Code</a></li><li><hr class="dropdown-divider"></li><li><a id="quarto-view-source" class="dropdown-item" href="javascript:void(0)" role="button">View Source</a></li></ul></div></div>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="setup" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="setup"><span class="header-section-number">2.1</span> Setup</h2>
+</section>
+<section id="the-strong-form" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="the-strong-form"><span class="header-section-number">2.2</span> The Strong Form</h2>
+<div id="4b5080b8" class="cell" data-execution_count="2">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">#| code-fold: true</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>fem.display_strong_form()</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Strong form of the equation:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle A{\left(x \right)} \frac{d^{2}}{d x^{2}} y{\left(x \right)} + B{\left(x \right)} \frac{d}{d x} y{\left(x \right)} + C{\left(x \right)} y{\left(x \right)} = F{\left(x \right)}\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>With boundary conditions:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle y{\left(0 \right)} = 0\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle y{\left(L \right)} = 0\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>where x ∈ [0, L]</p>
+</div>
+</div>
+</section>
+<section id="deriving-the-weak-form" class="level2" data-number="2.3">
+<h2 data-number="2.3" class="anchored" data-anchor-id="deriving-the-weak-form"><span class="header-section-number">2.3</span> Deriving the Weak Form</h2>
+<div id="4e720f00" class="cell" data-execution_count="3">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">#| code-fold: true</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>weak_eq <span class="op">=</span> fem.derive_weak_form()</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><strong>Step 1: Multiply the strong form by a test function v(x):</strong></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>EXPLANATION: We start with the strong form of our differential equation and multiply both sides by a test function v(x)</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This is the first step in converting to the weak form.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>The test function v(x) will eventually vanish at the boundaries, helping us incorporate boundary conditions naturally.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \left(A{\left(x \right)} \frac{d^{2}}{d x^{2}} y{\left(x \right)} + B{\left(x \right)} \frac{d}{d x} y{\left(x \right)} + C{\left(x \right)} y{\left(x \right)}\right) v{\left(x \right)} = F{\left(x \right)} v{\left(x \right)}\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><strong>Step 2: Integrate over the domain [0, L]:</strong></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>EXPLANATION: We integrate both sides of the equation over the entire domain [0, L].</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This transforms our pointwise equation into an integral equation that will hold over the whole domain.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This step moves us from a local formulation to a global one, which is a key aspect of the finite element method.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \int\limits_{0}^{L} \left(A{\left(x \right)} \frac{d^{2}}{d x^{2}} y{\left(x \right)} + B{\left(x \right)} \frac{d}{d x} y{\left(x \right)} + C{\left(x \right)} y{\left(x \right)}\right) v{\left(x \right)}\, dx = \int\limits_{0}^{L} F{\left(x \right)} v{\left(x \right)}\, dx\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><strong>Step 3: Expand the left-hand side:</strong></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>EXPLANATION:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>We expand the left-hand side to separate the terms with different derivatives of y. This makes it easier to apply integration by parts to the second-derivative term.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Breaking down the differential operator allows us to handle each term appropriately based on the order of derivatives.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \int\limits_{0}^{L} A{\left(x \right)} v{\left(x \right)} \frac{d^{2}}{d x^{2}} y{\left(x \right)}\, dx + \int\limits_{0}^{L} B{\left(x \right)} v{\left(x \right)} \frac{d}{d x} y{\left(x \right)}\, dx + \int\limits_{0}^{L} C{\left(x \right)} v{\left(x \right)} y{\left(x \right)}\, dx = \int\limits_{0}^{L} F{\left(x \right)} v{\left(x \right)}\, dx\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><strong>Step 4: Integration by parts for the term with second derivative:</strong></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>EXPLANATION:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This is the critical step that reduces the order of derivatives in our equation. We apply integration by parts to the term containing the second derivative of y.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>The formula for integration by parts is:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>∫u·dv = [u·v] - ∫v·du</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>For our case:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>u = v(x)·A(x) and dv = d²y/dx² dx</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>du = d(v(x)·A(x))/dx dx and v = dy/dx</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Using the product rule:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>d/dx(v·A·dy/dx) = v·A·d²y/dx² + (v·A)’·dy/dx</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Rearranging:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>v·A·d²y/dx² = d/dx(v·A·dy/dx) - (v·A)’·dy/dx</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This substitution allows us to replace the second derivative with first derivatives, reducing the continuity requirements on our approximation functions.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>After integration by parts:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \int\limits_{0}^{L} A{\left(x \right)} v{\left(x \right)} \frac{d^{2}}{d x^{2}} y{\left(x \right)}\, dx = - A{\left(0 \right)} v{\left(0 \right)} \left. \frac{d}{d x} y{\left(x \right)} \right|_{\substack{ x=0 }} + A{\left(L \right)} v{\left(L \right)} \frac{d}{d L} y{\left(L \right)} - \int\limits_{0}^{L} \left(A{\left(x \right)} \frac{d}{d x} v{\left(x \right)} + v{\left(x \right)} \frac{d}{d x} A{\left(x \right)}\right) \frac{d}{d x} y{\left(x \right)}\, dx\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><strong>Step 5: Apply boundary conditions v(0) = v(L) = 0:</strong></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>EXPLANATION:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>We choose our test functions v(x) to vanish at the domain boundaries (v(0) = v(L) = 0).</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This is a crucial step that eliminates the boundary terms from integration by parts. By carefully selecting test functions that satisfy these conditions, we naturally incorporate the essential (Dirichlet) boundary conditions into our formulation.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This is one of the elegant aspects of the finite element method.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>The boundary term [v·A·dy/dx]₀ᴸ vanishes because v(0) = v(L) = 0.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><strong>Step 6: Assemble the final weak form:</strong></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>EXPLANATION: Now we collect all terms to form the complete weak formulation.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This form requires lower continuity requirements on our solution (only first derivatives appear).</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>The weak form is equivalent to the strong form for sufficiently smooth solutions, but it allows us to find approximate solutions with less smoothness.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This is the foundation for the finite element approximation where we’ll represent the solution as a combination of piecewise polynomial functions.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle - \int\limits_{0}^{L} \left(A{\left(x \right)} \frac{d}{d x} v{\left(x \right)} + v{\left(x \right)} \frac{d}{d x} A{\left(x \right)}\right) \frac{d}{d x} y{\left(x \right)}\, dx + \int\limits_{0}^{L} B{\left(x \right)} v{\left(x \right)} \frac{d}{d x} y{\left(x \right)}\, dx + \int\limits_{0}^{L} C{\left(x \right)} v{\left(x \right)} y{\left(x \right)}\, dx = \int\limits_{0}^{L} F{\left(x \right)} v{\left(x \right)}\, dx\)</span></p>
+</div>
+</div>
+</section>
+<section id="shape-functions-for-discretization" class="level2" data-number="2.4">
+<h2 data-number="2.4" class="anchored" data-anchor-id="shape-functions-for-discretization"><span class="header-section-number">2.4</span> Shape Functions for Discretization</h2>
+<div id="120f67cb" class="cell" data-execution_count="4">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co">#| code-fold: true</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>N <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>phi, a, b, y_approx, v_approx <span class="op">=</span> fem.define_shape_functions(N)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><strong>Step 7: Define shape functions for N elements:</strong></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>EXPLANATION:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Now we discretize the problem by representing both the solution y(x) and test function v(x) as linear combinations of shape functions.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This transforms our continuous problem into a discrete one with a finite number of unknowns (the coefficients).</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>The shape functions are typically chosen to be simple piecewise polynomials (often linear) that are non-zero only over a small portion of the domain .</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This ‘local support’ property often leads to sparse matrices in the final system.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \left[ \phi_{1}{\left(x \right)}, \  \phi_{2}{\left(x \right)}, \  \phi_{3}{\left(x \right)}, \  \phi_{4}{\left(x \right)}, \  \phi_{5}{\left(x \right)}\right]\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><strong>Step 8: Express solution and test functions using shape functions:</strong></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>EXPLANATION:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>We approximate both the solution y(x) and test function v(x) using the same set of shape functions.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>The solution is written as a sum of shape functions with unknown coefficients a_j. Similarly, the test function is written as a sum with coefficients b_i.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This is the Galerkin approach, where we use the same functions for both approximation and testing.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle y{\left(x \right)} = a_{1} \phi_{1}{\left(x \right)} + a_{2} \phi_{2}{\left(x \right)} + a_{3} \phi_{3}{\left(x \right)} + a_{4} \phi_{4}{\left(x \right)} + a_{5} \phi_{5}{\left(x \right)}\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle v{\left(x \right)} = b_{1} \phi_{1}{\left(x \right)} + b_{2} \phi_{2}{\left(x \right)} + b_{3} \phi_{3}{\left(x \right)} + b_{4} \phi_{4}{\left(x \right)} + b_{5} \phi_{5}{\left(x \right)}\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Where:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<ul>
+<li>aⱼ are unknown constants we need to solve for</li>
+</ul>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<ul>
+<li>bᵢ are arbitrary constants for the test function</li>
+</ul>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<ul>
+<li>φᵢ(x), φⱼ(x) are known shape functions (typically piecewise linear functions)</li>
+</ul>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>NOTE: In the finite element method, we often choose shape functions that are equal to 1 at their corresponding node and 0 at all other nodes.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This makes it easy to enforce boundary conditions and interpret the coefficients aⱼ as the solution values at the nodes.</p>
+</div>
+</div>
+</section>
+<section id="assembling-the-fem-system" class="level2" data-number="2.5">
+<h2 data-number="2.5" class="anchored" data-anchor-id="assembling-the-fem-system"><span class="header-section-number">2.5</span> Assembling the FEM System</h2>
+<div id="528c0635" class="cell" data-execution_count="5">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co">#| code-fold: true</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>K, F_vec <span class="op">=</span> fem.assemble_fem_system(weak_eq, phi, a, b, y_approx, v_approx, N)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>** Step 9: Substitute discretized functions into the weak form:**</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>EXPLANATION: We now substitute our approximations for y(x) and v(x) into the weak form.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This transforms the continuous weak form into a discrete algebraic system of equations.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Since the test function coefficients bᵢ are arbitrary, we can collect terms and set up a system of equations for the unknown coefficients aⱼ.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><strong>Step 10: Assemble the system matrix and right-hand side vector:</strong></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>EXPLANATION:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>When we substitute the discretized functions and collect terms, we obtain a linear system of equations K·a = F, where:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<ul>
+<li>K is the stiffness matrix (or system matrix)</li>
+</ul>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<ul>
+<li>a is the vector of unknown coefficients</li>
+</ul>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<ul>
+<li>F is the load vector (right-hand side)</li>
+</ul>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Each entry K[i,j] is computed by evaluating an integral that involves the shape functions phi_i and phi_j and their derivatives.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Similarly, each entry F[i] comes from an integral involving phi_i and the force function F(x).</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>For a simplified case where A(x) = B(x) = C(x) = 1, the entries would be:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle K_{ij} = \int_0^L \frac{d\phi_i}{dx} \frac{d\phi_j}{dx} dx + \int_0^L \phi_i(x) \frac{d\phi_j}{dx} dx + \int_0^L \phi_i(x) \phi_j(x) dx\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle F_i = \int_0^L \phi_i(x) F(x) dx\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>NOTE: In practice, the assembly process is typically done by looping over elements,computing the element contributions, and adding them to the global system.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This element-by-element approach is more efficient and aligns with the local support property of shape functions.</p>
+</div>
+</div>
+</section>
+<section id="putting-it-all-together" class="level2" data-number="2.6">
+<h2 data-number="2.6" class="anchored" data-anchor-id="putting-it-all-together"><span class="header-section-number">2.6</span> Putting It All Together</h2>
+<div id="90a7765b" class="cell" data-execution_count="6">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">#| code-fold: true</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>fem.finite_element_method_1d_demo()</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>======================================================================</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>INTRODUCTION TO THE FINITE ELEMENT METHOD</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Lecture #1: Introduction + 1D Setup</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>======================================================================</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Strong form of the equation:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle A{\left(x \right)} \frac{d^{2}}{d x^{2}} y{\left(x \right)} + B{\left(x \right)} \frac{d}{d x} y{\left(x \right)} + C{\left(x \right)} y{\left(x \right)} = F{\left(x \right)}\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>With boundary conditions:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle y{\left(0 \right)} = 0\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle y{\left(L \right)} = 0\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>where x ∈ [0, L]</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>======================================================================</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>DERIVING THE WEAK FORM</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>======================================================================</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><strong>Step 1: Multiply the strong form by a test function v(x):</strong></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>EXPLANATION: We start with the strong form of our differential equation and multiply both sides by a test function v(x)</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This is the first step in converting to the weak form.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>The test function v(x) will eventually vanish at the boundaries, helping us incorporate boundary conditions naturally.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \left(A{\left(x \right)} \frac{d^{2}}{d x^{2}} y{\left(x \right)} + B{\left(x \right)} \frac{d}{d x} y{\left(x \right)} + C{\left(x \right)} y{\left(x \right)}\right) v{\left(x \right)} = F{\left(x \right)} v{\left(x \right)}\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><strong>Step 2: Integrate over the domain [0, L]:</strong></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>EXPLANATION: We integrate both sides of the equation over the entire domain [0, L].</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This transforms our pointwise equation into an integral equation that will hold over the whole domain.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This step moves us from a local formulation to a global one, which is a key aspect of the finite element method.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \int\limits_{0}^{L} \left(A{\left(x \right)} \frac{d^{2}}{d x^{2}} y{\left(x \right)} + B{\left(x \right)} \frac{d}{d x} y{\left(x \right)} + C{\left(x \right)} y{\left(x \right)}\right) v{\left(x \right)}\, dx = \int\limits_{0}^{L} F{\left(x \right)} v{\left(x \right)}\, dx\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><strong>Step 3: Expand the left-hand side:</strong></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>EXPLANATION:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>We expand the left-hand side to separate the terms with different derivatives of y. This makes it easier to apply integration by parts to the second-derivative term.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Breaking down the differential operator allows us to handle each term appropriately based on the order of derivatives.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \int\limits_{0}^{L} A{\left(x \right)} v{\left(x \right)} \frac{d^{2}}{d x^{2}} y{\left(x \right)}\, dx + \int\limits_{0}^{L} B{\left(x \right)} v{\left(x \right)} \frac{d}{d x} y{\left(x \right)}\, dx + \int\limits_{0}^{L} C{\left(x \right)} v{\left(x \right)} y{\left(x \right)}\, dx = \int\limits_{0}^{L} F{\left(x \right)} v{\left(x \right)}\, dx\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><strong>Step 4: Integration by parts for the term with second derivative:</strong></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>EXPLANATION:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This is the critical step that reduces the order of derivatives in our equation. We apply integration by parts to the term containing the second derivative of y.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>The formula for integration by parts is:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>∫u·dv = [u·v] - ∫v·du</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>For our case:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>u = v(x)·A(x) and dv = d²y/dx² dx</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>du = d(v(x)·A(x))/dx dx and v = dy/dx</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Using the product rule:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>d/dx(v·A·dy/dx) = v·A·d²y/dx² + (v·A)’·dy/dx</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Rearranging:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>v·A·d²y/dx² = d/dx(v·A·dy/dx) - (v·A)’·dy/dx</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This substitution allows us to replace the second derivative with first derivatives, reducing the continuity requirements on our approximation functions.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>After integration by parts:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \int\limits_{0}^{L} A{\left(x \right)} v{\left(x \right)} \frac{d^{2}}{d x^{2}} y{\left(x \right)}\, dx = - A{\left(0 \right)} v{\left(0 \right)} \left. \frac{d}{d x} y{\left(x \right)} \right|_{\substack{ x=0 }} + A{\left(L \right)} v{\left(L \right)} \frac{d}{d L} y{\left(L \right)} - \int\limits_{0}^{L} \left(A{\left(x \right)} \frac{d}{d x} v{\left(x \right)} + v{\left(x \right)} \frac{d}{d x} A{\left(x \right)}\right) \frac{d}{d x} y{\left(x \right)}\, dx\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><strong>Step 5: Apply boundary conditions v(0) = v(L) = 0:</strong></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>EXPLANATION:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>We choose our test functions v(x) to vanish at the domain boundaries (v(0) = v(L) = 0).</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This is a crucial step that eliminates the boundary terms from integration by parts. By carefully selecting test functions that satisfy these conditions, we naturally incorporate the essential (Dirichlet) boundary conditions into our formulation.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This is one of the elegant aspects of the finite element method.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>The boundary term [v·A·dy/dx]₀ᴸ vanishes because v(0) = v(L) = 0.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><strong>Step 6: Assemble the final weak form:</strong></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>EXPLANATION: Now we collect all terms to form the complete weak formulation.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This form requires lower continuity requirements on our solution (only first derivatives appear).</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>The weak form is equivalent to the strong form for sufficiently smooth solutions, but it allows us to find approximate solutions with less smoothness.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This is the foundation for the finite element approximation where we’ll represent the solution as a combination of piecewise polynomial functions.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle - \int\limits_{0}^{L} \left(A{\left(x \right)} \frac{d}{d x} v{\left(x \right)} + v{\left(x \right)} \frac{d}{d x} A{\left(x \right)}\right) \frac{d}{d x} y{\left(x \right)}\, dx + \int\limits_{0}^{L} B{\left(x \right)} v{\left(x \right)} \frac{d}{d x} y{\left(x \right)}\, dx + \int\limits_{0}^{L} C{\left(x \right)} v{\left(x \right)} y{\left(x \right)}\, dx = \int\limits_{0}^{L} F{\left(x \right)} v{\left(x \right)}\, dx\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>======================================================================</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>DISCRETIZATION USING SHAPE FUNCTIONS</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>======================================================================</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><strong>Step 7: Define shape functions for N elements:</strong></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>EXPLANATION:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Now we discretize the problem by representing both the solution y(x) and test function v(x) as linear combinations of shape functions.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This transforms our continuous problem into a discrete one with a finite number of unknowns (the coefficients).</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>The shape functions are typically chosen to be simple piecewise polynomials (often linear) that are non-zero only over a small portion of the domain .</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This ‘local support’ property often leads to sparse matrices in the final system.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \left[ \phi_{1}{\left(x \right)}, \  \phi_{2}{\left(x \right)}, \  \phi_{3}{\left(x \right)}, \  \phi_{4}{\left(x \right)}, \  \phi_{5}{\left(x \right)}\right]\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><strong>Step 8: Express solution and test functions using shape functions:</strong></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>EXPLANATION:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>We approximate both the solution y(x) and test function v(x) using the same set of shape functions.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>The solution is written as a sum of shape functions with unknown coefficients a_j. Similarly, the test function is written as a sum with coefficients b_i.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This is the Galerkin approach, where we use the same functions for both approximation and testing.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle y{\left(x \right)} = a_{1} \phi_{1}{\left(x \right)} + a_{2} \phi_{2}{\left(x \right)} + a_{3} \phi_{3}{\left(x \right)} + a_{4} \phi_{4}{\left(x \right)} + a_{5} \phi_{5}{\left(x \right)}\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle v{\left(x \right)} = b_{1} \phi_{1}{\left(x \right)} + b_{2} \phi_{2}{\left(x \right)} + b_{3} \phi_{3}{\left(x \right)} + b_{4} \phi_{4}{\left(x \right)} + b_{5} \phi_{5}{\left(x \right)}\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Where:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<ul>
+<li>aⱼ are unknown constants we need to solve for</li>
+</ul>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<ul>
+<li>bᵢ are arbitrary constants for the test function</li>
+</ul>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<ul>
+<li>φᵢ(x), φⱼ(x) are known shape functions (typically piecewise linear functions)</li>
+</ul>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>NOTE: In the finite element method, we often choose shape functions that are equal to 1 at their corresponding node and 0 at all other nodes.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This makes it easy to enforce boundary conditions and interpret the coefficients aⱼ as the solution values at the nodes.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>======================================================================</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>ASSEMBLING THE FEM SYSTEM</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>======================================================================</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>** Step 9: Substitute discretized functions into the weak form:**</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>EXPLANATION: We now substitute our approximations for y(x) and v(x) into the weak form.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This transforms the continuous weak form into a discrete algebraic system of equations.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Since the test function coefficients bᵢ are arbitrary, we can collect terms and set up a system of equations for the unknown coefficients aⱼ.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><strong>Step 10: Assemble the system matrix and right-hand side vector:</strong></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>EXPLANATION:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>When we substitute the discretized functions and collect terms, we obtain a linear system of equations K·a = F, where:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<ul>
+<li>K is the stiffness matrix (or system matrix)</li>
+</ul>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<ul>
+<li>a is the vector of unknown coefficients</li>
+</ul>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<ul>
+<li>F is the load vector (right-hand side)</li>
+</ul>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Each entry K[i,j] is computed by evaluating an integral that involves the shape functions phi_i and phi_j and their derivatives.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Similarly, each entry F[i] comes from an integral involving phi_i and the force function F(x).</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>For a simplified case where A(x) = B(x) = C(x) = 1, the entries would be:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle K_{ij} = \int_0^L \frac{d\phi_i}{dx} \frac{d\phi_j}{dx} dx + \int_0^L \phi_i(x) \frac{d\phi_j}{dx} dx + \int_0^L \phi_i(x) \phi_j(x) dx\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle F_i = \int_0^L \phi_i(x) F(x) dx\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>NOTE: In practice, the assembly process is typically done by looping over elements,computing the element contributions, and adding them to the global system.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This element-by-element approach is more efficient and aligns with the local support property of shape functions.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>======================================================================</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>SOLVING THE FEM SYSTEM</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>======================================================================</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>The final step would be solving the linear system:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \text{True}\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>After solving for the unknown coefficients a_j, we can reconstruct the solution y(x)</p>
+</div>
+</div>
+</section>
+<section id="sec-convergence-example" class="level2" data-number="2.7">
+<h2 data-number="2.7" class="anchored" data-anchor-id="sec-convergence-example"><span class="header-section-number">2.7</span> Example: Convergence with Mesh Refinement</h2>
+<p>The following plots show the FEM solution for increasing numbers of elements, demonstrating how the numerical solution converges to the exact solution as the mesh is refined.</p>
+<div id="19262e49" class="cell" data-execution_count="7">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">8</span>))</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>x_exact <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">100</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>y_exact <span class="op">=</span> <span class="fl">0.5</span> <span class="op">*</span> x_exact <span class="op">*</span> (<span class="dv">1</span> <span class="op">-</span> x_exact)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> idx, n_elem <span class="kw">in</span> <span class="bu">enumerate</span>([<span class="dv">2</span>, <span class="dv">5</span>, <span class="dv">10</span>, <span class="dv">20</span>]):</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    ax <span class="op">=</span> axes[idx <span class="op">//</span> <span class="dv">2</span>, idx <span class="op">%</span> <span class="dv">2</span>]</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># --- Compute FEM solution ---</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    n_nodes <span class="op">=</span> n_elem <span class="op">+</span> <span class="dv">1</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    h <span class="op">=</span> <span class="fl">1.0</span> <span class="op">/</span> n_elem</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    K <span class="op">=</span> np.zeros((n_nodes, n_nodes))</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    F_vec <span class="op">=</span> np.zeros(n_nodes)</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> e <span class="kw">in</span> <span class="bu">range</span>(n_elem):</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>        k_e <span class="op">=</span> np.array([[<span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span>], [<span class="op">-</span><span class="dv">1</span>, <span class="dv">1</span>]]) <span class="op">/</span> h</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>        f_e <span class="op">=</span> np.array([h <span class="op">/</span> <span class="dv">2</span>, h <span class="op">/</span> <span class="dv">2</span>])</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>        K[e:e<span class="op">+</span><span class="dv">2</span>, e:e<span class="op">+</span><span class="dv">2</span>] <span class="op">+=</span> k_e</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>        F_vec[e:e<span class="op">+</span><span class="dv">2</span>] <span class="op">+=</span> f_e</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>    a <span class="op">=</span> np.linalg.solve(K[<span class="dv">1</span>:<span class="op">-</span><span class="dv">1</span>, <span class="dv">1</span>:<span class="op">-</span><span class="dv">1</span>], F_vec[<span class="dv">1</span>:<span class="op">-</span><span class="dv">1</span>])</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>    y_fem <span class="op">=</span> np.zeros(n_nodes)</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>    y_fem[<span class="dv">1</span>:<span class="op">-</span><span class="dv">1</span>] <span class="op">=</span> a</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>    x_fem <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">1</span>, n_nodes)</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>    <span class="co"># --- Plot on the subplot ---</span></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>    ax.plot(x_exact, y_exact, <span class="st">'b-'</span>, label<span class="op">=</span><span class="st">'Exact: y = 0.5x(1-x)'</span>)</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>    ax.plot(x_fem, y_fem, <span class="st">'ro-'</span>, label<span class="op">=</span><span class="ss">f'FEM (</span><span class="sc">{</span>n_elem<span class="sc">}</span><span class="ss"> elements)'</span>)</span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>    ax.set_title(<span class="ss">f'</span><span class="sc">{</span>n_elem<span class="sc">}</span><span class="ss"> elements'</span>)</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>    ax.set_xlabel(<span class="st">'x'</span>)</span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>    ax.set_ylabel(<span class="st">'y'</span>)</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>    ax.grid(<span class="va">True</span>)</span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>    ax.legend(fontsize<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="ch01-introduction_files/figure-html/cell-8-output-1.svg" class="img-fluid figure-img"></p>
+<figcaption>FEM solution with varying mesh refinement</figcaption>
+</figure>
+</div>
+</div>
+</div>
+
+
+<!-- -->
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+    const viewSource = window.document.getElementById('quarto-view-source') ||
+                       window.document.getElementById('quarto-code-tools-source');
+    if (viewSource) {
+      const sourceUrl = viewSource.getAttribute("data-quarto-source-url");
+      viewSource.addEventListener("click", function(e) {
+        if (sourceUrl) {
+          // rstudio viewer pane
+          if (/\bcapabilities=\b/.test(window.location)) {
+            window.open(sourceUrl);
+          } else {
+            window.location.href = sourceUrl;
+          }
+        } else {
+          const modal = new bootstrap.Modal(document.getElementById('quarto-embedded-source-code-modal'));
+          modal.show();
+        }
+        return false;
+      });
+    }
+    function toggleCodeHandler(show) {
+      return function(e) {
+        const detailsSrc = window.document.querySelectorAll(".cell > details > .sourceCode");
+        for (let i=0; i<detailsSrc.length; i++) {
+          const details = detailsSrc[i].parentElement;
+          if (show) {
+            details.open = true;
+          } else {
+            details.removeAttribute("open");
+          }
+        }
+        const cellCodeDivs = window.document.querySelectorAll(".cell > .sourceCode");
+        const fromCls = show ? "hidden" : "unhidden";
+        const toCls = show ? "unhidden" : "hidden";
+        for (let i=0; i<cellCodeDivs.length; i++) {
+          const codeDiv = cellCodeDivs[i];
+          if (codeDiv.classList.contains(fromCls)) {
+            codeDiv.classList.remove(fromCls);
+            codeDiv.classList.add(toCls);
+          } 
+        }
+        return false;
+      }
+    }
+    const hideAllCode = window.document.getElementById("quarto-hide-all-code");
+    if (hideAllCode) {
+      hideAllCode.addEventListener("click", toggleCodeHandler(false));
+    }
+    const showAllCode = window.document.getElementById("quarto-show-all-code");
+    if (showAllCode) {
+      showAllCode.addEventListener("click", toggleCodeHandler(true));
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="./index.html" class="pagination-link" aria-label="Preface">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Preface</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="./ch02-algebraic-system.html" class="pagination-link" aria-label="Deriving the Algebraic System and Galerkin's Method">
+        <span class="nav-page-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Deriving the Algebraic System and Galerkin’s Method</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> "Introduction and 1D Setup"</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="fu">## Setup</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="co">#| include: false</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>run _common.py</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> python.L1 <span class="im">as</span> fem</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> python.L1a <span class="im">as</span> fem_viz</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a><span class="fu">## The Strong Form</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a><span class="co">#| code-fold: true</span></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: fenced</span></span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>fem.display_strong_form()</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a><span class="fu">## Deriving the Weak Form</span></span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a><span class="co">#| code-fold: true</span></span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: fenced</span></span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>weak_eq <span class="op">=</span> fem.derive_weak_form()</span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a><span class="fu">## Shape Functions for Discretization</span></span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a><span class="co">#| code-fold: true</span></span>
+<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: fenced</span></span>
+<span id="cb7-43"><a href="#cb7-43" aria-hidden="true" tabindex="-1"></a>N <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb7-44"><a href="#cb7-44" aria-hidden="true" tabindex="-1"></a>phi, a, b, y_approx, v_approx <span class="op">=</span> fem.define_shape_functions(N)</span>
+<span id="cb7-45"><a href="#cb7-45" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb7-46"><a href="#cb7-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-47"><a href="#cb7-47" aria-hidden="true" tabindex="-1"></a><span class="fu">## Assembling the FEM System</span></span>
+<span id="cb7-48"><a href="#cb7-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-51"><a href="#cb7-51" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb7-52"><a href="#cb7-52" aria-hidden="true" tabindex="-1"></a><span class="co">#| code-fold: true</span></span>
+<span id="cb7-53"><a href="#cb7-53" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: fenced</span></span>
+<span id="cb7-54"><a href="#cb7-54" aria-hidden="true" tabindex="-1"></a>K, F_vec <span class="op">=</span> fem.assemble_fem_system(weak_eq, phi, a, b, y_approx, v_approx, N)</span>
+<span id="cb7-55"><a href="#cb7-55" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb7-56"><a href="#cb7-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-57"><a href="#cb7-57" aria-hidden="true" tabindex="-1"></a><span class="fu">## Putting It All Together</span></span>
+<span id="cb7-58"><a href="#cb7-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-61"><a href="#cb7-61" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb7-62"><a href="#cb7-62" aria-hidden="true" tabindex="-1"></a><span class="co">#| code-fold: true</span></span>
+<span id="cb7-63"><a href="#cb7-63" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: fenced</span></span>
+<span id="cb7-64"><a href="#cb7-64" aria-hidden="true" tabindex="-1"></a>fem.finite_element_method_1d_demo()</span>
+<span id="cb7-65"><a href="#cb7-65" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb7-66"><a href="#cb7-66" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-67"><a href="#cb7-67" aria-hidden="true" tabindex="-1"></a><span class="fu">## Example: Convergence with Mesh Refinement {#sec-convergence-example}</span></span>
+<span id="cb7-68"><a href="#cb7-68" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-69"><a href="#cb7-69" aria-hidden="true" tabindex="-1"></a>The following plots show the FEM solution for increasing numbers of elements, demonstrating how the numerical solution converges to the exact solution as the mesh is refined.</span>
+<span id="cb7-70"><a href="#cb7-70" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-73"><a href="#cb7-73" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb7-74"><a href="#cb7-74" aria-hidden="true" tabindex="-1"></a><span class="co">#| code-fold: true</span></span>
+<span id="cb7-75"><a href="#cb7-75" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
+<span id="cb7-76"><a href="#cb7-76" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "FEM solution with varying mesh refinement"</span></span>
+<span id="cb7-77"><a href="#cb7-77" aria-hidden="true" tabindex="-1"></a><span class="co">#| output: true</span></span>
+<span id="cb7-78"><a href="#cb7-78" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb7-79"><a href="#cb7-79" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-80"><a href="#cb7-80" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">8</span>))</span>
+<span id="cb7-81"><a href="#cb7-81" aria-hidden="true" tabindex="-1"></a>x_exact <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">100</span>)</span>
+<span id="cb7-82"><a href="#cb7-82" aria-hidden="true" tabindex="-1"></a>y_exact <span class="op">=</span> <span class="fl">0.5</span> <span class="op">*</span> x_exact <span class="op">*</span> (<span class="dv">1</span> <span class="op">-</span> x_exact)</span>
+<span id="cb7-83"><a href="#cb7-83" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-84"><a href="#cb7-84" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> idx, n_elem <span class="kw">in</span> <span class="bu">enumerate</span>([<span class="dv">2</span>, <span class="dv">5</span>, <span class="dv">10</span>, <span class="dv">20</span>]):</span>
+<span id="cb7-85"><a href="#cb7-85" aria-hidden="true" tabindex="-1"></a>    ax <span class="op">=</span> axes[idx <span class="op">//</span> <span class="dv">2</span>, idx <span class="op">%</span> <span class="dv">2</span>]</span>
+<span id="cb7-86"><a href="#cb7-86" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-87"><a href="#cb7-87" aria-hidden="true" tabindex="-1"></a>    <span class="co"># --- Compute FEM solution ---</span></span>
+<span id="cb7-88"><a href="#cb7-88" aria-hidden="true" tabindex="-1"></a>    n_nodes <span class="op">=</span> n_elem <span class="op">+</span> <span class="dv">1</span></span>
+<span id="cb7-89"><a href="#cb7-89" aria-hidden="true" tabindex="-1"></a>    h <span class="op">=</span> <span class="fl">1.0</span> <span class="op">/</span> n_elem</span>
+<span id="cb7-90"><a href="#cb7-90" aria-hidden="true" tabindex="-1"></a>    K <span class="op">=</span> np.zeros((n_nodes, n_nodes))</span>
+<span id="cb7-91"><a href="#cb7-91" aria-hidden="true" tabindex="-1"></a>    F_vec <span class="op">=</span> np.zeros(n_nodes)</span>
+<span id="cb7-92"><a href="#cb7-92" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> e <span class="kw">in</span> <span class="bu">range</span>(n_elem):</span>
+<span id="cb7-93"><a href="#cb7-93" aria-hidden="true" tabindex="-1"></a>        k_e <span class="op">=</span> np.array([[<span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span>], [<span class="op">-</span><span class="dv">1</span>, <span class="dv">1</span>]]) <span class="op">/</span> h</span>
+<span id="cb7-94"><a href="#cb7-94" aria-hidden="true" tabindex="-1"></a>        f_e <span class="op">=</span> np.array([h <span class="op">/</span> <span class="dv">2</span>, h <span class="op">/</span> <span class="dv">2</span>])</span>
+<span id="cb7-95"><a href="#cb7-95" aria-hidden="true" tabindex="-1"></a>        K[e:e<span class="op">+</span><span class="dv">2</span>, e:e<span class="op">+</span><span class="dv">2</span>] <span class="op">+=</span> k_e</span>
+<span id="cb7-96"><a href="#cb7-96" aria-hidden="true" tabindex="-1"></a>        F_vec[e:e<span class="op">+</span><span class="dv">2</span>] <span class="op">+=</span> f_e</span>
+<span id="cb7-97"><a href="#cb7-97" aria-hidden="true" tabindex="-1"></a>    a <span class="op">=</span> np.linalg.solve(K[<span class="dv">1</span>:<span class="op">-</span><span class="dv">1</span>, <span class="dv">1</span>:<span class="op">-</span><span class="dv">1</span>], F_vec[<span class="dv">1</span>:<span class="op">-</span><span class="dv">1</span>])</span>
+<span id="cb7-98"><a href="#cb7-98" aria-hidden="true" tabindex="-1"></a>    y_fem <span class="op">=</span> np.zeros(n_nodes)</span>
+<span id="cb7-99"><a href="#cb7-99" aria-hidden="true" tabindex="-1"></a>    y_fem[<span class="dv">1</span>:<span class="op">-</span><span class="dv">1</span>] <span class="op">=</span> a</span>
+<span id="cb7-100"><a href="#cb7-100" aria-hidden="true" tabindex="-1"></a>    x_fem <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">1</span>, n_nodes)</span>
+<span id="cb7-101"><a href="#cb7-101" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-102"><a href="#cb7-102" aria-hidden="true" tabindex="-1"></a>    <span class="co"># --- Plot on the subplot ---</span></span>
+<span id="cb7-103"><a href="#cb7-103" aria-hidden="true" tabindex="-1"></a>    ax.plot(x_exact, y_exact, <span class="st">'b-'</span>, label<span class="op">=</span><span class="st">'Exact: y = 0.5x(1-x)'</span>)</span>
+<span id="cb7-104"><a href="#cb7-104" aria-hidden="true" tabindex="-1"></a>    ax.plot(x_fem, y_fem, <span class="st">'ro-'</span>, label<span class="op">=</span><span class="ss">f'FEM (</span><span class="sc">{</span>n_elem<span class="sc">}</span><span class="ss"> elements)'</span>)</span>
+<span id="cb7-105"><a href="#cb7-105" aria-hidden="true" tabindex="-1"></a>    ax.set_title(<span class="ss">f'</span><span class="sc">{</span>n_elem<span class="sc">}</span><span class="ss"> elements'</span>)</span>
+<span id="cb7-106"><a href="#cb7-106" aria-hidden="true" tabindex="-1"></a>    ax.set_xlabel(<span class="st">'x'</span>)</span>
+<span id="cb7-107"><a href="#cb7-107" aria-hidden="true" tabindex="-1"></a>    ax.set_ylabel(<span class="st">'y'</span>)</span>
+<span id="cb7-108"><a href="#cb7-108" aria-hidden="true" tabindex="-1"></a>    ax.grid(<span class="va">True</span>)</span>
+<span id="cb7-109"><a href="#cb7-109" aria-hidden="true" tabindex="-1"></a>    ax.legend(fontsize<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb7-110"><a href="#cb7-110" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-111"><a href="#cb7-111" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb7-112"><a href="#cb7-112" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb7-113"><a href="#cb7-113" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+</code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
+</div></div></div></div></div>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

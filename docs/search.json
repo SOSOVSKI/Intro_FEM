@@ -1,0 +1,863 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "symbolic_fem_workbench",
+    "section": "",
+    "text": "symbolic_fem_workbench is a small Python library that lives alongside the Introduction to the Finite Element Method lecture notes. Its purpose is narrow and deliberate: to let students work through FEM derivations step by step using live symbolic mathematics, so that every matrix entry, every integration-by-parts move, and every shape-function coefficient can be inspected rather than taken on faith.\n\n\n\n\n\n\nImportantThis is a teaching tool, not a production FEM solver\n\n\n\nsymbolic_fem_workbench is intentionally simple, slow, and explicit. It is not a replacement for production FEM software such as FEniCSx, deal.II, or Firedrake.\n\nIt will not scale beyond small academic examples.\nIt prioritises readability over performance at every design decision.\nSymPy symbolic computation is used throughout, which is orders of magnitude slower than compiled code.\nThere is no mesh partitioning, no sparse storage, no iterative solvers.\n\nIf you are building engineering software, use FEniCSx. If you want to understand why FEniCSx works the way it does, start here."
+  },
+  {
+    "objectID": "index.html#what-is-this",
+    "href": "index.html#what-is-this",
+    "title": "symbolic_fem_workbench",
+    "section": "",
+    "text": "symbolic_fem_workbench is a small Python library that lives alongside the Introduction to the Finite Element Method lecture notes. Its purpose is narrow and deliberate: to let students work through FEM derivations step by step using live symbolic mathematics, so that every matrix entry, every integration-by-parts move, and every shape-function coefficient can be inspected rather than taken on faith.\n\n\n\n\n\n\nImportantThis is a teaching tool, not a production FEM solver\n\n\n\nsymbolic_fem_workbench is intentionally simple, slow, and explicit. It is not a replacement for production FEM software such as FEniCSx, deal.II, or Firedrake.\n\nIt will not scale beyond small academic examples.\nIt prioritises readability over performance at every design decision.\nSymPy symbolic computation is used throughout, which is orders of magnitude slower than compiled code.\nThere is no mesh partitioning, no sparse storage, no iterative solvers.\n\nIf you are building engineering software, use FEniCSx. If you want to understand why FEniCSx works the way it does, start here."
+  },
+  {
+    "objectID": "index.html#design-philosophy",
+    "href": "index.html#design-philosophy",
+    "title": "symbolic_fem_workbench",
+    "section": "Design philosophy",
+    "text": "Design philosophy\nThe library is organised around the workflow a student follows on paper:\n\nWrite down the strong form of a PDE.\nMultiply by a test function and integrate over the domain.\nApply integration by parts to reduce the smoothness requirement.\nEnforce boundary conditions.\nSubstitute a finite-dimensional approximation.\nExtract the element stiffness matrix and load vector.\nAssemble into a global system.\nSolve.\n\nEach module owns exactly one of these steps. There are no hidden shortcuts. When a function does something non-trivial it says so in its docstring, and you can read the source in a few minutes."
+  },
+  {
+    "objectID": "index.html#module-overview",
+    "href": "index.html#module-overview",
+    "title": "symbolic_fem_workbench",
+    "section": "Module overview",
+    "text": "Module overview\n\n\n\n\n\n\n\nModule\nResponsibility\n\n\n\n\nsymbols\nSymbolic fields, domains, and coordinate helpers\n\n\nforms\nContainers for domain integrals and boundary terms\n\n\nfe_spaces\nShape functions and local field expansions\n\n\nreference\nReference elements (P1 interval, triangle, tetrahedron) and affine maps\n\n\nquadrature\nExact and Gaussian quadrature on reference elements\n\n\ntransforms\nSymbolic transformations: IBP, Neumann flux, Galerkin substitution\n\n\nextract\nExtract element matrices and vectors from discretised forms\n\n\nassembly\nManual element-to-global assembly (dense, educational)\n\n\nelasticity\nConstitutive matrices and B-matrices for 2D/3D elasticity\n\n\nworkflow\nHigh-level helpers that string multiple steps together\n\n\nviz\nMatplotlib-based plotting of shape functions and solutions\n\n\ncodegen\nEmit I❤LA source from symbolic expressions"
+  },
+  {
+    "objectID": "index.html#what-the-companion-notebooks-show",
+    "href": "index.html#what-the-companion-notebooks-show",
+    "title": "symbolic_fem_workbench",
+    "section": "What the companion notebooks show",
+    "text": "What the companion notebooks show\nThe fourteen companion notebooks walk through the full FEM pipeline from scratch using this library. Each one corresponds to a topic in the lecture notes and is designed to be run interactively while reading the relevant chapter."
+  },
+  {
+    "objectID": "index.html#installation",
+    "href": "index.html#installation",
+    "title": "symbolic_fem_workbench",
+    "section": "Installation",
+    "text": "Installation\n# Clone the repository and install in editable mode\ngit clone https://github.com/shmuelosovski/IntroFem\ncd IntroFem\npip install -e \".[lectures]\"\nSee Getting Started for the full environment setup including FEniCSx."
+  },
+  {
+    "objectID": "api/forms.html",
+    "href": "api/forms.html",
+    "title": "forms",
+    "section": "",
+    "text": "Structured form containers used by the symbolic FEM workflow."
+  },
+  {
+    "objectID": "api/forms.html#domainintegral",
+    "href": "api/forms.html#domainintegral",
+    "title": "forms",
+    "section": "DomainIntegral",
+    "text": "DomainIntegral\nA domain integral ∫ integrand dx over a 1D domain. Call .as_integral() to get a SymPy Integral object."
+  },
+  {
+    "objectID": "api/forms.html#boundarycontribution",
+    "href": "api/forms.html#boundarycontribution",
+    "title": "forms",
+    "section": "BoundaryContribution",
+    "text": "BoundaryContribution\nA boundary term from integration by parts. Stores the expression, coordinate, evaluation point, and optional label. Call .evaluate() to substitute the coordinate and simplify."
+  },
+  {
+    "objectID": "api/forms.html#weightedresidual",
+    "href": "api/forms.html#weightedresidual",
+    "title": "forms",
+    "section": "WeightedResidual",
+    "text": "WeightedResidual\nThe complete weighted residual before splitting into bilinear/linear forms. Contains domain integrals and boundary contributions. Call .as_expression() to combine into a single SymPy expression."
+  },
+  {
+    "objectID": "api/forms.html#weakform",
+    "href": "api/forms.html#weakform",
+    "title": "forms",
+    "section": "WeakForm",
+    "text": "WeakForm\nThe split weak form with bilinear part a(u,v) and linear part F(v). The bilinear form contains terms with both trial and test functions. The linear form is the right-hand side."
+  },
+  {
+    "objectID": "api/forms.html#as_integralself",
+    "href": "api/forms.html#as_integralself",
+    "title": "forms",
+    "section": "as_integral(self)",
+    "text": "as_integral(self)\nNo docstring."
+  },
+  {
+    "objectID": "api/forms.html#evaluateself",
+    "href": "api/forms.html#evaluateself",
+    "title": "forms",
+    "section": "evaluate(self)",
+    "text": "evaluate(self)\nNo docstring."
+  },
+  {
+    "objectID": "api/forms.html#as_expressionself",
+    "href": "api/forms.html#as_expressionself",
+    "title": "forms",
+    "section": "as_expression(self)",
+    "text": "as_expression(self)\nNo docstring."
+  },
+  {
+    "objectID": "api/extract.html",
+    "href": "api/extract.html",
+    "title": "extract",
+    "section": "",
+    "text": "Helpers for extracting local element matrices and vectors from symbolic forms."
+  },
+  {
+    "objectID": "api/extract.html#extract_coefficient_matrixexpr-trial_dofs-test_dofs",
+    "href": "api/extract.html#extract_coefficient_matrixexpr-trial_dofs-test_dofs",
+    "title": "extract",
+    "section": "extract_coefficient_matrix(expr, trial_dofs, test_dofs)",
+    "text": "extract_coefficient_matrix(expr, trial_dofs, test_dofs)\nExtract the local element stiffness matrix from a discretized bilinear form. After Galerkin substitution, the bilinear form is a polynomial in trial DOFs (d₀, d₁, …) and test DOFs (w₀, w₁, …). This function extracts the coefficient of each (wᵢ, dⱼ) pair to build the element matrix K_e[i,j]. Parameters: expr - the discretized bilinear form expression, trial_dofs - list of trial DOF symbols, test_dofs - list of test DOF symbols. Returns a SymPy Matrix of shape (n_test, n_trial)."
+  },
+  {
+    "objectID": "api/extract.html#extract_coefficient_vectorexpr-test_dofs",
+    "href": "api/extract.html#extract_coefficient_vectorexpr-test_dofs",
+    "title": "extract",
+    "section": "extract_coefficient_vector(expr, test_dofs)",
+    "text": "extract_coefficient_vector(expr, test_dofs)\nExtract the local element load vector from a discretized linear form. After Galerkin substitution, the linear form is a polynomial in test DOFs (w₀, w₁, …). This function extracts the coefficient of each wᵢ to build the element load vector f_e[i]. Parameters: expr - the discretized linear form expression, test_dofs - list of test DOF symbols. Returns a SymPy column Matrix of length n_test."
+  },
+  {
+    "objectID": "api/assembly.html",
+    "href": "api/assembly.html",
+    "title": "assembly",
+    "section": "",
+    "text": "Minimal manual-assembly helpers for teaching examples.\nThese helpers are intentionally small and explicit. They support classroom examples without trying to hide topology or boundary-condition reasoning."
+  },
+  {
+    "objectID": "api/assembly.html#assemble_dense_matrixglobal_matrix-local_matrix-connectivity",
+    "href": "api/assembly.html#assemble_dense_matrixglobal_matrix-local_matrix-connectivity",
+    "title": "assembly",
+    "section": "assemble_dense_matrix(global_matrix, local_matrix, connectivity)",
+    "text": "assemble_dense_matrix(global_matrix, local_matrix, connectivity)\nAdd a local element matrix into a dense global matrix in place."
+  },
+  {
+    "objectID": "api/assembly.html#assemble_dense_vectorglobal_vector-local_vector-connectivity",
+    "href": "api/assembly.html#assemble_dense_vectorglobal_vector-local_vector-connectivity",
+    "title": "assembly",
+    "section": "assemble_dense_vector(global_vector, local_vector, connectivity)",
+    "text": "assemble_dense_vector(global_vector, local_vector, connectivity)\nAdd a local element vector into a dense global vector in place."
+  },
+  {
+    "objectID": "api/assembly.html#apply_dirichlet_by_reductionglobal_matrix-global_vector-constrained_dofs-prescribed_values",
+    "href": "api/assembly.html#apply_dirichlet_by_reductionglobal_matrix-global_vector-constrained_dofs-prescribed_values",
+    "title": "assembly",
+    "section": "apply_dirichlet_by_reduction(global_matrix, global_vector, constrained_dofs, prescribed_values)",
+    "text": "apply_dirichlet_by_reduction(global_matrix, global_vector, constrained_dofs, prescribed_values)\nReturn the reduced linear system after enforcing Dirichlet values. Parameters ———- global_matrix, global_vector Full linear system K u = F. constrained_dofs Global dof indices where the solution is prescribed. prescribed_values Values at the constrained dofs. Defaults to homogeneous conditions."
+  },
+  {
+    "objectID": "api/assembly.html#expand_reduced_solutionfree_solution-ndofs-free_dofs-constrained_dofs-prescribed_values",
+    "href": "api/assembly.html#expand_reduced_solutionfree_solution-ndofs-free_dofs-constrained_dofs-prescribed_values",
+    "title": "assembly",
+    "section": "expand_reduced_solution(free_solution, ndofs, free_dofs, constrained_dofs, prescribed_values)",
+    "text": "expand_reduced_solution(free_solution, ndofs, free_dofs, constrained_dofs, prescribed_values)\nExpand a reduced solution back into the full nodal vector."
+  },
+  {
+    "objectID": "api/assembly.html#apply_dirichlet_by_row_substitutionglobal_matrix-global_vector-constrained_dofs-prescribed_values",
+    "href": "api/assembly.html#apply_dirichlet_by_row_substitutionglobal_matrix-global_vector-constrained_dofs-prescribed_values",
+    "title": "assembly",
+    "section": "apply_dirichlet_by_row_substitution(global_matrix, global_vector, constrained_dofs, prescribed_values)",
+    "text": "apply_dirichlet_by_row_substitution(global_matrix, global_vector, constrained_dofs, prescribed_values)\nEnforce Dirichlet BCs by modifying the global system in-place (row substitution). This is the textbook approach that most students learn first: 1. For each constrained DOF i with prescribed value g_i: - Zero out row i of K - Set K[i, i] = 1 - Subtract K[:, i] * g_i from the RHS for all other rows - Zero out column i of K - Set F[i] = g_i After modification, the system K u = F can be solved directly and u[i] = g_i for every constrained DOF. Parameters ———- global_matrix, global_vector The assembled system K u = F. Modified in-place and also returned. constrained_dofs Indices of DOFs with prescribed Dirichlet values. prescribed_values The prescribed values. Defaults to zeros (homogeneous). Returns ——- K_mod, F_mod : np.ndarray The modified system (same arrays, returned for convenience)."
+  },
+  {
+    "objectID": "api/assembly.html#apply_dirichlet_by_liftingglobal_matrix-global_vector-constrained_dofs-prescribed_values",
+    "href": "api/assembly.html#apply_dirichlet_by_liftingglobal_matrix-global_vector-constrained_dofs-prescribed_values",
+    "title": "assembly",
+    "section": "apply_dirichlet_by_lifting(global_matrix, global_vector, constrained_dofs, prescribed_values)",
+    "text": "apply_dirichlet_by_lifting(global_matrix, global_vector, constrained_dofs, prescribed_values)\nEnforce Dirichlet BCs using the lifting approach. The lifting approach decomposes the solution as u = u_0 + u_D, where: - u_D is a “lift” vector that satisfies the Dirichlet conditions (u_D[i] = g_i for constrained DOFs, zero elsewhere) - u_0 ∈ V_0 is the homogeneous part (u_0[i] = 0 for constrained DOFs) Substituting into a(u, v) = F(v): a(u_0 + u_D, v) = F(v) a(u_0, v) = F(v) - a(u_D, v) In matrix form this becomes: K_ff u_0f = F_f - K_fc g_c This is mathematically equivalent to the reduction approach but shows more clearly how the Dirichlet data enters as a correction to the RHS. The approach follows the treatment in Dokken’s FEniCS tutorial: the lift u_D lives in the full space, the modified RHS is F - K u_D, and the constrained rows/columns are then eliminated. Parameters ———- global_matrix, global_vector Assembled system K u = F. Not modified. constrained_dofs Indices of Dirichlet DOFs. prescribed_values Prescribed values at the Dirichlet DOFs. Defaults to zeros. Returns ——- K_ff : np.ndarray Reduced stiffness (free-free block). F_modified : np.ndarray Modified load vector = F_f - K_fc g_c. free_dofs : list[int] u_lift : np.ndarray The full lift vector (zero except at constrained DOFs)."
+  },
+  {
+    "objectID": "api/codegen.html",
+    "href": "api/codegen.html",
+    "title": "codegen",
+    "section": "",
+    "text": "Very small backend wrapper around the I❤️LA printer.\nThis module intentionally stops at source generation. Compilation to NumPy is left to the external I❤️LA toolchain so the course can keep that boundary explicit."
+  },
+  {
+    "objectID": "api/codegen.html#emit_iheartla_scalarname-expr-declarations",
+    "href": "api/codegen.html#emit_iheartla_scalarname-expr-declarations",
+    "title": "codegen",
+    "section": "emit_iheartla_scalar(name, expr, declarations)",
+    "text": "emit_iheartla_scalar(name, expr, declarations)\nNo docstring."
+  },
+  {
+    "objectID": "api/codegen.html#emit_iheartla_matrixname-matrix-declarations",
+    "href": "api/codegen.html#emit_iheartla_matrixname-matrix-declarations",
+    "title": "codegen",
+    "section": "emit_iheartla_matrix(name, matrix, declarations)",
+    "text": "emit_iheartla_matrix(name, matrix, declarations)\nNo docstring."
+  },
+  {
+    "objectID": "api/transforms.html",
+    "href": "api/transforms.html",
+    "title": "transforms",
+    "section": "",
+    "text": "Explicit symbolic transformations for the teaching workflow."
+  },
+  {
+    "objectID": "api/transforms.html#weighted_residuallhs-rhs-test-domain",
+    "href": "api/transforms.html#weighted_residuallhs-rhs-test-domain",
+    "title": "transforms",
+    "section": "weighted_residual(lhs, rhs, test, domain)",
+    "text": "weighted_residual(lhs, rhs, test, domain)\nConstruct the weighted residual from a strong-form equation. Given a strong form lhs = rhs, multiplies the residual (lhs - rhs) by the test function and integrates over the domain. This is the first step in deriving the weak form. Parameters: lhs - left-hand side of the strong form, rhs - right-hand side, test - test (weight) function, domain - 1D domain tuple (x, x_min, x_max). Returns a WeightedResidual container."
+  },
+  {
+    "objectID": "api/transforms.html#integrate_divergence_1dflux-test-x-domain",
+    "href": "api/transforms.html#integrate_divergence_1dflux-test-x-domain",
+    "title": "transforms",
+    "section": "integrate_divergence_1d(flux, test, x, domain)",
+    "text": "integrate_divergence_1d(flux, test, x, domain)\nApply integration by parts to a flux-divergence term in 1D. Converts ∫ (d(flux)/dx)·v dx into -∫ flux·(dv/dx) dx plus boundary terms [flux·v] evaluated at both ends. This reduces the smoothness requirement on the trial function by shifting one derivative onto the test function. Parameters: flux - the flux expression (e.g. E·A·du/dx), test - the test function v, x - the spatial coordinate symbol, domain - 1D domain tuple. Returns (domain_integral, (boundary_left, boundary_right))."
+  },
+  {
+    "objectID": "api/transforms.html#drop_dirichlet_boundaryboundary_term-test",
+    "href": "api/transforms.html#drop_dirichlet_boundaryboundary_term-test",
+    "title": "transforms",
+    "section": "drop_dirichlet_boundary(boundary_term, test)",
+    "text": "drop_dirichlet_boundary(boundary_term, test)\nEnforce a homogeneous Dirichlet condition by setting the test function to zero at a boundary. In FEM, the test space vanishes on the essential (Dirichlet) boundary. This function evaluates the boundary term and substitutes v=0 at the specified location. Parameters: boundary_term - a BoundaryContribution object, test - the test function expression. Returns the simplified (typically zero) boundary contribution."
+  },
+  {
+    "objectID": "api/transforms.html#apply_neumann_fluxboundary_term-flux_expr-prescribed_flux",
+    "href": "api/transforms.html#apply_neumann_fluxboundary_term-flux_expr-prescribed_flux",
+    "title": "transforms",
+    "section": "apply_neumann_flux(boundary_term, flux_expr, prescribed_flux)",
+    "text": "apply_neumann_flux(boundary_term, flux_expr, prescribed_flux)\nApply a prescribed Neumann (natural) boundary condition. Substitutes the known flux value into a boundary term and evaluates at the boundary location. Parameters: boundary_term - a BoundaryContribution object, flux_expr - the symbolic flux to replace, prescribed_flux - the known boundary flux value. Returns the evaluated boundary contribution."
+  },
+  {
+    "objectID": "api/transforms.html#split_linear_weak_formexpr-trial-test",
+    "href": "api/transforms.html#split_linear_weak_formexpr-trial-test",
+    "title": "transforms",
+    "section": "split_linear_weak_form(expr, trial, test)",
+    "text": "split_linear_weak_form(expr, trial, test)\nSplit a weak-form expression into its bilinear and linear parts. Identifies which terms depend on both trial and test functions (bilinear form a(u,v)) and which depend only on the test function (linear form F(v), moved to the RHS). Parameters: expr - the combined weak form expression, trial - the trial field, test - the test field. Returns a WeakForm with .bilinear and .linear attributes."
+  },
+  {
+    "objectID": "api/transforms.html#grad_2dexpr-x-y",
+    "href": "api/transforms.html#grad_2dexpr-x-y",
+    "title": "transforms",
+    "section": "grad_2d(expr, x, y)",
+    "text": "grad_2d(expr, x, y)\nReturn the 2D gradient as a column vector."
+  },
+  {
+    "objectID": "api/transforms.html#pullback_gradient_2dgradient_ref-jacobian",
+    "href": "api/transforms.html#pullback_gradient_2dgradient_ref-jacobian",
+    "title": "transforms",
+    "section": "pullback_gradient_2d(gradient_ref, jacobian)",
+    "text": "pullback_gradient_2d(gradient_ref, jacobian)\nMap a reference-space gradient into physical coordinates using J^{-T}."
+  },
+  {
+    "objectID": "api/transforms.html#substitute_fieldexpr-field-replacement",
+    "href": "api/transforms.html#substitute_fieldexpr-field-replacement",
+    "title": "transforms",
+    "section": "substitute_field(expr, field, replacement)",
+    "text": "substitute_field(expr, field, replacement)\nReplace a symbolic field with a finite-element expansion in an expression. Handles derivatives of all orders: finds the maximum derivative order present, then substitutes from highest to lowest to avoid partial matches. This implements the Galerkin discretization step u(x) → Σ Nᵢ dᵢ. Parameters: expr - the expression to substitute into, field - the symbolic field (e.g. u(x)), replacement - the FE expansion, *coordinates - the spatial coordinate symbols. Returns the expanded expression with all field references replaced."
+  },
+  {
+    "objectID": "api/transforms.html#substitute_feexpr-replacements",
+    "href": "api/transforms.html#substitute_feexpr-replacements",
+    "title": "transforms",
+    "section": "substitute_fe(expr, replacements)",
+    "text": "substitute_fe(expr, replacements)\nApply multiple field substitutions for Galerkin discretization. Convenience wrapper that calls substitute_field for each (field, replacement) pair. Typically used to substitute both trial u→u_h and test v→v_h simultaneously. Parameters: expr - the expression, replacements - dict mapping fields to their FE expansions, *coordinates - spatial coordinates. Returns the fully discretized expression."
+  },
+  {
+    "objectID": "api/transforms.html#gateaux_derivativeform-trial_var-increment_var",
+    "href": "api/transforms.html#gateaux_derivativeform-trial_var-increment_var",
+    "title": "transforms",
+    "section": "gateaux_derivative(form, trial_var, increment_var)",
+    "text": "gateaux_derivative(form, trial_var, increment_var)\nCompute the Gateaux (directional) derivative for linearization. Evaluates d/dε[form(u + ε·δu)]|_{ε=0}. Used in Newton-Raphson linearization of nonlinear problems. Parameters: form - the nonlinear form expression, trial_var - the current solution variable, increment_var - the increment/perturbation variable. Returns the linearized expression."
+  },
+  {
+    "objectID": "api/transforms.html#integrate_boundary_edge_1dintegrand-t-t_start-t_end",
+    "href": "api/transforms.html#integrate_boundary_edge_1dintegrand-t-t_start-t_end",
+    "title": "transforms",
+    "section": "integrate_boundary_edge_1d(integrand, t, t_start, t_end)",
+    "text": "integrate_boundary_edge_1d(integrand, t, t_start, t_end)\nIntegrate an expression along a 1D parametric edge. In 2D FEM, boundary integrals arise from integration by parts of the flux-divergence term. When the divergence theorem converts a domain integral to a boundary integral, the result is a line integral along each boundary edge: ∫_Γ (flux · n) v ds For a straight edge parameterised by t ∈ [t_start, t_end], this function evaluates ∫ integrand dt. Parameters ———- integrand : sp.Expr The boundary integrand (already including the edge Jacobian / length factor if the parameterisation is not unit-speed). t : sp.Symbol The parameterisation variable. t_start, t_end : sp.Expr Limits of integration. Returns ——- sp.Expr The simplified result of the line integral."
+  },
+  {
+    "objectID": "api/transforms.html#neumann_load_vector_triangle_edgeref_element-edge_local_nodes-prescribed_flux-edge_length-xi-eta",
+    "href": "api/transforms.html#neumann_load_vector_triangle_edgeref_element-edge_local_nodes-prescribed_flux-edge_length-xi-eta",
+    "title": "transforms",
+    "section": "neumann_load_vector_triangle_edge(ref_element, edge_local_nodes, prescribed_flux, edge_length, xi, eta)",
+    "text": "neumann_load_vector_triangle_edge(ref_element, edge_local_nodes, prescribed_flux, edge_length, xi, eta)\nCompute the Neumann contribution to the element load vector for one edge. For a P1 triangle with a Neumann BC t* on one edge, the boundary integral contributes: f_e[i] += ∫_edge t* N_i ds On a straight edge of length |e|, with a linear parameterisation, the shape functions restrict to 1D linear functions on the edge. For constant t, the result is t |e| / 2 for each of the two edge nodes, and 0 for the interior node. Parameters ———- ref_element Reference element (e.g. ReferenceTriangleP1) with .shape_functions. edge_local_nodes : tuple[int, int] Local node indices (0-based) of the two nodes on the boundary edge. prescribed_flux : sp.Expr The prescribed Neumann flux value t*. edge_length : sp.Expr Physical length of the edge. xi, eta : sp.Symbol Reference coordinate symbols. Returns ——- sp.Matrix Column vector of length n_nodes with the boundary contributions."
+  },
+  {
+    "objectID": "api/workflow.html",
+    "href": "api/workflow.html",
+    "title": "workflow",
+    "section": "",
+    "text": "Small workflow helpers for course-ready examples."
+  },
+  {
+    "objectID": "api/workflow.html#build_bar_1d_local_problem",
+    "href": "api/workflow.html#build_bar_1d_local_problem",
+    "title": "workflow",
+    "section": "build_bar_1d_local_problem()",
+    "text": "build_bar_1d_local_problem()\nBuild the complete 1D bar/Poisson local element problem symbolically. Derives the weak form from the strong form d/dx(EA·du/dx) + q = 0, applies integration by parts, enforces homogeneous Dirichlet at x=0 and Neumann traction P at x=L, substitutes P1 shape functions, and extracts the 2×2 element stiffness matrix and 2×1 load vector. Returns a dict with keys: x, L, E, A, q, P (symbols); u, v (fields); weak_bilinear, weak_linear (forms); Ke (2×2 Matrix), fe (2×1 Matrix)."
+  },
+  {
+    "objectID": "api/workflow.html#build_poisson_triangle_p1_local_problem",
+    "href": "api/workflow.html#build_poisson_triangle_p1_local_problem",
+    "title": "workflow",
+    "section": "build_poisson_triangle_p1_local_problem()",
+    "text": "build_poisson_triangle_p1_local_problem()\nBuild a teaching-first local P1 triangle problem for scalar Poisson/diffusion."
+  },
+  {
+    "objectID": "api/workflow.html#build_bar_1d_mass_matrix",
+    "href": "api/workflow.html#build_bar_1d_mass_matrix",
+    "title": "workflow",
+    "section": "build_bar_1d_mass_matrix()",
+    "text": "build_bar_1d_mass_matrix()\nBuild the consistent mass matrix for a 1D bar element. Derives M_e from the L2 inner product ∫ ρA·u·v dx on a two-node linear element. Used in time-dependent problems: M·a_ddot + K·a = F. Returns a dict with keys: x, L, rho, A (symbols); Me (2×2 Matrix)."
+  },
+  {
+    "objectID": "api/workflow.html#build_elasticity_triangle_p1_2dformulation",
+    "href": "api/workflow.html#build_elasticity_triangle_p1_2dformulation",
+    "title": "workflow",
+    "section": "build_elasticity_triangle_p1_2d(formulation)",
+    "text": "build_elasticity_triangle_p1_2d(formulation)\nBuild local element matrices for 2D linear elasticity on a P1 triangle. Demonstrates the full pipeline: constitutive matrix D, gradient pullback, B-matrix construction, and K_e = t A B^T D B. Parameters ———- formulation : str Either “plane_stress” or “plane_strain”. Returns a dict with: E_sym, nu (material); D (3×3 constitutive); B (3×6 strain-displacement); Ke (6×6 element stiffness); geometry; etc."
+  },
+  {
+    "objectID": "api/workflow.html#build_elasticity_tetra_p1_3d",
+    "href": "api/workflow.html#build_elasticity_tetra_p1_3d",
+    "title": "workflow",
+    "section": "build_elasticity_tetra_p1_3d()",
+    "text": "build_elasticity_tetra_p1_3d()\nBuild local element matrices for 3D linear elasticity on a P1 tetrahedron. Derives the full pipeline: 6×6 constitutive matrix D, gradient pullback via 3×3 Jacobian, B-matrix (6×12), and K_e = V B^T D B (12×12). Returns a dict with: E, nu (material); D (6×6); B (6×12); Ke (12×12); vertex symbols; etc."
+  },
+  {
+    "objectID": "getting-started.html",
+    "href": "getting-started.html",
+    "title": "Getting Started",
+    "section": "",
+    "text": "You need Python 3.11 and either conda/mamba or uv."
+  },
+  {
+    "objectID": "getting-started.html#prerequisites",
+    "href": "getting-started.html#prerequisites",
+    "title": "Getting Started",
+    "section": "",
+    "text": "You need Python 3.11 and either conda/mamba or uv."
+  },
+  {
+    "objectID": "getting-started.html#installation",
+    "href": "getting-started.html#installation",
+    "title": "Getting Started",
+    "section": "Installation",
+    "text": "Installation\n\nWith conda + uv (recommended)\nThe FEniCSx chapters (14 and 16) require packages that are only available through conda-forge. Everything else is pure Python and handled by uv.\n# 1. Create the conda environment (Python 3.11 + FEniCSx + pyvista)\nconda env create -f environment.yml\nconda activate fem-env\n\n# 2. Install the workbench and remaining Python deps\nuv pip install -e \".[lectures,dev]\"\n\n\nWithout FEniCSx (core only)\nIf you only need the symbolic workbench and the companion notebooks (no FEniCSx chapters):\npip install -e \".[lectures]\""
+  },
+  {
+    "objectID": "getting-started.html#verify-the-installation",
+    "href": "getting-started.html#verify-the-installation",
+    "title": "Getting Started",
+    "section": "Verify the installation",
+    "text": "Verify the installation\nimport symbolic_fem_workbench as sfem\n\n# Quick smoke-test: build the 1D bar element problem\nresult = sfem.workflow.build_bar_1d_local_problem()\nprint(result[\"Ke\"])   # 2×2 symbolic stiffness matrix"
+  },
+  {
+    "objectID": "getting-started.html#running-the-companion-notebooks",
+    "href": "getting-started.html#running-the-companion-notebooks",
+    "title": "Getting Started",
+    "section": "Running the companion notebooks",
+    "text": "Running the companion notebooks\n# From the project root\njupyter lab notebooks/\nOr render the full HTML site with output:\nmake notebooks-html"
+  },
+  {
+    "objectID": "getting-started.html#build-everything",
+    "href": "getting-started.html#build-everything",
+    "title": "Getting Started",
+    "section": "Build everything",
+    "text": "Build everything\nmake all          # notebooks (HTML + PDF) + book (HTML + PDF) + slides\nmake book         # lecture-note book only\nmake notebooks    # companion notebooks only\nmake slides       # revealjs lecture slides only"
+  },
+  {
+    "objectID": "getting-started.html#package-layout",
+    "href": "getting-started.html#package-layout",
+    "title": "Getting Started",
+    "section": "Package layout",
+    "text": "Package layout\nsrc/\n└── symbolic_fem_workbench/\n    ├── __init__.py       # public API surface\n    ├── symbols.py        # domains and symbolic fields\n    ├── forms.py          # form containers\n    ├── fe_spaces.py      # shape functions\n    ├── reference.py      # reference elements + affine maps\n    ├── quadrature.py     # integration rules\n    ├── transforms.py     # IBP, Neumann, Galerkin substitution\n    ├── extract.py        # element matrix / vector extraction\n    ├── assembly.py       # global assembly helpers\n    ├── elasticity.py     # constitutive matrices, B-matrix\n    ├── workflow.py       # high-level end-to-end helpers\n    ├── viz.py            # matplotlib plotting\n    ├── codegen/          # I❤LA code generation\n    └── printers/         # custom SymPy printers"
+  },
+  {
+    "objectID": "api/viz.html",
+    "href": "api/viz.html",
+    "title": "viz",
+    "section": "",
+    "text": "Visualization helpers for teaching FEM concepts.\nProvides matplotlib-based functions for plotting shape functions, reference-to-physical mappings, and FEM solution fields."
+  },
+  {
+    "objectID": "api/viz.html#plot_triangle_shape_functionsreference_element-xi_sym-eta_sym-ax",
+    "href": "api/viz.html#plot_triangle_shape_functionsreference_element-xi_sym-eta_sym-ax",
+    "title": "viz",
+    "section": "plot_triangle_shape_functions(reference_element, xi_sym, eta_sym, ax)",
+    "text": "plot_triangle_shape_functions(reference_element, xi_sym, eta_sym, ax)\nPlot 2D contour plots of triangle shape functions on the reference element. Parameters ———- reference_element A reference triangle object with .shape_functions property. xi_sym, eta_sym SymPy symbols for the reference coordinates. ax Optional matplotlib axes (creates new figure if None). Returns ——- fig : matplotlib Figure"
+  },
+  {
+    "objectID": "api/viz.html#plot_affine_mappinggeom-xi_sym-eta_sym-vertex_subs-ax",
+    "href": "api/viz.html#plot_affine_mappinggeom-xi_sym-eta_sym-vertex_subs-ax",
+    "title": "viz",
+    "section": "plot_affine_mapping(geom, xi_sym, eta_sym, vertex_subs, ax)",
+    "text": "plot_affine_mapping(geom, xi_sym, eta_sym, vertex_subs, ax)\nVisualize the affine mapping from reference to physical triangle. Parameters ———- geom : AffineTriangleMap2D xi_sym, eta_sym : sp.Symbol vertex_subs : dict Substitution dict mapping symbolic vertices to numerical values, e.g. {x1: 0, y1: 0, x2: 2, y2: 0, x3: 1, y3: 1.5}. ax : optional matplotlib axes pair (ax_ref, ax_phys) Returns ——- fig : matplotlib Figure"
+  },
+  {
+    "objectID": "api/viz.html#plot_mesh_solutionnodes-elements-u-ax-title",
+    "href": "api/viz.html#plot_mesh_solutionnodes-elements-u-ax-title",
+    "title": "viz",
+    "section": "plot_mesh_solution(nodes, elements, u, ax, title)",
+    "text": "plot_mesh_solution(nodes, elements, u, ax, title)\nPlot a scalar FEM solution on a triangular mesh. Parameters ———- nodes : ndarray of shape (n_nodes, 2) elements : list of 3-tuples (connectivity) u : ndarray of shape (n_nodes,) — nodal values ax : optional matplotlib axes title : str Returns ——- fig : matplotlib Figure"
+  },
+  {
+    "objectID": "api/reference.html",
+    "href": "api/reference.html",
+    "title": "reference",
+    "section": "",
+    "text": "Reference-element and affine-mapping helpers for teaching examples."
+  },
+  {
+    "objectID": "api/reference.html#referenceintervalp1",
+    "href": "api/reference.html#referenceintervalp1",
+    "title": "reference",
+    "section": "ReferenceIntervalP1",
+    "text": "ReferenceIntervalP1\nReference linear interval element on [0, 1]. Two nodes at endpoints. Provides shape functions N₁ = 1 - ξ, N₂ = ξ and their constant derivatives. This is the 1D counterpart to ReferenceTriangleP1 for consistency."
+  },
+  {
+    "objectID": "api/reference.html#referencetrianglep1",
+    "href": "api/reference.html#referencetrianglep1",
+    "title": "reference",
+    "section": "ReferenceTriangleP1",
+    "text": "ReferenceTriangleP1\nReference P1 triangle with vertices at (0,0), (1,0), (0,1). Provides barycentric shape functions N₁ = 1-ξ-η, N₂ = ξ, N₃ = η and their constant gradients."
+  },
+  {
+    "objectID": "api/reference.html#referencequadrilateralq1",
+    "href": "api/reference.html#referencequadrilateralq1",
+    "title": "reference",
+    "section": "ReferenceQuadrilateralQ1",
+    "text": "ReferenceQuadrilateralQ1\nReference bilinear quadrilateral on [-1,1]². Four nodes at corners, bilinear shape functions."
+  },
+  {
+    "objectID": "api/reference.html#referencequadrilateralq2",
+    "href": "api/reference.html#referencequadrilateralq2",
+    "title": "reference",
+    "section": "ReferenceQuadrilateralQ2",
+    "text": "ReferenceQuadrilateralQ2\nReference biquadratic quadrilateral on [-1,1]². Nine nodes (corners + edges + center), tensor-product Lagrange shape functions."
+  },
+  {
+    "objectID": "api/reference.html#referencehexahedronq1",
+    "href": "api/reference.html#referencehexahedronq1",
+    "title": "reference",
+    "section": "ReferenceHexahedronQ1",
+    "text": "ReferenceHexahedronQ1\nReference trilinear hexahedron on [-1,1]³. Eight corner nodes, trilinear shape functions."
+  },
+  {
+    "objectID": "api/reference.html#referencetetrahedronp1",
+    "href": "api/reference.html#referencetetrahedronp1",
+    "title": "reference",
+    "section": "ReferenceTetrahedronP1",
+    "text": "ReferenceTetrahedronP1\nReference linear tetrahedron with vertices at (0,0,0), (1,0,0), (0,1,0), (0,0,1). Barycentric shape functions."
+  },
+  {
+    "objectID": "api/reference.html#referencetetrahedronp2",
+    "href": "api/reference.html#referencetetrahedronp2",
+    "title": "reference",
+    "section": "ReferenceTetrahedronP2",
+    "text": "ReferenceTetrahedronP2\nReference quadratic tetrahedron with 10 nodes. Second-order barycentric shape functions."
+  },
+  {
+    "objectID": "api/reference.html#affinetrianglemap2d",
+    "href": "api/reference.html#affinetrianglemap2d",
+    "title": "reference",
+    "section": "AffineTriangleMap2D",
+    "text": "AffineTriangleMap2D\nAffine mapping from the reference triangle to a physical triangle defined by vertices (x₁,y₁), (x₂,y₂), (x₃,y₃). Provides the Jacobian matrix J, its determinant, the inverse transpose J^{-T} for gradient pullback, and the coordinate mapping formulas."
+  },
+  {
+    "objectID": "api/reference.html#nodesself",
+    "href": "api/reference.html#nodesself",
+    "title": "reference",
+    "section": "nodes(self)",
+    "text": "nodes(self)\nNo docstring."
+  },
+  {
+    "objectID": "api/reference.html#shape_functionsself",
+    "href": "api/reference.html#shape_functionsself",
+    "title": "reference",
+    "section": "shape_functions(self)",
+    "text": "shape_functions(self)\nNo docstring."
+  },
+  {
+    "objectID": "api/reference.html#shape_gradients_referenceself",
+    "href": "api/reference.html#shape_gradients_referenceself",
+    "title": "reference",
+    "section": "shape_gradients_reference(self)",
+    "text": "shape_gradients_reference(self)\nNo docstring."
+  },
+  {
+    "objectID": "api/reference.html#nodesself-1",
+    "href": "api/reference.html#nodesself-1",
+    "title": "reference",
+    "section": "nodes(self)",
+    "text": "nodes(self)\nNo docstring."
+  },
+  {
+    "objectID": "api/reference.html#shape_functionsself-1",
+    "href": "api/reference.html#shape_functionsself-1",
+    "title": "reference",
+    "section": "shape_functions(self)",
+    "text": "shape_functions(self)\nNo docstring."
+  },
+  {
+    "objectID": "api/reference.html#shape_gradients_referenceself-1",
+    "href": "api/reference.html#shape_gradients_referenceself-1",
+    "title": "reference",
+    "section": "shape_gradients_reference(self)",
+    "text": "shape_gradients_reference(self)\nNo docstring."
+  },
+  {
+    "objectID": "api/reference.html#exact_domainself",
+    "href": "api/reference.html#exact_domainself",
+    "title": "reference",
+    "section": "exact_domain(self)",
+    "text": "exact_domain(self)\nNo docstring."
+  },
+  {
+    "objectID": "api/reference.html#nodesself-2",
+    "href": "api/reference.html#nodesself-2",
+    "title": "reference",
+    "section": "nodes(self)",
+    "text": "nodes(self)\nNo docstring."
+  },
+  {
+    "objectID": "api/reference.html#shape_functionsself-2",
+    "href": "api/reference.html#shape_functionsself-2",
+    "title": "reference",
+    "section": "shape_functions(self)",
+    "text": "shape_functions(self)\nNo docstring."
+  },
+  {
+    "objectID": "api/reference.html#shape_gradients_referenceself-2",
+    "href": "api/reference.html#shape_gradients_referenceself-2",
+    "title": "reference",
+    "section": "shape_gradients_reference(self)",
+    "text": "shape_gradients_reference(self)\nNo docstring."
+  },
+  {
+    "objectID": "api/reference.html#nodesself-3",
+    "href": "api/reference.html#nodesself-3",
+    "title": "reference",
+    "section": "nodes(self)",
+    "text": "nodes(self)\nNo docstring."
+  },
+  {
+    "objectID": "api/reference.html#shape_functionsself-3",
+    "href": "api/reference.html#shape_functionsself-3",
+    "title": "reference",
+    "section": "shape_functions(self)",
+    "text": "shape_functions(self)\nNo docstring."
+  },
+  {
+    "objectID": "api/reference.html#shape_gradients_referenceself-3",
+    "href": "api/reference.html#shape_gradients_referenceself-3",
+    "title": "reference",
+    "section": "shape_gradients_reference(self)",
+    "text": "shape_gradients_reference(self)\nNo docstring."
+  },
+  {
+    "objectID": "api/reference.html#nodesself-4",
+    "href": "api/reference.html#nodesself-4",
+    "title": "reference",
+    "section": "nodes(self)",
+    "text": "nodes(self)\nNo docstring."
+  },
+  {
+    "objectID": "api/reference.html#shape_functionsself-4",
+    "href": "api/reference.html#shape_functionsself-4",
+    "title": "reference",
+    "section": "shape_functions(self)",
+    "text": "shape_functions(self)\nNo docstring."
+  },
+  {
+    "objectID": "api/reference.html#shape_gradients_referenceself-4",
+    "href": "api/reference.html#shape_gradients_referenceself-4",
+    "title": "reference",
+    "section": "shape_gradients_reference(self)",
+    "text": "shape_gradients_reference(self)\nNo docstring."
+  },
+  {
+    "objectID": "api/reference.html#nodesself-5",
+    "href": "api/reference.html#nodesself-5",
+    "title": "reference",
+    "section": "nodes(self)",
+    "text": "nodes(self)\nNo docstring."
+  },
+  {
+    "objectID": "api/reference.html#shape_functionsself-5",
+    "href": "api/reference.html#shape_functionsself-5",
+    "title": "reference",
+    "section": "shape_functions(self)",
+    "text": "shape_functions(self)\nNo docstring."
+  },
+  {
+    "objectID": "api/reference.html#shape_gradients_referenceself-5",
+    "href": "api/reference.html#shape_gradients_referenceself-5",
+    "title": "reference",
+    "section": "shape_gradients_reference(self)",
+    "text": "shape_gradients_reference(self)\nNo docstring."
+  },
+  {
+    "objectID": "api/reference.html#nodesself-6",
+    "href": "api/reference.html#nodesself-6",
+    "title": "reference",
+    "section": "nodes(self)",
+    "text": "nodes(self)\nNo docstring."
+  },
+  {
+    "objectID": "api/reference.html#shape_functionsself-6",
+    "href": "api/reference.html#shape_functionsself-6",
+    "title": "reference",
+    "section": "shape_functions(self)",
+    "text": "shape_functions(self)\nNo docstring."
+  },
+  {
+    "objectID": "api/reference.html#shape_gradients_referenceself-6",
+    "href": "api/reference.html#shape_gradients_referenceself-6",
+    "title": "reference",
+    "section": "shape_gradients_reference(self)",
+    "text": "shape_gradients_reference(self)\nNo docstring."
+  },
+  {
+    "objectID": "api/reference.html#jacobianself",
+    "href": "api/reference.html#jacobianself",
+    "title": "reference",
+    "section": "jacobian(self)",
+    "text": "jacobian(self)\nNo docstring."
+  },
+  {
+    "objectID": "api/reference.html#det_jacobianself",
+    "href": "api/reference.html#det_jacobianself",
+    "title": "reference",
+    "section": "det_jacobian(self)",
+    "text": "det_jacobian(self)\nNo docstring."
+  },
+  {
+    "objectID": "api/reference.html#areaself",
+    "href": "api/reference.html#areaself",
+    "title": "reference",
+    "section": "area(self)",
+    "text": "area(self)\nNo docstring."
+  },
+  {
+    "objectID": "api/reference.html#inverse_transpose_jacobianself",
+    "href": "api/reference.html#inverse_transpose_jacobianself",
+    "title": "reference",
+    "section": "inverse_transpose_jacobian(self)",
+    "text": "inverse_transpose_jacobian(self)\nNo docstring."
+  },
+  {
+    "objectID": "api/reference.html#x_mapself",
+    "href": "api/reference.html#x_mapself",
+    "title": "reference",
+    "section": "x_map(self)",
+    "text": "x_map(self)\nNo docstring."
+  },
+  {
+    "objectID": "api/reference.html#y_mapself",
+    "href": "api/reference.html#y_mapself",
+    "title": "reference",
+    "section": "y_map(self)",
+    "text": "y_map(self)\nNo docstring."
+  },
+  {
+    "objectID": "api/elasticity.html",
+    "href": "api/elasticity.html",
+    "title": "elasticity",
+    "section": "",
+    "text": "Elasticity helpers for 2D and 3D vector FEM problems.\nProvides constitutive matrices (D), strain-displacement matrices (B), and element stiffness computation for plane stress, plane strain, and full 3D isotropic linear elasticity using Voigt notation."
+  },
+  {
+    "objectID": "api/elasticity.html#plane_stress_de-nu",
+    "href": "api/elasticity.html#plane_stress_de-nu",
+    "title": "elasticity",
+    "section": "plane_stress_D(E, nu)",
+    "text": "plane_stress_D(E, nu)\nConstitutive matrix for plane stress (thin plates). Voigt ordering: [σ_xx, σ_yy, τ_xy]^T = D [ε_xx, ε_yy, γ_xy]^T D = E/(1-ν²) [[1, ν, 0], [ν, 1, 0], [0, 0, (1-ν)/2]]"
+  },
+  {
+    "objectID": "api/elasticity.html#plane_strain_de-nu",
+    "href": "api/elasticity.html#plane_strain_de-nu",
+    "title": "elasticity",
+    "section": "plane_strain_D(E, nu)",
+    "text": "plane_strain_D(E, nu)\nConstitutive matrix for plane strain (thick/constrained bodies). Voigt ordering: [σ_xx, σ_yy, τ_xy]^T = D [ε_xx, ε_yy, γ_xy]^T D = E/((1+ν)(1-2ν)) [[1-ν, ν, 0], [ν, 1-ν, 0], [0, 0, (1-2ν)/2]]"
+  },
+  {
+    "objectID": "api/elasticity.html#isotropic_3d_de-nu",
+    "href": "api/elasticity.html#isotropic_3d_de-nu",
+    "title": "elasticity",
+    "section": "isotropic_3d_D(E, nu)",
+    "text": "isotropic_3d_D(E, nu)\nFull 3D isotropic constitutive matrix (6×6). Voigt ordering: [σ_xx, σ_yy, σ_zz, τ_yz, τ_xz, τ_xy]^T = D [ε_xx, ε_yy, ε_zz, γ_yz, γ_xz, γ_xy]^T"
+  },
+  {
+    "objectID": "api/elasticity.html#b_matrix_triangle_2ddn_dx-dn_dy",
+    "href": "api/elasticity.html#b_matrix_triangle_2ddn_dx-dn_dy",
+    "title": "elasticity",
+    "section": "B_matrix_triangle_2d(dN_dx, dN_dy)",
+    "text": "B_matrix_triangle_2d(dN_dx, dN_dy)\nBuild the 2D strain-displacement matrix B for a triangle element. For n_nodes nodes with physical-space shape function derivatives, the B matrix maps nodal displacements [u1, v1, u2, v2, …]^T to Voigt strains [ε_xx, ε_yy, γ_xy]^T. B is 3 × (2 * n_nodes): B = [[dN1/dx, 0, dN2/dx, 0, …], [0, dN1/dy, 0, dN2/dy, …], [dN1/dy, dN1/dx, dN2/dy, dN2/dx, …]] Parameters ———- dN_dx, dN_dy : list of sp.Expr Physical-space partial derivatives of shape functions."
+  },
+  {
+    "objectID": "api/elasticity.html#b_matrix_tetra_3ddn_dx-dn_dy-dn_dz",
+    "href": "api/elasticity.html#b_matrix_tetra_3ddn_dx-dn_dy-dn_dz",
+    "title": "elasticity",
+    "section": "B_matrix_tetra_3d(dN_dx, dN_dy, dN_dz)",
+    "text": "B_matrix_tetra_3d(dN_dx, dN_dy, dN_dz)\nBuild the 3D strain-displacement matrix B for a tetrahedral element. Maps nodal displacements [u1, v1, w1, u2, v2, w2, …]^T to Voigt strains [ε_xx, ε_yy, ε_zz, γ_yz, γ_xz, γ_xy]^T. B is 6 × (3 * n_nodes)."
+  },
+  {
+    "objectID": "api/elasticity.html#element_stiffness_btdbb-d-volume_or_area-thickness",
+    "href": "api/elasticity.html#element_stiffness_btdbb-d-volume_or_area-thickness",
+    "title": "elasticity",
+    "section": "element_stiffness_BtDB(B, D, volume_or_area, thickness)",
+    "text": "element_stiffness_BtDB(B, D, volume_or_area, thickness)\nCompute element stiffness K_e = (t) * |Ω_e| * B^T D B. For constant-strain elements (P1 triangle, P1 tet) where B and D are constant over the element, the integral reduces to a simple product. Parameters ———- B : sp.Matrix Strain-displacement matrix. D : sp.Matrix Constitutive matrix. volume_or_area : sp.Expr Element area (2D) or volume (3D). thickness : sp.Expr or None Plate thickness for 2D problems (defaults to 1 if omitted)."
+  },
+  {
+    "objectID": "api/quadrature.html",
+    "href": "api/quadrature.html",
+    "title": "quadrature",
+    "section": "",
+    "text": "Exact and quadrature integration helpers for reference elements."
+  },
+  {
+    "objectID": "api/quadrature.html#integrate_reference_triangle_exactexpr-xi-eta",
+    "href": "api/quadrature.html#integrate_reference_triangle_exactexpr-xi-eta",
+    "title": "quadrature",
+    "section": "integrate_reference_triangle_exact(expr, xi, eta)",
+    "text": "integrate_reference_triangle_exact(expr, xi, eta)\nExact symbolic integration over the reference P1 triangle with vertices (0,0), (1,0), (0,1). Uses SymPy’s integrate with bounds η ∈ [0, 1-ξ], ξ ∈ [0, 1]."
+  },
+  {
+    "objectID": "api/quadrature.html#integrate_reference_quadrilateral_exactexpr-xi-eta",
+    "href": "api/quadrature.html#integrate_reference_quadrilateral_exactexpr-xi-eta",
+    "title": "quadrature",
+    "section": "integrate_reference_quadrilateral_exact(expr, xi, eta)",
+    "text": "integrate_reference_quadrilateral_exact(expr, xi, eta)\nExact symbolic integration over the reference quadrilateral [-1,1]²."
+  },
+  {
+    "objectID": "api/quadrature.html#integrate_reference_tetra_exactexpr-xi-eta-zeta",
+    "href": "api/quadrature.html#integrate_reference_tetra_exactexpr-xi-eta-zeta",
+    "title": "quadrature",
+    "section": "integrate_reference_tetra_exact(expr, xi, eta, zeta)",
+    "text": "integrate_reference_tetra_exact(expr, xi, eta, zeta)\nExact symbolic integration over the reference P1 tetrahedron."
+  },
+  {
+    "objectID": "api/quadrature.html#integrate_reference_hexahedron_exactexpr-xi-eta-zeta",
+    "href": "api/quadrature.html#integrate_reference_hexahedron_exactexpr-xi-eta-zeta",
+    "title": "quadrature",
+    "section": "integrate_reference_hexahedron_exact(expr, xi, eta, zeta)",
+    "text": "integrate_reference_hexahedron_exact(expr, xi, eta, zeta)\nExact symbolic integration over the reference hexahedron [-1,1]³."
+  },
+  {
+    "objectID": "api/quadrature.html#triangle_one_point_ruleexpr-xi-eta",
+    "href": "api/quadrature.html#triangle_one_point_ruleexpr-xi-eta",
+    "title": "quadrature",
+    "section": "triangle_one_point_rule(expr, xi, eta)",
+    "text": "triangle_one_point_rule(expr, xi, eta)\nOne-point quadrature on the reference triangle (centroid rule). Evaluates at (1/3, 1/3) with weight 1/2. Exact for linear polynomials."
+  },
+  {
+    "objectID": "api/quadrature.html#triangle_three_point_ruleexpr-xi-eta",
+    "href": "api/quadrature.html#triangle_three_point_ruleexpr-xi-eta",
+    "title": "quadrature",
+    "section": "triangle_three_point_rule(expr, xi, eta)",
+    "text": "triangle_three_point_rule(expr, xi, eta)\nThree-point quadrature on the reference triangle. Exact for quadratic polynomials. Points are at the edge midpoints: (1/2, 0), (1/2, 1/2), (0, 1/2). Each has weight 1/6."
+  },
+  {
+    "objectID": "api/quadrature.html#triangle_six_point_ruleexpr-xi-eta",
+    "href": "api/quadrature.html#triangle_six_point_ruleexpr-xi-eta",
+    "title": "quadrature",
+    "section": "triangle_six_point_rule(expr, xi, eta)",
+    "text": "triangle_six_point_rule(expr, xi, eta)\nSix-point quadrature on the reference triangle. Exact for quartic polynomials. Uses the symmetric rule with two orbit types."
+  },
+  {
+    "objectID": "api/quadrature.html#quadrilateral_gauss_ruleexpr-xi-eta-order",
+    "href": "api/quadrature.html#quadrilateral_gauss_ruleexpr-xi-eta-order",
+    "title": "quadrature",
+    "section": "quadrilateral_gauss_rule(expr, xi, eta, order)",
+    "text": "quadrilateral_gauss_rule(expr, xi, eta, order)\nGauss-Legendre tensor-product quadrature on the reference quad [-1,1]². Supports orders 1, 2, 3."
+  },
+  {
+    "objectID": "api/quadrature.html#hexahedron_gauss_ruleexpr-xi-eta-zeta-order",
+    "href": "api/quadrature.html#hexahedron_gauss_ruleexpr-xi-eta-zeta-order",
+    "title": "quadrature",
+    "section": "hexahedron_gauss_rule(expr, xi, eta, zeta, order)",
+    "text": "hexahedron_gauss_rule(expr, xi, eta, zeta, order)\nGauss-Legendre tensor-product quadrature on the reference hex [-1,1]³."
+  },
+  {
+    "objectID": "api/quadrature.html#tetrahedron_one_point_ruleexpr-xi-eta-zeta",
+    "href": "api/quadrature.html#tetrahedron_one_point_ruleexpr-xi-eta-zeta",
+    "title": "quadrature",
+    "section": "tetrahedron_one_point_rule(expr, xi, eta, zeta)",
+    "text": "tetrahedron_one_point_rule(expr, xi, eta, zeta)\nOne-point quadrature on the reference tetrahedron (centroid rule). Evaluates at (1/4, 1/4, 1/4) with weight 1/6."
+  },
+  {
+    "objectID": "api/quadrature.html#tetrahedron_four_point_ruleexpr-xi-eta-zeta",
+    "href": "api/quadrature.html#tetrahedron_four_point_ruleexpr-xi-eta-zeta",
+    "title": "quadrature",
+    "section": "tetrahedron_four_point_rule(expr, xi, eta, zeta)",
+    "text": "tetrahedron_four_point_rule(expr, xi, eta, zeta)\nFour-point quadrature on the reference tetrahedron. Exact for quadratic polynomials."
+  },
+  {
+    "objectID": "api/symbols.html",
+    "href": "api/symbols.html",
+    "title": "symbols",
+    "section": "",
+    "text": "Symbol and domain helpers for teaching-first symbolic FEM workflows."
+  },
+  {
+    "objectID": "api/symbols.html#scalarfield",
+    "href": "api/symbols.html#scalarfield",
+    "title": "symbols",
+    "section": "ScalarField",
+    "text": "ScalarField\nA thin wrapper around a SymPy scalar field expression."
+  },
+  {
+    "objectID": "api/symbols.html#make_field_1dname-x",
+    "href": "api/symbols.html#make_field_1dname-x",
+    "title": "symbols",
+    "section": "make_field_1d(name, x)",
+    "text": "make_field_1d(name, x)\nCreate a symbolic 1D scalar field as a SymPy Function application. Returns Function(name)(x), which SymPy treats as an undefined function of x, suitable for differentiation and integration."
+  },
+  {
+    "objectID": "api/symbols.html#make_field_2dname-x-y",
+    "href": "api/symbols.html#make_field_2dname-x-y",
+    "title": "symbols",
+    "section": "make_field_2d(name, x, y)",
+    "text": "make_field_2d(name, x, y)\nCreate a symbolic 2D scalar field as a SymPy Function application. Returns Function(name)(x, y)."
+  },
+  {
+    "objectID": "api/fe_spaces.html",
+    "href": "api/fe_spaces.html",
+    "title": "fe_spaces",
+    "section": "",
+    "text": "Finite-element interpolation helpers."
+  },
+  {
+    "objectID": "api/fe_spaces.html#linearelement1d",
+    "href": "api/fe_spaces.html#linearelement1d",
+    "title": "fe_spaces",
+    "section": "LinearElement1D",
+    "text": "LinearElement1D\nA two-node linear (P1) finite element on an interval [x0, x1]. Provides symbolic shape functions N₁ = (x₁ - x) / L and N₂ = (x - x₀) / L where L = x₁ - x₀."
+  },
+  {
+    "objectID": "api/fe_spaces.html#local_trial_expansionshape_functions-dofs",
+    "href": "api/fe_spaces.html#local_trial_expansionshape_functions-dofs",
+    "title": "fe_spaces",
+    "section": "local_trial_expansion(shape_functions, dofs)",
+    "text": "local_trial_expansion(shape_functions, dofs)\nBuild the local trial field expansion u_h = Σ Nᵢ dᵢ. Parameters: shape_functions - tuple of shape function expressions, dofs - list of DOF symbols. Returns the expanded polynomial."
+  },
+  {
+    "objectID": "api/fe_spaces.html#local_test_expansionshape_functions-dofs",
+    "href": "api/fe_spaces.html#local_test_expansionshape_functions-dofs",
+    "title": "fe_spaces",
+    "section": "local_test_expansion(shape_functions, dofs)",
+    "text": "local_test_expansion(shape_functions, dofs)\nBuild the local test field expansion v_h = Σ Nᵢ wᵢ. Identical to local_trial_expansion (Galerkin method uses the same basis for trial and test)."
+  },
+  {
+    "objectID": "api/fe_spaces.html#lengthself",
+    "href": "api/fe_spaces.html#lengthself",
+    "title": "fe_spaces",
+    "section": "length(self)",
+    "text": "length(self)\nNo docstring."
+  },
+  {
+    "objectID": "api/fe_spaces.html#shape_functionsself",
+    "href": "api/fe_spaces.html#shape_functionsself",
+    "title": "fe_spaces",
+    "section": "shape_functions(self)",
+    "text": "shape_functions(self)\nNo docstring."
+  }
+]

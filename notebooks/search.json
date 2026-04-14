@@ -1,0 +1,1024 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "FEM Companion Notebooks",
+    "section": "",
+    "text": "These notebooks accompany the Introduction to the Finite Element Method lecture notes. Each one is a hands-on exercise that lets you work through the key ideas symbolically and numerically using the symbolic_fem_workbench package.\n\n\n\n#\nNotebook\nTopic\n\n\n\n\n1\nStrong to Weak Form\nWeighted residuals, integration by parts\n\n\n2\nGalerkin Discretization\nElement matrices from weak form\n\n\n3\n1D Element Stiffness\nSymbolic → numerical assembly\n\n\n4\nExact vs. Gauss Integration\nQuadrature rules\n\n\n5\nReference Element Gallery\nShape functions in 1D/2D/3D\n\n\n6\n2D Triangle Poisson\nGradient pullback, local tensors\n\n\n7\nManual 2D Assembly\nGlobal stiffness from local elements\n\n\n8\nBoundary Conditions 1D\nDirichlet & Neumann in 1D\n\n\n9\nBoundary Conditions 2D\nNeumann edges, Dirichlet lifting\n\n\n10\n2D Elasticity\nP1 triangles, stress/strain\n\n\n11\n3D Elasticity\nP1 tetrahedra\n\n\n12\nCode Generation & Widgets\nInteractive exploration\n\n\n13\nTime-Dependent FEM\nMass matrix, time stepping\n\n\n14\nError Analysis\nConvergence rates",
+    "crumbs": [
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>FEM Companion Notebooks</span>"
+    ]
+  },
+  {
+    "objectID": "01_strong_to_weak_form.html",
+    "href": "01_strong_to_weak_form.html",
+    "title": "2  From Strong Form to Weak Form",
+    "section": "",
+    "text": "2.1 Step 1: Define the problem\nThis notebook demonstrates the fundamental transformation from a strong form PDE into a weak form, which is the mathematical foundation of the Finite Element Method. We will convert a 1D bar equilibrium equation into its weak form using the method of weighted residuals and integration by parts.\nWe consider a 1D bar under axial loading. The strong form of the equilibrium equation is: \\[\\frac{d}{dx}\\left(EA\\frac{du}{dx}\\right) + q = 0\\]\nwhere: - \\(u(x)\\) is the axial displacement - \\(E\\) is Young’s modulus - \\(A\\) is the cross-sectional area - \\(q\\) is a distributed load - Domain: \\(x \\in [0, L]\\)\nx, L = sp.symbols(\"x L\", positive=True)\nE, A = sp.symbols(\"E A\", positive=True)\nq, P = sp.symbols(\"q P\", real=True)\n\nu = make_field_1d(\"u\", x)\nv = make_field_1d(\"v\", x)\ndomain = (x, 0, L)\n\nprint(\"Trial field u(x):\", u)\nprint(\"Test field v(x):\", v)\nprint(\"Domain:\", domain)",
+    "crumbs": [
+      "Foundations",
+      "<span class='chapter-number'>2</span>  <span class='chapter-title'>From Strong Form to Weak Form</span>"
+    ]
+  },
+  {
+    "objectID": "01_strong_to_weak_form.html#step-2-build-the-weighted-residual",
+    "href": "01_strong_to_weak_form.html#step-2-build-the-weighted-residual",
+    "title": "2  From Strong Form to Weak Form",
+    "section": "2.2 Step 2: Build the weighted residual",
+    "text": "2.2 Step 2: Build the weighted residual\nWe multiply the strong form by a test function \\(v(x)\\) (also called a weight function) and integrate over the domain. This is the method of weighted residuals: \\[\\int_0^L \\left[\\frac{d}{dx}\\left(EA\\frac{du}{dx}\\right) + q\\right] v \\, dx = 0\\]\n\nflux = E * A * sp.diff(u, x)\nstrong_form_lhs = sp.diff(flux, x) + q\n\ndisplay(Math(r\"\\text{Strong form: } \" + sp.latex(strong_form_lhs) + \" = 0\"))\n\nwr = weighted_residual(strong_form_lhs, 0, v, domain)\ndisplay(Math(r\"\\text{Weighted residual: } \" + sp.latex(wr.as_expression()) + \" = 0\"))",
+    "crumbs": [
+      "Foundations",
+      "<span class='chapter-number'>2</span>  <span class='chapter-title'>From Strong Form to Weak Form</span>"
+    ]
+  },
+  {
+    "objectID": "01_strong_to_weak_form.html#step-3-integration-by-parts",
+    "href": "01_strong_to_weak_form.html#step-3-integration-by-parts",
+    "title": "2  From Strong Form to Weak Form",
+    "section": "2.3 Step 3: Integration by parts",
+    "text": "2.3 Step 3: Integration by parts\nWe now apply integration by parts to shift one derivative from \\(u\\) to \\(v\\). This lowers the regularity requirement on \\(u\\) and introduces natural boundary conditions: \\[\\int_0^L \\frac{d}{dx}\\left(EA\\frac{du}{dx}\\right) v \\, dx = \\left[EA\\frac{du}{dx}v\\right]_0^L - \\int_0^L EA\\frac{du}{dx}\\frac{dv}{dx} \\, dx\\]\n\ndomain_term, (left_bc, right_bc) = integrate_divergence_1d(flux, v, x, domain)\n\nprint(\"Domain integral (after IBP):\")\ndisplay(Math(sp.latex(domain_term.as_integral())))\n\nprint(\"\\nLeft boundary term:\")\ndisplay(Math(sp.latex(left_bc.evaluate())))\n\nprint(\"\\nRight boundary term:\")\ndisplay(Math(sp.latex(right_bc.evaluate())))",
+    "crumbs": [
+      "Foundations",
+      "<span class='chapter-number'>2</span>  <span class='chapter-title'>From Strong Form to Weak Form</span>"
+    ]
+  },
+  {
+    "objectID": "01_strong_to_weak_form.html#step-4-apply-boundary-conditions",
+    "href": "01_strong_to_weak_form.html#step-4-apply-boundary-conditions",
+    "title": "2  From Strong Form to Weak Form",
+    "section": "2.4 Step 4: Apply boundary conditions",
+    "text": "2.4 Step 4: Apply boundary conditions\nDirichlet BC (Essential): The test function must vanish where displacement is prescribed. At \\(x=0\\): \\(u(0) = 0\\) (homogeneous Dirichlet) \\(\\Rightarrow\\) \\(v(0) = 0\\)\nNeumann BC (Natural): The prescribed flux/traction appears as a source term. At \\(x=L\\): Prescribed force \\(P\\) \\(\\Rightarrow\\) \\(EA\\frac{du}{dx}\\big|_x=L = P\\)\n\n# Homogeneous Dirichlet at x=0: test function vanishes\nleft_val = drop_dirichlet_boundary(left_bc, v)\nprint(\"Left BC (Dirichlet, v=0 at x=0):\", left_val)\n\n# Neumann at x=L: prescribed traction P\nright_val = apply_neumann_flux(right_bc, flux_expr=flux, prescribed_flux=P)\nprint(\"Right BC (Neumann, flux=P at x=L):\", right_val)",
+    "crumbs": [
+      "Foundations",
+      "<span class='chapter-number'>2</span>  <span class='chapter-title'>From Strong Form to Weak Form</span>"
+    ]
+  },
+  {
+    "objectID": "01_strong_to_weak_form.html#step-5-assemble-and-split-the-weak-form",
+    "href": "01_strong_to_weak_form.html#step-5-assemble-and-split-the-weak-form",
+    "title": "2  From Strong Form to Weak Form",
+    "section": "2.5 Step 5: Assemble and split the weak form",
+    "text": "2.5 Step 5: Assemble and split the weak form\nWe now assemble all terms into a single weak form and decompose it into bilinear and linear parts: \\[a(u, v) + F(v) = 0\\] where \\(a(u,v)\\) is bilinear in \\(u\\) and \\(v\\), and \\(F(v)\\) is linear in \\(v\\).\n\nsource_integral = sp.Integral(q * v, domain)\nweak_expr = domain_term.as_integral() - source_integral + left_val + right_val\n\ndisplay(Math(r\"\\text{Full weak form expression: } \" + sp.latex(weak_expr) + \" = 0\"))\n\nweak_form = split_linear_weak_form(weak_expr, u, v)\nprint(\"\\nBilinear form a(u,v):\")\ndisplay(Math(sp.latex(weak_form.bilinear)))\nprint(\"\\nLinear form F(v):\")\ndisplay(Math(sp.latex(weak_form.linear)))",
+    "crumbs": [
+      "Foundations",
+      "<span class='chapter-number'>2</span>  <span class='chapter-title'>From Strong Form to Weak Form</span>"
+    ]
+  },
+  {
+    "objectID": "01_strong_to_weak_form.html#exercise",
+    "href": "01_strong_to_weak_form.html#exercise",
+    "title": "2  From Strong Form to Weak Form",
+    "section": "2.6 Exercise",
+    "text": "2.6 Exercise\nQuestion: Modify the problem to have Dirichlet conditions on both ends (\\(u(0) = 0\\), \\(u(L) = 0\\)) with a distributed source term \\(q\\). How does the boundary condition handling change? What happens to the natural boundary term contributions?\n\n# Exercise: Modify the problem to have Dirichlet conditions on both ends:\n# u(0) = 0, u(L) = 0, with source term q.\n# What changes in the boundary condition handling?",
+    "crumbs": [
+      "Foundations",
+      "<span class='chapter-number'>2</span>  <span class='chapter-title'>From Strong Form to Weak Form</span>"
+    ]
+  },
+  {
+    "objectID": "02_galerkin_discretization.html",
+    "href": "02_galerkin_discretization.html",
+    "title": "3  Galerkin Discretization: From Weak Form to Element Matrices",
+    "section": "",
+    "text": "3.1 Step 1: Recall the weak form\nThis notebook demonstrates the Galerkin discretization process, where we substitute finite element shape functions into the weak form to derive the element stiffness matrix and load vector. This is where abstract weak forms become concrete linear algebra.\nFrom the previous notebook, the weak form for the 1D bar is: \\[a(u, v) = \\int_0^L EA \\frac{du}{dx} \\frac{dv}{dx} \\, dx\\] \\[F(v) = -\\int_0^L q v \\, dx + P \\cdot v(L)\\]\nIn the Galerkin method, we substitute \\(u \\approx u_h = \\sum_i N_i d_i\\) and \\(v = N_j\\) to get a finite-dimensional problem.\nproblem = build_bar_1d_local_problem()\nx, L = problem[\"x\"], problem[\"L\"]\nu, v = problem[\"u\"], problem[\"v\"]\nE, A = problem[\"E\"], problem[\"A\"]\n\nprint(\"Bilinear form a(u,v):\")\ndisplay(Math(sp.latex(problem[\"weak_bilinear\"])))\nprint(\"\\nLinear form F(v):\")\ndisplay(Math(sp.latex(problem[\"weak_linear\"])))",
+    "crumbs": [
+      "Foundations",
+      "<span class='chapter-number'>3</span>  <span class='chapter-title'>Galerkin Discretization: From Weak Form to Element Matrices</span>"
+    ]
+  },
+  {
+    "objectID": "02_galerkin_discretization.html#step-2-define-shape-functions-on-an-element",
+    "href": "02_galerkin_discretization.html#step-2-define-shape-functions-on-an-element",
+    "title": "3  Galerkin Discretization: From Weak Form to Element Matrices",
+    "section": "3.2 Step 2: Define shape functions on an element",
+    "text": "3.2 Step 2: Define shape functions on an element\nFor a linear 1D element on the interval \\([0, L]\\), we use two linear shape functions (P1 element): \\[N_1(x) = 1 - \\frac{x}{L}, \\quad N_2(x) = \\frac{x}{L}\\]\nThese form a partition of unity: \\(N_1 + N_2 = 1\\)\n\nelement = LinearElement1D(x=x, x0=0, x1=L)\nN = element.shape_functions\n\nprint(f\"Element length: {element.length}\")\nprint(f\"Shape function N1 = {N[0]}\")\nprint(f\"Shape function N2 = {N[1]}\")\nprint(f\"Sum (partition of unity): {sp.simplify(N[0] + N[1])}\")",
+    "crumbs": [
+      "Foundations",
+      "<span class='chapter-number'>3</span>  <span class='chapter-title'>Galerkin Discretization: From Weak Form to Element Matrices</span>"
+    ]
+  },
+  {
+    "objectID": "02_galerkin_discretization.html#step-3-build-trial-and-test-expansions",
+    "href": "02_galerkin_discretization.html#step-3-build-trial-and-test-expansions",
+    "title": "3  Galerkin Discretization: From Weak Form to Element Matrices",
+    "section": "3.3 Step 3: Build trial and test expansions",
+    "text": "3.3 Step 3: Build trial and test expansions\nThe Galerkin discretization replaces the infinite-dimensional spaces with finite-dimensional ones: \\[u_h(x) = N_1(x) d_0 + N_2(x) d_1\\] \\[v_h(x) = N_1(x) w_0 + N_2(x) w_1\\]\nwhere \\(d_0, d_1\\) are nodal values and \\(w_0, w_1\\) are test function coefficients.\n\nd0, d1 = sp.symbols(\"d0 d1\", real=True)\nw0, w1 = sp.symbols(\"w0 w1\", real=True)\n\nuh = local_trial_expansion(N, [d0, d1])\nvh = local_test_expansion(N, [w0, w1])\n\nprint(\"u_h =\", uh)\nprint(\"v_h =\", vh)",
+    "crumbs": [
+      "Foundations",
+      "<span class='chapter-number'>3</span>  <span class='chapter-title'>Galerkin Discretization: From Weak Form to Element Matrices</span>"
+    ]
+  },
+  {
+    "objectID": "02_galerkin_discretization.html#step-4-substitute-into-the-weak-form",
+    "href": "02_galerkin_discretization.html#step-4-substitute-into-the-weak-form",
+    "title": "3  Galerkin Discretization: From Weak Form to Element Matrices",
+    "section": "3.4 Step 4: Substitute into the weak form",
+    "text": "3.4 Step 4: Substitute into the weak form\nThe Galerkin discretization consists of substituting \\(u \\to u_h\\) and \\(v \\to v_h\\) into the weak form integrals. This produces a bilinear form that depends on coefficients \\(d_i\\) and \\(w_j\\).\n\na_disc = substitute_fe(problem[\"weak_bilinear\"], {u: uh, v: vh}, x)\nl_disc = substitute_fe(problem[\"weak_linear\"], {v: vh}, x)\n\nprint(\"Discretized bilinear form:\")\ndisplay(Math(sp.latex(a_disc)))\nprint(\"\\nDiscretized linear form:\")\ndisplay(Math(sp.latex(l_disc)))",
+    "crumbs": [
+      "Foundations",
+      "<span class='chapter-number'>3</span>  <span class='chapter-title'>Galerkin Discretization: From Weak Form to Element Matrices</span>"
+    ]
+  },
+  {
+    "objectID": "02_galerkin_discretization.html#step-5-extract-element-matrices",
+    "href": "02_galerkin_discretization.html#step-5-extract-element-matrices",
+    "title": "3  Galerkin Discretization: From Weak Form to Element Matrices",
+    "section": "3.5 Step 5: Extract element matrices",
+    "text": "3.5 Step 5: Extract element matrices\nThe key insight: The discretized bilinear form is quadratic in coefficients. By comparing coefficients of \\(d_i w_j\\), we extract the element stiffness matrix \\(K_e\\). Similarly, coefficients of \\(w_j\\) give the element load vector \\(f_e\\).\n\nKe = extract_coefficient_matrix(a_disc, [d0, d1], [w0, w1])\nfe = extract_coefficient_vector(l_disc, [w0, w1])\n\nprint(\"Element stiffness matrix Ke:\")\ndisplay(Math(r\"K_e = \" + sp.latex(sp.simplify(Ke))))\nprint(\"\\nElement load vector fe:\")\ndisplay(Math(r\"f_e = \" + sp.latex(sp.simplify(fe))))",
+    "crumbs": [
+      "Foundations",
+      "<span class='chapter-number'>3</span>  <span class='chapter-title'>Galerkin Discretization: From Weak Form to Element Matrices</span>"
+    ]
+  },
+  {
+    "objectID": "02_galerkin_discretization.html#verify-use-the-pre-built-workflow",
+    "href": "02_galerkin_discretization.html#verify-use-the-pre-built-workflow",
+    "title": "3  Galerkin Discretization: From Weak Form to Element Matrices",
+    "section": "3.6 Verify: Use the pre-built workflow",
+    "text": "3.6 Verify: Use the pre-built workflow\nThe symbolic_fem_workbench provides pre-built workflows that perform all these steps at once. Let’s verify our manual derivation matches the library.\n\nprint(\"Pre-built workflow gives the same result:\")\ndisplay(Math(r\"K_e = \" + sp.latex(problem[\"Ke\"])))\ndisplay(Math(r\"f_e = \" + sp.latex(problem[\"fe\"])))",
+    "crumbs": [
+      "Foundations",
+      "<span class='chapter-number'>3</span>  <span class='chapter-title'>Galerkin Discretization: From Weak Form to Element Matrices</span>"
+    ]
+  },
+  {
+    "objectID": "02_galerkin_discretization.html#exercise",
+    "href": "02_galerkin_discretization.html#exercise",
+    "title": "3  Galerkin Discretization: From Weak Form to Element Matrices",
+    "section": "3.7 Exercise",
+    "text": "3.7 Exercise\nQuestion: What happens if you use a 3-node (P2) element instead? Define shape functions for a quadratic element on \\([0, L]\\): \\[N_1 = (1 - \\xi)(1 - 2\\xi), \\quad N_2 = 4\\xi(1-\\xi), \\quad N_3 = \\xi(2\\xi - 1)\\] where \\(\\xi = x/L\\).\nSubstitute and extract the \\(3 \\times 3\\) element stiffness matrix. How do the entries compare to the P1 case?\n\n# Exercise: What happens if you use a 3-node (P2) element instead?\n# Define shape functions for a quadratic element on [0, L]:\n#   N1 = (1 - xi)(1 - 2*xi),  N2 = 4*xi*(1-xi),  N3 = xi*(2*xi - 1)\n# where xi = x/L.\n# Substitute and extract the 3x3 element stiffness matrix.",
+    "crumbs": [
+      "Foundations",
+      "<span class='chapter-number'>3</span>  <span class='chapter-title'>Galerkin Discretization: From Weak Form to Element Matrices</span>"
+    ]
+  },
+  {
+    "objectID": "03_1d_element_stiffness.html",
+    "href": "03_1d_element_stiffness.html",
+    "title": "4  1D Element Stiffness: From Symbolic to Numerical",
+    "section": "",
+    "text": "4.1 Step 1: Symbolic derivation\nThis notebook demonstrates how to convert symbolic element matrices into efficient numerical kernels using SymPy’s lambdify. We’ll examine the numerical behavior of the 1D bar element and perform parameter studies.\nWe start with the symbolic element stiffness matrix and load vector derived in the previous notebooks. These are expressed in terms of material parameters (\\(E\\), \\(A\\)) and geometric parameters (\\(L\\)).\nproblem = build_bar_1d_local_problem()\nKe = problem[\"Ke\"]\nfe = problem[\"fe\"]\nL_sym = problem[\"L\"]\nE_sym, A_sym = problem[\"E\"], problem[\"A\"]\nq_sym, P_sym = problem[\"q\"], problem[\"P\"]\n\nprint(\"Symbolic Ke:\")\ndisplay(Math(r\"K_e = \" + sp.latex(Ke)))\nprint(\"\\nSymbolic fe:\")\ndisplay(Math(r\"f_e = \" + sp.latex(fe)))",
+    "crumbs": [
+      "Foundations",
+      "<span class='chapter-number'>4</span>  <span class='chapter-title'>1D Element Stiffness: From Symbolic to Numerical</span>"
+    ]
+  },
+  {
+    "objectID": "03_1d_element_stiffness.html#step-2-convert-to-numerical-functions-using-lambdify",
+    "href": "03_1d_element_stiffness.html#step-2-convert-to-numerical-functions-using-lambdify",
+    "title": "4  1D Element Stiffness: From Symbolic to Numerical",
+    "section": "4.2 Step 2: Convert to numerical functions using lambdify",
+    "text": "4.2 Step 2: Convert to numerical functions using lambdify\nSymPy’s lambdify converts symbolic expressions into NumPy-compatible functions. This allows us to rapidly evaluate matrices for different parameter values without recompiling.\n\nke_fn = sp.lambdify((L_sym, E_sym, A_sym), Ke, \"numpy\")\nfe_fn = sp.lambdify((L_sym, q_sym, P_sym), fe, \"numpy\")\n\n# Example: steel bar element, L=0.5m, E=200e9 Pa, A=1e-4 m^2\nL_val, E_val, A_val = 0.5, 200e9, 1e-4\nKe_num = np.array(ke_fn(L_val, E_val, A_val), dtype=float)\nprint(f\"Numerical Ke for L={L_val}, E={E_val:.0e}, A={A_val}:\")\nprint(Ke_num)\n\nq_val, P_val = 1000.0, 500.0\nfe_num = np.array(fe_fn(L_val, q_val, P_val), dtype=float).flatten()\nprint(f\"\\nNumerical fe for q={q_val}, P={P_val}:\")\nprint(fe_num)",
+    "crumbs": [
+      "Foundations",
+      "<span class='chapter-number'>4</span>  <span class='chapter-title'>1D Element Stiffness: From Symbolic to Numerical</span>"
+    ]
+  },
+  {
+    "objectID": "03_1d_element_stiffness.html#step-3-verify-properties",
+    "href": "03_1d_element_stiffness.html#step-3-verify-properties",
+    "title": "4  1D Element Stiffness: From Symbolic to Numerical",
+    "section": "4.3 Step 3: Verify properties",
+    "text": "4.3 Step 3: Verify properties\nThe element stiffness matrix should satisfy important mathematical properties: - Symmetry: \\(K_e = K_e^T\\) (from the symmetry of the bilinear form) - Positive semi-definiteness: All eigenvalues \\(\\geq 0\\) - Singular: One null eigenvector (rigid body translation)\n\nprint(\"Symmetry check: Ke == Ke.T?\", np.allclose(Ke_num, Ke_num.T))\nprint(\"Row sums (should be zero for homogeneous problem):\", Ke_num.sum(axis=1))\nprint(\"Positive diagonal entries?\", np.all(np.diag(Ke_num) &gt; 0))\n\n# Eigenvalue analysis\neigvals = np.linalg.eigvalsh(Ke_num)\nprint(f\"\\nEigenvalues: {eigvals}\")\nprint(f\"Smallest eigenvalue (should be ~0): {eigvals[0]:.2e}\")\nprint(f\"Positive semi-definite: {np.all(eigvals &gt;= -1e-10)}\")",
+    "crumbs": [
+      "Foundations",
+      "<span class='chapter-number'>4</span>  <span class='chapter-title'>1D Element Stiffness: From Symbolic to Numerical</span>"
+    ]
+  },
+  {
+    "objectID": "03_1d_element_stiffness.html#step-4-parameter-study",
+    "href": "03_1d_element_stiffness.html#step-4-parameter-study",
+    "title": "4  1D Element Stiffness: From Symbolic to Numerical",
+    "section": "4.4 Step 4: Parameter study",
+    "text": "4.4 Step 4: Parameter study\nThe stiffness scales with the ratio \\(EA/L\\). Let’s verify this behavior numerically.\n\nprint(\"Effect of element length on stiffness:\")\nfor L_test in [0.1, 0.5, 1.0, 2.0]:\n    K = np.array(ke_fn(L_test, E_val, A_val), dtype=float)\n    print(f\"  L = {L_test:4.1f} -&gt; K[0,0] = {K[0,0]:.2e}  (EA/L = {E_val*A_val/L_test:.2e})\")\n\nprint(\"\\nEffect of cross-section on stiffness:\")\nfor A_test in [1e-5, 1e-4, 5e-4, 1e-3]:\n    K = np.array(ke_fn(L_val, E_val, A_test), dtype=float)\n    print(f\"  A = {A_test:.0e} -&gt; K[0,0] = {K[0,0]:.2e}\")",
+    "crumbs": [
+      "Foundations",
+      "<span class='chapter-number'>4</span>  <span class='chapter-title'>1D Element Stiffness: From Symbolic to Numerical</span>"
+    ]
+  },
+  {
+    "objectID": "03_1d_element_stiffness.html#exercise",
+    "href": "03_1d_element_stiffness.html#exercise",
+    "title": "4  1D Element Stiffness: From Symbolic to Numerical",
+    "section": "4.5 Exercise",
+    "text": "4.5 Exercise\nQuestion: Assemble a 3-element bar manually using the numerical kernels: 1. Create 3 elements of equal length \\(L_{\\text{total}}/3\\) 2. Assemble the global \\(4 \\times 4\\) stiffness matrix 3. Apply boundary condition \\(u(0) = 0\\) and a prescribed force \\(P\\) at \\(x=L_{\\text{total}}\\) 4. Solve for displacements and plot the solution\nHint: Use np.zeros to initialize the global matrix and an assembly loop with connectivity information.\n\n# Exercise: Assemble a 3-element bar manually.\n# Create 3 elements of equal length L_total/3, assemble K_global (4x4),\n# apply u(0) = 0 and P at x=L_total, solve, and plot the solution.",
+    "crumbs": [
+      "Foundations",
+      "<span class='chapter-number'>4</span>  <span class='chapter-title'>1D Element Stiffness: From Symbolic to Numerical</span>"
+    ]
+  },
+  {
+    "objectID": "04_exact_vs_gauss_integration.html",
+    "href": "04_exact_vs_gauss_integration.html",
+    "title": "5  Exact vs. Gauss Integration on Reference Elements",
+    "section": "",
+    "text": "5.1 Part A: Quadrilateral integration\nThis notebook explores numerical quadrature on reference elements. In FEM, we often use Gauss quadrature to approximate integrals over reference elements. The choice of quadrature order affects both accuracy and computational cost.\nWe test Gauss quadrature on the reference square \\([-1, 1]^2\\) against exact symbolic integration. Different Gauss orders provide exact integration for different polynomial degrees.\nxi, eta = sp.symbols(\"xi eta\")\n\n# A polynomial integrand\nf1 = 1 + xi + eta + xi*eta\nprint(\"Integrand:\", f1)\n\nexact = integrate_reference_quadrilateral_exact(f1, xi, eta)\ngauss1 = quadrilateral_gauss_rule(f1, xi, eta, order=1)\ngauss2 = quadrilateral_gauss_rule(f1, xi, eta, order=2)\n\nprint(f\"Exact integral:     {exact}\")\nprint(f\"Gauss order 1:      {gauss1}\")\nprint(f\"Gauss order 2:      {gauss2}\")\nprint(f\"Match (order 2)?    {sp.simplify(exact - gauss2) == 0}\")",
+    "crumbs": [
+      "Integration & Elements",
+      "<span class='chapter-number'>5</span>  <span class='chapter-title'>Exact vs. Gauss Integration on Reference Elements</span>"
+    ]
+  },
+  {
+    "objectID": "04_exact_vs_gauss_integration.html#part-b-triangle-integration",
+    "href": "04_exact_vs_gauss_integration.html#part-b-triangle-integration",
+    "title": "5  Exact vs. Gauss Integration on Reference Elements",
+    "section": "5.2 Part B: Triangle integration",
+    "text": "5.2 Part B: Triangle integration\nThe reference triangle uses different quadrature rules. We compare the one-point rule (centroid) and three-point rule (edge midpoints) against exact integration.\n\n# Linear polynomial on triangle\nf2 = 1 + 2*xi + 3*eta\nexact_tri = integrate_reference_triangle_exact(f2, xi, eta)\none_pt = triangle_one_point_rule(f2, xi, eta)\nthree_pt = triangle_three_point_rule(f2, xi, eta)\n\nprint(f\"Integrand: {f2}\")\nprint(f\"Exact:      {exact_tri}\")\nprint(f\"1-point:    {one_pt}\")\nprint(f\"3-point:    {three_pt}\")\nprint(f\"1-point matches exact: {sp.simplify(exact_tri - one_pt) == 0}\")\nprint(f\"3-point matches exact: {sp.simplify(exact_tri - three_pt) == 0}\")",
+    "crumbs": [
+      "Integration & Elements",
+      "<span class='chapter-number'>5</span>  <span class='chapter-title'>Exact vs. Gauss Integration on Reference Elements</span>"
+    ]
+  },
+  {
+    "objectID": "04_exact_vs_gauss_integration.html#part-c-when-quadrature-fails",
+    "href": "04_exact_vs_gauss_integration.html#part-c-when-quadrature-fails",
+    "title": "5  Exact vs. Gauss Integration on Reference Elements",
+    "section": "5.3 Part C: When quadrature fails",
+    "text": "5.3 Part C: When quadrature fails\nLower-order quadrature rules cannot exactly integrate higher-degree polynomials. This demonstrates why choosing the correct quadrature order is critical for element accuracy.\n\n# Higher-degree polynomial\nf3 = xi**2 * eta**2\nexact_high = integrate_reference_quadrilateral_exact(f3, xi, eta)\ngauss1_high = quadrilateral_gauss_rule(f3, xi, eta, order=1)\ngauss2_high = quadrilateral_gauss_rule(f3, xi, eta, order=2)\ngauss3_high = quadrilateral_gauss_rule(f3, xi, eta, order=3)\n\nprint(f\"Integrand: {f3}\")\nprint(f\"Exact:      {exact_high}\")\nprint(f\"Gauss 1:    {gauss1_high}  (error: {sp.simplify(exact_high - gauss1_high)})\")\nprint(f\"Gauss 2:    {gauss2_high}  (error: {sp.simplify(exact_high - gauss2_high)})\")\nprint(f\"Gauss 3:    {gauss3_high}  (error: {sp.simplify(exact_high - gauss3_high)})\")",
+    "crumbs": [
+      "Integration & Elements",
+      "<span class='chapter-number'>5</span>  <span class='chapter-title'>Exact vs. Gauss Integration on Reference Elements</span>"
+    ]
+  },
+  {
+    "objectID": "04_exact_vs_gauss_integration.html#part-d-element-stiffness-integration-teaching-insight",
+    "href": "04_exact_vs_gauss_integration.html#part-d-element-stiffness-integration-teaching-insight",
+    "title": "5  Exact vs. Gauss Integration on Reference Elements",
+    "section": "5.4 Part D: Element stiffness integration (teaching insight)",
+    "text": "5.4 Part D: Element stiffness integration (teaching insight)\nFor a P1 triangle element with constant gradients, the stiffness integrand is proportional to \\(\\text{det}(J)\\), which is constant. This means 1-point quadrature is sufficient—no higher-order quadrature is needed!\n\nprint(\"For P1 triangle stiffness: integrand ~ constant * det(J)\")\nprint(\"Constant polynomial exact integration:\")\nf_const = sp.Integer(1)\nexact_const = integrate_reference_triangle_exact(f_const, xi, eta)\none_pt_const = triangle_one_point_rule(f_const, xi, eta)\nprint(f\"  Exact: {exact_const}\")\nprint(f\"  1-point: {one_pt_const}\")\nprint(f\"  Match: {exact_const == one_pt_const}\")",
+    "crumbs": [
+      "Integration & Elements",
+      "<span class='chapter-number'>5</span>  <span class='chapter-title'>Exact vs. Gauss Integration on Reference Elements</span>"
+    ]
+  },
+  {
+    "objectID": "04_exact_vs_gauss_integration.html#exercise",
+    "href": "04_exact_vs_gauss_integration.html#exercise",
+    "title": "5  Exact vs. Gauss Integration on Reference Elements",
+    "section": "5.5 Exercise",
+    "text": "5.5 Exercise\nQuestion: For a P1 triangle element, the stiffness integrand involves products of constant gradients times \\(\\text{det}(J)\\). What is the minimum quadrature order needed for exact integration? Test your answer using the workbench.\nThen consider a P2 element: the shape functions are quadratic, so gradients are linear. What quadrature order is needed then?\n\n# Exercise: For a P1 triangle element, the stiffness integrand involves\n# products of constant gradients times det(J). What is the minimum\n# quadrature order needed for exact integration?\n# Test your answer using the workbench.",
+    "crumbs": [
+      "Integration & Elements",
+      "<span class='chapter-number'>5</span>  <span class='chapter-title'>Exact vs. Gauss Integration on Reference Elements</span>"
+    ]
+  },
+  {
+    "objectID": "05_reference_element_gallery.html",
+    "href": "05_reference_element_gallery.html",
+    "title": "6  Reference Element Gallery",
+    "section": "",
+    "text": "6.1 2D Elements\nThis notebook showcases the reference elements that form the building blocks of finite element analysis. Each reference element is defined on a standard domain (e.g., the unit triangle or unit square) and provides shape functions that are mapped to physical elements via Jacobian transformations.",
+    "crumbs": [
+      "Integration & Elements",
+      "<span class='chapter-number'>6</span>  <span class='chapter-title'>Reference Element Gallery</span>"
+    ]
+  },
+  {
+    "objectID": "05_reference_element_gallery.html#d-elements",
+    "href": "05_reference_element_gallery.html#d-elements",
+    "title": "6  Reference Element Gallery",
+    "section": "",
+    "text": "6.1.1 Triangle P1 (Linear Triangle)\n\nxi, eta = sp.symbols(\"xi eta\")\ntri = ReferenceTriangleP1(xi, eta)\n\nprint(\"=== Triangle P1 ===\")\nprint(f\"Nodes: {tri.nodes}\")\nprint(f\"Number of nodes: {len(tri.nodes)}\")\nfor i, N in enumerate(tri.shape_functions):\n    display(Math(f\"N_{{{i+1}}} = \" + sp.latex(N)))\nprint(f\"Partition of unity: {sp.simplify(sum(tri.shape_functions))}\")\n\n# Kronecker delta check\nprint(\"\\nKronecker delta property (N_i(node_j) = delta_ij):\")\nfor i, node in enumerate(tri.nodes):\n    vals = [sp.simplify(N.subs({xi: node[0], eta: node[1]})) for N in tri.shape_functions]\n    print(f\"  N(node {i+1}) = {vals}\")\n\n\n\n6.1.2 Quadrilateral Q1 (Bilinear Quad)\n\nquad1 = ReferenceQuadrilateralQ1(xi, eta)\nprint(\"=== Quadrilateral Q1 ===\")\nprint(f\"Nodes: {quad1.nodes}\")\nfor i, N in enumerate(quad1.shape_functions):\n    display(Math(f\"N_{{{i+1}}} = \" + sp.latex(N)))\nprint(f\"Partition of unity: {sp.simplify(sum(quad1.shape_functions))}\")\n\n# Kronecker delta\nprint(\"\\nKronecker delta property:\")\nfor i, node in enumerate(quad1.nodes):\n    vals = [sp.simplify(N.subs({xi: node[0], eta: node[1]})) for N in quad1.shape_functions]\n    print(f\"  N(node {i+1}) = {vals}\")\n\n\n\n6.1.3 Quadrilateral Q2 (Biquadratic Quad)\n\nquad2 = ReferenceQuadrilateralQ2(xi, eta)\nprint(\"=== Quadrilateral Q2 ===\")\nprint(f\"Nodes: {quad2.nodes}\")\nprint(f\"Number of nodes: {len(quad2.nodes)}\")\nfor i, N in enumerate(quad2.shape_functions):\n    display(Math(f\"N_{{{i+1}}} = \" + sp.latex(sp.simplify(N))))",
+    "crumbs": [
+      "Integration & Elements",
+      "<span class='chapter-number'>6</span>  <span class='chapter-title'>Reference Element Gallery</span>"
+    ]
+  },
+  {
+    "objectID": "05_reference_element_gallery.html#d-elements-1",
+    "href": "05_reference_element_gallery.html#d-elements-1",
+    "title": "6  Reference Element Gallery",
+    "section": "6.2 3D Elements",
+    "text": "6.2 3D Elements\n\nzeta = sp.Symbol(\"zeta\")\ntet1 = ReferenceTetrahedronP1(xi, eta, zeta)\ntet2 = ReferenceTetrahedronP2(xi, eta, zeta)\nhex1 = ReferenceHexahedronQ1(xi, eta, zeta)\n\nfor name, elem in [(\"Tet P1\", tet1), (\"Tet P2\", tet2), (\"Hex Q1\", hex1)]:\n    print(f\"\\n=== {name} ===\")\n    print(f\"Number of nodes: {len(elem.nodes)}\")\n    print(f\"Partition of unity: {sp.simplify(sum(elem.shape_functions))}\")",
+    "crumbs": [
+      "Integration & Elements",
+      "<span class='chapter-number'>6</span>  <span class='chapter-title'>Reference Element Gallery</span>"
+    ]
+  },
+  {
+    "objectID": "05_reference_element_gallery.html#visualizing-2d-shape-functions",
+    "href": "05_reference_element_gallery.html#visualizing-2d-shape-functions",
+    "title": "6  Reference Element Gallery",
+    "section": "6.3 Visualizing 2D Shape Functions",
+    "text": "6.3 Visualizing 2D Shape Functions\nWe create contour plots of the P1 triangle shape functions on the reference element to visualize their linear nature.\n\nfig, axes = plt.subplots(1, 3, figsize=(12, 4))\nxi_vals = np.linspace(0, 1, 50)\neta_vals = np.linspace(0, 1, 50)\nXI, ETA = np.meshgrid(xi_vals, eta_vals)\nmask = XI + ETA &lt;= 1.0\n\nfor idx, (ax, N_sym) in enumerate(zip(axes, tri.shape_functions)):\n    N_fn = sp.lambdify((xi, eta), N_sym, \"numpy\")\n    Z = N_fn(XI, ETA)\n    Z = np.where(mask, Z, np.nan)\n    c = ax.contourf(XI, ETA, Z, levels=20, cmap=\"viridis\")\n    ax.set_title(f\"$N_{{{idx+1}}}$\")\n    ax.set_xlabel(r\"$\\xi$\")\n    ax.set_ylabel(r\"$\\eta$\")\n    ax.set_aspect(\"equal\")\n    plt.colorbar(c, ax=ax, shrink=0.7)\n\nplt.suptitle(\"P1 Triangle Shape Functions on Reference Element\")\nplt.tight_layout()\nplt.show()",
+    "crumbs": [
+      "Integration & Elements",
+      "<span class='chapter-number'>6</span>  <span class='chapter-title'>Reference Element Gallery</span>"
+    ]
+  },
+  {
+    "objectID": "05_reference_element_gallery.html#visualizing-q1-quadrilateral-shape-functions",
+    "href": "05_reference_element_gallery.html#visualizing-q1-quadrilateral-shape-functions",
+    "title": "6  Reference Element Gallery",
+    "section": "6.4 Visualizing Q1 Quadrilateral Shape Functions",
+    "text": "6.4 Visualizing Q1 Quadrilateral Shape Functions\n\nfig, axes = plt.subplots(2, 2, figsize=(10, 9))\naxes = axes.flatten()\nxi_vals_q = np.linspace(-1, 1, 50)\neta_vals_q = np.linspace(-1, 1, 50)\nXI_q, ETA_q = np.meshgrid(xi_vals_q, eta_vals_q)\n\nfor idx, (ax, N_sym) in enumerate(zip(axes, quad1.shape_functions)):\n    N_fn = sp.lambdify((xi, eta), N_sym, \"numpy\")\n    Z = N_fn(XI_q, ETA_q)\n    c = ax.contourf(XI_q, ETA_q, Z, levels=20, cmap=\"viridis\")\n    ax.set_title(f\"$N_{{{idx+1}}}$\")\n    ax.set_xlabel(r\"$\\xi$\")\n    ax.set_ylabel(r\"$\\eta$\")\n    ax.set_aspect(\"equal\")\n    plt.colorbar(c, ax=ax, shrink=0.7)\n\nplt.suptitle(\"Q1 Quadrilateral Shape Functions on Reference Element\")\nplt.tight_layout()\nplt.show()",
+    "crumbs": [
+      "Integration & Elements",
+      "<span class='chapter-number'>6</span>  <span class='chapter-title'>Reference Element Gallery</span>"
+    ]
+  },
+  {
+    "objectID": "05_reference_element_gallery.html#exercise",
+    "href": "05_reference_element_gallery.html#exercise",
+    "title": "6  Reference Element Gallery",
+    "section": "6.5 Exercise",
+    "text": "6.5 Exercise\nQuestion: Verify the Kronecker delta property for the Q2 quadrilateral. For each node, evaluate all 9 shape functions and check that \\(N_i(\\text{node}_j) = \\delta_{ij}\\). Which shape function is the most “localized” (has the smallest support)?\n\n# Exercise: Verify the Kronecker delta property for the Q2 quadrilateral.\n# For each node, evaluate all 9 shape functions and check N_i(node_j) = delta_ij.",
+    "crumbs": [
+      "Integration & Elements",
+      "<span class='chapter-number'>6</span>  <span class='chapter-title'>Reference Element Gallery</span>"
+    ]
+  },
+  {
+    "objectID": "06_2d_triangle_poisson.html",
+    "href": "06_2d_triangle_poisson.html",
+    "title": "7  2D Poisson on a P1 Triangle: Gradient Pullback and Local Tensors",
+    "section": "",
+    "text": "7.1 Step 1: Reference triangle and shape functions\nThis notebook extends finite element analysis to 2D by deriving local element matrices for a Poisson equation on a P1 triangle. The key new concepts are the Jacobian-based gradient transformation (pullback) and handling 2D integrands over distorted elements.\nThe reference triangle is defined on the unit triangle in the \\(\\xi\\)-\\(\\eta\\) parameter space: \\[\\hat{\\Omega} = \\{(\\xi, \\eta) : 0 \\le \\xi, \\eta, \\xi + \\eta \\le 1\\}\\]\nLinear shape functions (P1) are barycentric coordinates.\nxi, eta = sp.symbols(\"xi eta\")\nref = ReferenceTriangleP1(xi, eta)\n\nprint(\"Reference nodes:\", ref.nodes)\nfor i, N in enumerate(ref.shape_functions):\n    display(Math(f\"N_{{{i+1}}} = \" + sp.latex(N)))\n\nprint(\"\\nReference gradients (constant for P1):\")\nfor i, grad in enumerate(ref.shape_gradients_reference):\n    display(Math(r\"\\nabla_{\\hat{}} N_\" + str(i+1) + \" = \" + sp.latex(grad)))",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>7</span>  <span class='chapter-title'>2D Poisson on a P1 Triangle: Gradient Pullback and Local Tensors</span>"
+    ]
+  },
+  {
+    "objectID": "06_2d_triangle_poisson.html#step-2-affine-mapping-to-physical-triangle",
+    "href": "06_2d_triangle_poisson.html#step-2-affine-mapping-to-physical-triangle",
+    "title": "7  2D Poisson on a P1 Triangle: Gradient Pullback and Local Tensors",
+    "section": "7.2 Step 2: Affine mapping to physical triangle",
+    "text": "7.2 Step 2: Affine mapping to physical triangle\nThe affine mapping transforms the reference triangle to a physical triangle with vertices \\((x_1, y_1)\\), \\((x_2, y_2)\\), \\((x_3, y_3)\\): \\[\\mathbf{x}(\\xi, \\eta) = \\mathbf{x}_1 + (\\mathbf{x}_2 - \\mathbf{x}_1)\\xi + (\\mathbf{x}_3 - \\mathbf{x}_1)\\eta\\]\nThe Jacobian matrix is constant and relates derivatives in the two spaces.\n\nx1, y1, x2, y2, x3, y3 = sp.symbols(\"x1 y1 x2 y2 x3 y3\", real=True)\ngeom = AffineTriangleMap2D(xi=xi, eta=eta, x1=x1, y1=y1, x2=x2, y2=y2, x3=x3, y3=y3)\n\nprint(\"Jacobian matrix J:\")\ndisplay(Math(r\"J = \" + sp.latex(geom.jacobian)))\nprint(\"\\nDeterminant of J:\")\ndisplay(Math(r\"|J| = \" + sp.latex(geom.det_jacobian)))\nprint(\"\\nTriangle area = |J|/2 =\", geom.area)\nprint(\"\\nInverse transpose J^{-T} (for gradient pullback):\")\ndisplay(Math(r\"J^{-T} = \" + sp.latex(geom.inverse_transpose_jacobian)))",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>7</span>  <span class='chapter-title'>2D Poisson on a P1 Triangle: Gradient Pullback and Local Tensors</span>"
+    ]
+  },
+  {
+    "objectID": "06_2d_triangle_poisson.html#step-3-gradient-pullback",
+    "href": "06_2d_triangle_poisson.html#step-3-gradient-pullback",
+    "title": "7  2D Poisson on a P1 Triangle: Gradient Pullback and Local Tensors",
+    "section": "7.3 Step 3: Gradient pullback",
+    "text": "7.3 Step 3: Gradient pullback\nThe key transformation: gradients in physical space relate to reference gradients via the inverse Jacobian transpose: \\[\\nabla u = J^{-T} \\nabla_{\\hat{}} \\hat{u}\\]\nThis ensures the chain rule is satisfied correctly for distorted elements.\n\nd0, d1, d2 = sp.symbols(\"d0 d1 d2\", real=True)\nw0, w1, w2 = sp.symbols(\"w0 w1 w2\", real=True)\n\nuh = local_trial_expansion(ref.shape_functions, [d0, d1, d2])\nvh = local_test_expansion(ref.shape_functions, [w0, w1, w2])\n\ngrad_uh_ref = grad_2d(uh, xi, eta)\ngrad_uh_phys = pullback_gradient_2d(grad_uh_ref, geom.jacobian)\n\nprint(\"Gradient of u_h in reference coords:\")\ndisplay(Math(sp.latex(grad_uh_ref)))\nprint(\"\\nGradient of u_h in physical coords (after J^{-T} pullback):\")\ndisplay(Math(sp.latex(grad_uh_phys)))",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>7</span>  <span class='chapter-title'>2D Poisson on a P1 Triangle: Gradient Pullback and Local Tensors</span>"
+    ]
+  },
+  {
+    "objectID": "06_2d_triangle_poisson.html#step-4-form-the-integrand-and-extract-local-tensors",
+    "href": "06_2d_triangle_poisson.html#step-4-form-the-integrand-and-extract-local-tensors",
+    "title": "7  2D Poisson on a P1 Triangle: Gradient Pullback and Local Tensors",
+    "section": "7.4 Step 4: Form the integrand and extract local tensors",
+    "text": "7.4 Step 4: Form the integrand and extract local tensors\nThe weak form of the Poisson equation is: \\[a(u, v) = \\int_\\Omega \\nabla u \\cdot \\nabla v \\, dx\\] \\[F(v) = \\int_\\Omega f v \\, dx\\]\nWe evaluate the integrals on the reference element and extract coefficients.\n\ngrad_vh_ref = grad_2d(vh, xi, eta)\ngrad_vh_phys = pullback_gradient_2d(grad_vh_ref, geom.jacobian)\n\nbilinear_integrand = sp.simplify((grad_uh_phys.T * grad_vh_phys)[0] * geom.det_jacobian)\nf = sp.Symbol(\"f\", real=True)\nlinear_integrand = sp.simplify(f * vh * geom.det_jacobian)\n\nbilinear_val = integrate_reference_triangle_exact(bilinear_integrand, xi, eta)\nlinear_val = integrate_reference_triangle_exact(linear_integrand, xi, eta)\n\nKe = extract_coefficient_matrix(bilinear_val, [d0, d1, d2], [w0, w1, w2])\nfe = extract_coefficient_vector(linear_val, [w0, w1, w2])\n\nprint(\"Element stiffness matrix Ke (generic triangle):\")\ndisplay(Math(r\"K_e = \" + sp.latex(sp.simplify(Ke))))\nprint(\"\\nElement load vector fe (constant source f):\")\ndisplay(Math(r\"f_e = \" + sp.latex(sp.simplify(fe))))",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>7</span>  <span class='chapter-title'>2D Poisson on a P1 Triangle: Gradient Pullback and Local Tensors</span>"
+    ]
+  },
+  {
+    "objectID": "06_2d_triangle_poisson.html#step-5-specialize-to-the-unit-right-triangle",
+    "href": "06_2d_triangle_poisson.html#step-5-specialize-to-the-unit-right-triangle",
+    "title": "7  2D Poisson on a P1 Triangle: Gradient Pullback and Local Tensors",
+    "section": "7.5 Step 5: Specialize to the unit right triangle",
+    "text": "7.5 Step 5: Specialize to the unit right triangle\nFor the special case of a unit right triangle with vertices at \\((0,0)\\), \\((1,0)\\), \\((0,1)\\), the Jacobian is the identity, and formulas simplify.\n\nunit_subs = {x1: 0, y1: 0, x2: 1, y2: 0, x3: 0, y3: 1}\nprint(\"Unit right triangle Ke:\")\ndisplay(Math(r\"K_e = \" + sp.latex(sp.simplify(Ke.subs(unit_subs)))))\nprint(\"\\nUnit right triangle fe:\")\ndisplay(Math(r\"f_e = \" + sp.latex(sp.simplify(fe.subs(unit_subs)))))",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>7</span>  <span class='chapter-title'>2D Poisson on a P1 Triangle: Gradient Pullback and Local Tensors</span>"
+    ]
+  },
+  {
+    "objectID": "06_2d_triangle_poisson.html#verify-with-pre-built-workflow",
+    "href": "06_2d_triangle_poisson.html#verify-with-pre-built-workflow",
+    "title": "7  2D Poisson on a P1 Triangle: Gradient Pullback and Local Tensors",
+    "section": "7.6 Verify with pre-built workflow",
+    "text": "7.6 Verify with pre-built workflow\n\ndata = build_poisson_triangle_p1_local_problem()\nprint(\"Pre-built Ke (unit right triangle):\")\ndisplay(Math(sp.latex(data[\"Ke_unit_right_triangle\"])))\nprint(\"Match:\", sp.simplify(Ke.subs(unit_subs) - data[\"Ke_unit_right_triangle\"]) == sp.zeros(3))",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>7</span>  <span class='chapter-title'>2D Poisson on a P1 Triangle: Gradient Pullback and Local Tensors</span>"
+    ]
+  },
+  {
+    "objectID": "06_2d_triangle_poisson.html#exercise",
+    "href": "06_2d_triangle_poisson.html#exercise",
+    "title": "7  2D Poisson on a P1 Triangle: Gradient Pullback and Local Tensors",
+    "section": "7.7 Exercise",
+    "text": "7.7 Exercise\nQuestion: Evaluate \\(K_e\\) for an equilateral triangle with vertices at \\((0,0)\\), \\((1,0)\\), \\((1/2, \\sqrt{3}/2)\\). Is the matrix still symmetric? Compare the diagonal entries with the unit right triangle case. Why do they differ?\n\n# Exercise: Evaluate Ke for an equilateral triangle with vertices\n# (0,0), (1,0), (0.5, sqrt(3)/2). Is the matrix still symmetric?\n# Compare the diagonal entries with the unit right triangle case.",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>7</span>  <span class='chapter-title'>2D Poisson on a P1 Triangle: Gradient Pullback and Local Tensors</span>"
+    ]
+  },
+  {
+    "objectID": "07_manual_assembly_2d.html",
+    "href": "07_manual_assembly_2d.html",
+    "title": "8  Manual 2D Assembly: From Local Tensors to Global Solution",
+    "section": "",
+    "text": "8.1 Step 1: Get symbolic local tensors and convert to numerical\nThis notebook demonstrates the assembly process: combining element matrices and vectors into a global system, applying boundary conditions, and solving for the finite element solution. Assembly is fundamentally a topological operation—it depends only on node connectivity, not on the analytical properties of elements.\nWe retrieve the element stiffness matrix and load vector from the previous notebook and convert them to numerical functions via lambdify.\ndata = build_poisson_triangle_p1_local_problem()\ngeom = data[\"geometry\"]\n\nke_fn = sp.lambdify(\n    (geom.x1, geom.y1, geom.x2, geom.y2, geom.x3, geom.y3),\n    data[\"Ke\"], \"numpy\"\n)\nfe_fn = sp.lambdify(\n    (geom.x1, geom.y1, geom.x2, geom.y2, geom.x3, geom.y3, data[\"f\"]),\n    data[\"fe\"], \"numpy\"\n)\nprint(\"Numerical kernels ready.\")",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>8</span>  <span class='chapter-title'>Manual 2D Assembly: From Local Tensors to Global Solution</span>"
+    ]
+  },
+  {
+    "objectID": "07_manual_assembly_2d.html#step-2-define-a-tiny-mesh",
+    "href": "07_manual_assembly_2d.html#step-2-define-a-tiny-mesh",
+    "title": "8  Manual 2D Assembly: From Local Tensors to Global Solution",
+    "section": "8.2 Step 2: Define a tiny mesh",
+    "text": "8.2 Step 2: Define a tiny mesh\nWe discretize the unit square using 4 triangles arranged around a central point. This simple mesh illustrates the assembly process without excessive complexity.\n\nnodes = np.array([\n    [0.0, 0.0],  # 0: bottom-left\n    [1.0, 0.0],  # 1: bottom-right\n    [1.0, 1.0],  # 2: top-right\n    [0.0, 1.0],  # 3: top-left\n    [0.5, 0.5],  # 4: center\n])\nelements = [(0,1,4), (1,2,4), (2,3,4), (3,0,4)]\n\n# Visualize the mesh\nfig, ax = plt.subplots(1, 1, figsize=(5, 5))\nfor tri in elements:\n    pts = nodes[list(tri) + [tri[0]]]\n    ax.plot(pts[:, 0], pts[:, 1], \"b-\")\nfor i, (x, y) in enumerate(nodes):\n    ax.plot(x, y, \"ko\", markersize=8)\n    ax.annotate(f\"  {i}\", (x, y), fontsize=12)\nax.set_title(\"Mesh: 4 triangles, 5 nodes\")\nax.set_aspect(\"equal\")\nplt.show()",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>8</span>  <span class='chapter-title'>Manual 2D Assembly: From Local Tensors to Global Solution</span>"
+    ]
+  },
+  {
+    "objectID": "07_manual_assembly_2d.html#step-3-element-by-element-assembly",
+    "href": "07_manual_assembly_2d.html#step-3-element-by-element-assembly",
+    "title": "8  Manual 2D Assembly: From Local Tensors to Global Solution",
+    "section": "8.3 Step 3: Element-by-element assembly",
+    "text": "8.3 Step 3: Element-by-element assembly\nThe assembly loop scans through all elements, retrieves element matrices/vectors, and accumulates them into global arrays using the connectivity information.\n\nndofs = len(nodes)\nK_global = np.zeros((ndofs, ndofs))\nF_global = np.zeros(ndofs)\nsource_value = 1.0\n\nfor eid, conn in enumerate(elements):\n    coords = nodes[list(conn)]\n    x1v, y1v = coords[0]\n    x2v, y2v = coords[1]\n    x3v, y3v = coords[2]\n\n    K_local = np.asarray(ke_fn(x1v, y1v, x2v, y2v, x3v, y3v), dtype=float)\n    F_local = np.asarray(fe_fn(x1v, y1v, x2v, y2v, x3v, y3v, source_value), dtype=float).reshape(-1)\n\n    print(f\"Element {eid}, connectivity {conn}\")\n    print(f\"  K_local diagonal: {np.diag(K_local)}\")\n    print(f\"  F_local: {F_local}\")\n\n    assemble_dense_matrix(K_global, K_local, conn)\n    assemble_dense_vector(F_global, F_local, conn)\n\nprint(\"\\nAssembled K_global:\")\nprint(np.round(K_global, 4))\nprint(\"\\nAssembled F_global:\")\nprint(np.round(F_global, 4))",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>8</span>  <span class='chapter-title'>Manual 2D Assembly: From Local Tensors to Global Solution</span>"
+    ]
+  },
+  {
+    "objectID": "07_manual_assembly_2d.html#step-4-apply-dirichlet-bcs-and-solve",
+    "href": "07_manual_assembly_2d.html#step-4-apply-dirichlet-bcs-and-solve",
+    "title": "8  Manual 2D Assembly: From Local Tensors to Global Solution",
+    "section": "8.4 Step 4: Apply Dirichlet BCs and solve",
+    "text": "8.4 Step 4: Apply Dirichlet BCs and solve\nDirichlet boundary conditions are applied by reducing the system: we eliminate rows and columns corresponding to constrained DOFs and solve for the free DOFs, then expand the solution.\n\nconstrained = [0, 1, 2, 3]  # All boundary nodes\nK_ff, F_f, free_dofs = apply_dirichlet_by_reduction(K_global, F_global, constrained)\n\nprint(f\"Free DOFs: {free_dofs}\")\nprint(f\"K_ff = {K_ff}\")\nprint(f\"F_f = {F_f}\")\n\nu_free = np.linalg.solve(K_ff, F_f)\nu = expand_reduced_solution(u_free, ndofs, free_dofs, constrained)\n\nprint(f\"\\nSolution vector u = {u}\")\nprint(f\"Center node value u[4] = {u[4]:.6f}\")\nprint(f\"Expected (analytical): 1/12 = {1/12:.6f}\")\nprint(f\"Match: {np.isclose(u[4], 1/12)}\")",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>8</span>  <span class='chapter-title'>Manual 2D Assembly: From Local Tensors to Global Solution</span>"
+    ]
+  },
+  {
+    "objectID": "07_manual_assembly_2d.html#step-5-visualize-the-solution",
+    "href": "07_manual_assembly_2d.html#step-5-visualize-the-solution",
+    "title": "8  Manual 2D Assembly: From Local Tensors to Global Solution",
+    "section": "8.5 Step 5: Visualize the solution",
+    "text": "8.5 Step 5: Visualize the solution\nWe plot the FEM solution as a colored patch over the mesh, with annotations showing nodal values.\n\nfrom matplotlib.tri import Triangulation\n\ntri_conn = np.array(elements)\ntriang = Triangulation(nodes[:, 0], nodes[:, 1], tri_conn)\n\nfig, ax = plt.subplots(figsize=(6, 5))\ntpc = ax.tripcolor(triang, u, shading=\"flat\", cmap=\"viridis\")\nax.triplot(triang, \"k-\", linewidth=0.5)\nfor i, (x, y) in enumerate(nodes):\n    ax.annotate(f\"{i}: u={u[i]:.4f}\", (x, y), fontsize=9,\n                xytext=(5, 5), textcoords=\"offset points\")\nplt.colorbar(tpc, label=\"u\")\nax.set_title(\"FEM Solution: Poisson on 4-Triangle Mesh\")\nax.set_aspect(\"equal\")\nplt.show()",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>8</span>  <span class='chapter-title'>Manual 2D Assembly: From Local Tensors to Global Solution</span>"
+    ]
+  },
+  {
+    "objectID": "07_manual_assembly_2d.html#exercise",
+    "href": "07_manual_assembly_2d.html#exercise",
+    "title": "8  Manual 2D Assembly: From Local Tensors to Global Solution",
+    "section": "8.6 Exercise",
+    "text": "8.6 Exercise\nQuestion: Move the center node from \\((0.5, 0.5)\\) to \\((0.3, 0.7)\\). How does the solution change? Is the center node value still \\(1/12\\)? Why or why not?\nHint: The center node is no longer at a symmetric position, so the Jacobians of the four elements are all different. This affects their stiffness matrices.\n\n# Exercise: Move the center node from (0.5, 0.5) to (0.3, 0.7).\n# How does the solution change? Is the center node value still 1/12?\n# Why or why not?",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>8</span>  <span class='chapter-title'>Manual 2D Assembly: From Local Tensors to Global Solution</span>"
+    ]
+  },
+  {
+    "objectID": "08_boundary_conditions_1d.html",
+    "href": "08_boundary_conditions_1d.html",
+    "title": "9  Boundary Conditions in FEM: Theory and Practice",
+    "section": "",
+    "text": "9.1 How Boundary Conditions Arise\nBoundary conditions are where the physics meets the algebra. This notebook covers how Neumann and Dirichlet conditions enter the FEM formulation.\nWhen we apply integration by parts to a flux-divergence term, we get a boundary integral:\n\\[\\int_\\Omega \\frac{d(\\text{flux})}{dx} \\cdot v \\, dx = -\\int_\\Omega \\text{flux} \\cdot \\frac{dv}{dx} \\, dx + \\left[\\text{flux} \\cdot v\\right]_{\\text{boundary}}\\]\nThis boundary term is the mathematical origin of both boundary condition types:\nThe key insight: Neumann conditions enter the weak form naturally through the boundary integral, while Dirichlet conditions must be enforced by constraining the solution space.",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>9</span>  <span class='chapter-title'>Boundary Conditions in FEM: Theory and Practice</span>"
+    ]
+  },
+  {
+    "objectID": "08_boundary_conditions_1d.html#how-boundary-conditions-arise",
+    "href": "08_boundary_conditions_1d.html#how-boundary-conditions-arise",
+    "title": "9  Boundary Conditions in FEM: Theory and Practice",
+    "section": "",
+    "text": "Neumann (natural) BCs: The flux itself is prescribed on part of the boundary\nDirichlet (essential) BCs: The solution value is prescribed on part of the boundary",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>9</span>  <span class='chapter-title'>Boundary Conditions in FEM: Theory and Practice</span>"
+    ]
+  },
+  {
+    "objectID": "08_boundary_conditions_1d.html#neumann-natural-boundary-conditions",
+    "href": "08_boundary_conditions_1d.html#neumann-natural-boundary-conditions",
+    "title": "9  Boundary Conditions in FEM: Theory and Practice",
+    "section": "9.2 Neumann (Natural) Boundary Conditions",
+    "text": "9.2 Neumann (Natural) Boundary Conditions\nWhy “natural”? When flux multiplied by n is prescribed on Gamma_N, the boundary integral becomes a known contribution:\n\\[\\int_{\\Gamma_N} t^* \\, v \\, ds\\]\nThis term is simply added to the load vector. No special handling of the stiffness matrix is needed—the condition is automatically incorporated when we assemble the system.\n\nimport sympy as sp\nfrom IPython.display import Math, display\nfrom symbolic_fem_workbench import (\n    make_field_1d,\n    integrate_divergence_1d,\n    drop_dirichlet_boundary,\n    apply_neumann_flux,\n)\n\n# Set up a simple 1D problem\nx, L = sp.symbols(\"x L\", positive=True)\nE, A = sp.symbols(\"E A\", positive=True)\nP = sp.Symbol(\"P\", real=True)  # External load\nu = make_field_1d(\"u\", x)\nv = make_field_1d(\"v\", x)\ndomain = (x, 0, L)\n\n# Define the flux (stress times area)\nflux = E * A * sp.diff(u, x)\n\n# Apply integration by parts\ndomain_term, (left_bc, right_bc) = integrate_divergence_1d(flux, v, x, domain)\n\nprint(\"Boundary terms from integration by parts:\")\nprint(f\"Left boundary (x=0): {left_bc.evaluate()}\")\nprint(f\"Right boundary (x=L): {right_bc.evaluate()}\")\nprint()\nprint(\"These boundary terms will be handled by Neumann and Dirichlet BCs.\")\n\n\n# Apply Neumann BC at x=L: prescribed force P\nprint(\"Applying Neumann BC: flux = P at x=L\")\nneumann_contrib = apply_neumann_flux(right_bc, flux_expr=flux, prescribed_flux=P)\nprint(f\"Neumann contribution to load vector: {neumann_contrib}\")\nprint()\nprint(\"Key insight: This term enters F(v) directly—no matrix modification needed.\")\nprint(\"This is why Neumann BCs are called 'natural': they are built into the weak form.\")",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>9</span>  <span class='chapter-title'>Boundary Conditions in FEM: Theory and Practice</span>"
+    ]
+  },
+  {
+    "objectID": "08_boundary_conditions_1d.html#dirichlet-essential-boundary-conditions",
+    "href": "08_boundary_conditions_1d.html#dirichlet-essential-boundary-conditions",
+    "title": "9  Boundary Conditions in FEM: Theory and Practice",
+    "section": "9.3 Dirichlet (Essential) Boundary Conditions",
+    "text": "9.3 Dirichlet (Essential) Boundary Conditions\nWhy “essential”? Dirichlet BCs constrain solution values directly. Unlike Neumann BCs, they don’t enter through the weak form naturally. Instead, they must be enforced on the solution space and then on the algebraic system.\nWhen u = g on Gamma_D, we restrict the test space to functions vanishing on Gamma_D:\n\\[V_D = \\{v : v = 0 \\text{ on } \\Gamma_D\\}\\]\nAfter discretization and assembly, we have a system K u = F with all DOFs. To enforce the Dirichlet condition u_i = g_i, we modify the system algebraically. Two main approaches:\n\nRow Substitution: Textbook approach, simple and explicit\nLifting: Modern approach (FEniCS, deal.II), reveals mathematical structure\n\n\n9.3.1 Approach 1: Row Substitution\nThe algorithm: For each constrained DOF i with prescribed value g_i:\n\nSubtract K_{:,i} times g_i from the RHS: F becomes F - K_{:,i} times g_i\nZero out row i and column i of K\nSet K_{ii} = 1\nSet F_i = g_i\n\nAfter these modifications, solving K u = F automatically gives u_i = g_i.\nPros: Simple, preserves matrix size, explicit\nCons: Destroys symmetry of K (temporarily), modifies matrix structure\n\nimport numpy as np\nfrom symbolic_fem_workbench import (\n    build_bar_1d_local_problem,\n)\nfrom symbolic_fem_workbench.assembly import (\n    assemble_dense_matrix,\n    assemble_dense_vector,\n    apply_dirichlet_by_row_substitution,\n)\n\n# Build a 1D bar problem with 3 elements\nproblem = build_bar_1d_local_problem()\nke_fn = sp.lambdify((problem[\"L\"], problem[\"E\"], problem[\"A\"]), problem[\"Ke\"], \"numpy\")\nfe_fn = sp.lambdify((problem[\"L\"], problem[\"q\"], problem[\"P\"]), problem[\"fe\"], \"numpy\")\n\nn_elem, L_val, E_val, A_val, q_val = 3, 1.0, 1.0, 1.0, 1.0\nh = L_val / n_elem\nndofs = n_elem + 1\nK = np.zeros((ndofs, ndofs))\nF = np.zeros(ndofs)\n\n# Assemble the system\nfor e in range(n_elem):\n    Ke = np.array(ke_fn(h, E_val, A_val), dtype=float)\n    fe = np.array(fe_fn(h, q_val, 0.0), dtype=float).flatten()\n    conn = [e, e + 1]\n    assemble_dense_matrix(K, Ke, conn)\n    assemble_dense_vector(F, fe, conn)\n\nprint(\"Assembled K (before BC enforcement):\")\nprint(np.round(K, 4))\nprint()\nprint(\"Assembled F (before BC enforcement):\", np.round(F, 4))\n\n\n# Apply Dirichlet BCs: u(0) = 0 and u(L) = 0 (fixed at both ends)\nK_mod, F_mod = apply_dirichlet_by_row_substitution(\n    K.copy(), F.copy(), constrained_dofs=[0, ndofs-1], prescribed_values=[0.0, 0.0]\n)\n\nprint(\"After row substitution (u(0)=0, u(L)=0):\")\nprint()\nprint(\"K_mod:\")\nprint(np.round(K_mod, 4))\nprint()\nprint(\"F_mod:\", np.round(F_mod, 4))\nprint()\nprint(\"Note: Rows/columns 0 and 3 are now identity rows\")\nprint(\"      RHS entries 0 and 3 are now the prescribed values (0).\")\n\n\n# Solve the modified system\nu = np.linalg.solve(K_mod, F_mod)\nprint(\"Solution (row substitution):\")\nprint(np.round(u, 6))\nprint()\nprint(f\"Verification: u[0] = {u[0]:.6f}, u[3] = {u[3]:.6f}\")\nprint(\"Both are 0.0 as prescribed.\")\n\n\n\n9.3.2 Approach 2: Lifting (Modern FEniCS Approach)\nThe mathematical idea:\nDecompose the solution as: u = u_0 + u_D\nwhere: - u_D is a “lift” that satisfies the Dirichlet BCs: u_D = g on Gamma_D, zero elsewhere - u_0 is the homogeneous part: u_0 = 0 on Gamma_D\nSubstituting into the weak form a(u, v) = F(v): a(u_0 + u_D, v) = F(v) a(u_0, v) = F(v) - a(u_D, v)\nIn matrix form: K_{ff} u_{0,f} = F_f - K_{fc} g_c\nWhy is this better? 1. The test space has homogeneous BCs—no special handling needed 2. The Dirichlet data enters as a correction to the RHS, not as matrix surgery 3. Generalises naturally to non-homogeneous BCs and higher dimensions 4. This is how modern FEM frameworks (FEniCS, deal.II) handle Dirichlet conditions internally\n\nfrom symbolic_fem_workbench.assembly import apply_dirichlet_by_lifting, expand_reduced_solution\n\n# Re-assemble (since row substitution modified in place)\nK2 = np.zeros((ndofs, ndofs))\nF2 = np.zeros(ndofs)\nfor e in range(n_elem):\n    Ke = np.array(ke_fn(h, E_val, A_val), dtype=float)\n    fe = np.array(fe_fn(h, q_val, 0.0), dtype=float).flatten()\n    assemble_dense_matrix(K2, Ke, [e, e+1])\n    assemble_dense_vector(F2, fe, [e, e+1])\n\n# Apply lifting\nK_ff, F_f, free_dofs, u_lift = apply_dirichlet_by_lifting(\n    K2, F2, constrained_dofs=[0, ndofs-1], prescribed_values=[0.0, 0.0]\n)\n\nprint(\"Lifting decomposition:\")\nprint(f\"Lift vector u_D: {u_lift}\")\nprint(f\"Free DOFs: {free_dofs}\")\nprint()\nprint(\"Modified RHS F_f:\")\nprint(np.round(F_f, 4))\nprint()\nprint(\"Reduced stiffness K_ff (free-free block):\")\nprint(np.round(K_ff, 4))\n\n\n# Solve for the homogeneous part u_0\nu0_free = np.linalg.solve(K_ff, F_f)\nprint(f\"Homogeneous solution u_0 (at free DOFs): {np.round(u0_free, 6)}\")\nprint()\n\n# Expand back to full size\nu0_full = expand_reduced_solution(u0_free, ndofs, free_dofs, [0, ndofs-1], [0.0, 0.0])\nprint(f\"u_0 (full size): {np.round(u0_full, 6)}\")\nprint()\n\n# Total solution = u_0 + u_D\nu_total = u0_full + u_lift\nprint(f\"u = u_0 + u_D: {np.round(u_total, 6)}\")",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>9</span>  <span class='chapter-title'>Boundary Conditions in FEM: Theory and Practice</span>"
+    ]
+  },
+  {
+    "objectID": "08_boundary_conditions_1d.html#comparison-both-approaches-give-the-same-answer",
+    "href": "08_boundary_conditions_1d.html#comparison-both-approaches-give-the-same-answer",
+    "title": "9  Boundary Conditions in FEM: Theory and Practice",
+    "section": "9.4 Comparison: Both Approaches Give the Same Answer",
+    "text": "9.4 Comparison: Both Approaches Give the Same Answer\nThe mathematical principle behind both methods is the same—they are just different algebraic implementations. Let us verify:\n\nprint(\"Row substitution result:\", np.round(u, 6))\nprint(\"Lifting result:         \", np.round(u_total, 6))\nprint()\nprint(\"Are they equal?\", np.allclose(u, u_total))\nprint(\"Max difference:\", np.max(np.abs(u - u_total)))",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>9</span>  <span class='chapter-title'>Boundary Conditions in FEM: Theory and Practice</span>"
+    ]
+  },
+  {
+    "objectID": "08_boundary_conditions_1d.html#non-homogeneous-dirichlet-example",
+    "href": "08_boundary_conditions_1d.html#non-homogeneous-dirichlet-example",
+    "title": "9  Boundary Conditions in FEM: Theory and Practice",
+    "section": "9.5 Non-Homogeneous Dirichlet Example",
+    "text": "9.5 Non-Homogeneous Dirichlet Example\nNow let us try a non-homogeneous case: u(0) = 0 and u(L) = 1\n\n# Re-assemble\nK3 = np.zeros((ndofs, ndofs))\nF3 = np.zeros(ndofs)\nfor e in range(n_elem):\n    Ke = np.array(ke_fn(h, E_val, A_val), dtype=float)\n    fe = np.array(fe_fn(h, q_val, 0.0), dtype=float).flatten()\n    assemble_dense_matrix(K3, Ke, [e, e+1])\n    assemble_dense_vector(F3, fe, [e, e+1])\n\nprint(\"Non-homogeneous Dirichlet: u(0)=0, u(L)=1\")\nprint()\n\n# Row substitution\nK3_mod, F3_mod = apply_dirichlet_by_row_substitution(\n    K3.copy(), F3.copy(), constrained_dofs=[0, ndofs-1], prescribed_values=[0.0, 1.0]\n)\nu_row = np.linalg.solve(K3_mod, F3_mod)\nprint(\"Row substitution:\", np.round(u_row, 6))\n\n# Lifting\nK3_ff, F3_f, free_dofs, u_lift3 = apply_dirichlet_by_lifting(\n    K3, F3, constrained_dofs=[0, ndofs-1], prescribed_values=[0.0, 1.0]\n)\nu0_free = np.linalg.solve(K3_ff, F3_f)\n# IMPORTANT: use zeros here because u_lift already carries the prescribed values\nu0_full = expand_reduced_solution(u0_free, ndofs, free_dofs, [0, ndofs-1], [0.0, 0.0])\nu_lift_total = u0_full + u_lift3\nprint(\"Lifting:         \", np.round(u_lift_total, 6))\nprint()\nprint(\"Match:\", np.allclose(u_row, u_lift_total))",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>9</span>  <span class='chapter-title'>Boundary Conditions in FEM: Theory and Practice</span>"
+    ]
+  },
+  {
+    "objectID": "08_boundary_conditions_1d.html#exercise",
+    "href": "08_boundary_conditions_1d.html#exercise",
+    "title": "9  Boundary Conditions in FEM: Theory and Practice",
+    "section": "9.6 Exercise",
+    "text": "9.6 Exercise\nModify the problem above to apply a different boundary condition at the right end: - Try u(L) = 2 - Try u(0) = 1, u(L) = 0 - Try only fixing the left end: u(0) = 0 (what happens at the right?)\nFor each case, verify that both approaches still give the same answer.\n\n# Your exercise code here",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>9</span>  <span class='chapter-title'>Boundary Conditions in FEM: Theory and Practice</span>"
+    ]
+  },
+  {
+    "objectID": "09_boundary_conditions_2d.html",
+    "href": "09_boundary_conditions_2d.html",
+    "title": "10  2D Boundary Conditions: Neumann Edges and Dirichlet Lifting",
+    "section": "",
+    "text": "10.1 Neumann BCs on Triangle Edges\nThis notebook extends the 1D boundary condition concepts to 2D triangular meshes, showing how Neumann conditions are applied on edge boundaries and how Dirichlet conditions are enforced across a full problem.\nIn 2D, the boundary integral becomes a line integral along each edge:\n\\[\\int_{\\Gamma_N} t^* v \\, ds\\]\nFor a straight edge of length |e| in a P1 triangle, if the flux t-star is constant, the contribution to each endpoint node is:\n\\[f_i^{\\text{edge}} = t^* \\cdot \\frac{|e|}{2}\\]\nThis comes from integrating the constant flux against the linear shape function over the edge.\n# Define reference coordinates first\nxi, eta = sp.symbols('xi eta', real=True, positive=True)\n\n# Create a reference P1 triangle\nref_tri = ReferenceTriangleP1(xi, eta)\nprint(f\"Reference triangle shape functions:\")\nfor idx, N in enumerate(ref_tri.shape_functions):\n    print(f\"  N_{idx}: {N}\")\n\n# Define a constant Neumann flux and edge length\nt_star = sp.Symbol('t_star', real=True)  # Prescribed flux\nedge_len = sp.Symbol('edge_len', positive=True)\n\n# Compute Neumann load contribution for edge 0 (between nodes 0 and 1)\n# Nodes 0 and 1 are at (0,0) and (1,0) on the reference triangle\nf_edge = neumann_load_vector_triangle_edge(\n    ref_tri,\n    edge_local_nodes=(0, 1),\n    prescribed_flux=t_star,\n    edge_length=edge_len,\n    xi=xi,\n    eta=eta,\n)\n\nprint(f\"\\nNeumann load vector for edge 0-1:\")\nprint(f\"f_edge = {f_edge.T}\")\nprint()\nprint(f\"Each endpoint gets t_star times edge_len divided by 2\")\nprint(f\"The opposite node (node 2) gets 0\")",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>10</span>  <span class='chapter-title'>2D Boundary Conditions: Neumann Edges and Dirichlet Lifting</span>"
+    ]
+  },
+  {
+    "objectID": "09_boundary_conditions_2d.html#d-problem-setup-4-triangle-mesh-with-mixed-bcs",
+    "href": "09_boundary_conditions_2d.html#d-problem-setup-4-triangle-mesh-with-mixed-bcs",
+    "title": "10  2D Boundary Conditions: Neumann Edges and Dirichlet Lifting",
+    "section": "10.2 2D Problem Setup: 4-Triangle Mesh with Mixed BCs",
+    "text": "10.2 2D Problem Setup: 4-Triangle Mesh with Mixed BCs\nConsider a simple domain made of 4 triangles in a 1x1 square:\n3 -------- 4 -------- 5\n|\\\\\\\\ tri2 /|\\\\\\\\ tri3 /|\n| \\\\\\\\ /  |  \\\\\\\\ /  |\n| tri0 \\\\/ tri1 |  (interior edges omitted)\n|    /  \\\\  |    /  \\\\  |\n|   /    \\\\ |   /    \\\\ |\n|  /      \\\\|  /      \\\\|\n0 -------- 1 -------- 2\nBoundary Conditions: - Bottom (nodes 0, 1, 2): Dirichlet u = 0 (fixed) - Top (nodes 3, 4, 5): Neumann t-star = 1.0 (prescribed flux) - Left & Right: Natural (homogeneous Neumann, no load)\n\n# Simple 4-triangle mesh for a 1x1 domain\n# Nodes\nnodes = np.array([\n    [0.0, 0.0],  # 0: bottom-left\n    [0.5, 0.0],  # 1: bottom-center\n    [1.0, 0.0],  # 2: bottom-right\n    [0.0, 1.0],  # 3: top-left\n    [0.5, 1.0],  # 4: top-center\n    [1.0, 1.0],  # 5: top-right\n])\nn_nodes = len(nodes)\n\n# Connectivity (triangles)\n# Each row: [node_a, node_b, node_c]\nconnectivity = np.array([\n    [0, 1, 3],  # triangle 0 (bottom-left)\n    [1, 4, 3],  # triangle 1 (top-left)\n    [1, 2, 4],  # triangle 2 (bottom-right)\n    [2, 5, 4],  # triangle 3 (top-right)\n])\nn_elem = len(connectivity)\n\nprint(f\"Mesh: {n_nodes} nodes, {n_elem} elements\")\nprint(f\"\\nNode coordinates:\")\nfor i, (x, y) in enumerate(nodes):\n    print(f\"  Node {i}: ({x:.1f}, {y:.1f})\")\n\nprint(f\"\\nElement connectivity:\")\nfor e, (a, b, c) in enumerate(connectivity):\n    print(f\"  Element {e}: nodes {a}, {b}, {c}\")\n\n\n# For a teaching example, we use a uniform Poisson problem:\n#   -nabla u = 0 in Omega\n#   u = 0 on Gamma_D (bottom)\n#   du/dn = t-star on Gamma_N (top)\n\n# Local stiffness matrix for P1 triangle (standard Poisson)\n# For a uniform reference triangle with area 0.5:\nK_ref = np.array([\n    [1, -1/2, -1/2],\n    [-1/2, 1, -1/2],\n    [-1/2, -1/2, 1],\n]) / 2\n\n# Assemble global system\nK_global = np.zeros((n_nodes, n_nodes))\nF_global = np.zeros(n_nodes)\n\n# Assemble element matrices\nfor e, (a, b, c) in enumerate(connectivity):\n    # Get physical coordinates\n    x_a, y_a = nodes[a]\n    x_b, y_b = nodes[b]\n    x_c, y_c = nodes[c]\n    \n    # Compute physical element area (0.5 times |det(J)|)\n    J = np.array([\n        [x_b - x_a, x_c - x_a],\n        [y_b - y_a, y_c - y_a],\n    ])\n    area = 0.5 * abs(np.linalg.det(J))\n    \n    # Scale local stiffness matrix by area\n    K_e = K_ref / area\n    \n    # Assemble\n    for i, global_i in enumerate([a, b, c]):\n        for j, global_j in enumerate([a, b, c]):\n            K_global[global_i, global_j] += K_e[i, j]\n\nprint(f\"Assembled global K ({n_nodes}x{n_nodes}):\")\nprint(np.round(K_global, 3))\nprint(f\"\\nF_global (before boundary conditions): {F_global}\")",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>10</span>  <span class='chapter-title'>2D Boundary Conditions: Neumann Edges and Dirichlet Lifting</span>"
+    ]
+  },
+  {
+    "objectID": "09_boundary_conditions_2d.html#apply-neumann-bc-on-top-edge",
+    "href": "09_boundary_conditions_2d.html#apply-neumann-bc-on-top-edge",
+    "title": "10  2D Boundary Conditions: Neumann Edges and Dirichlet Lifting",
+    "section": "10.3 Apply Neumann BC on Top Edge",
+    "text": "10.3 Apply Neumann BC on Top Edge\nThe top boundary consists of edges between nodes (3,4) and (4,5). Each has length 0.5.\n\n# Apply Neumann BC: t-star = 1.0 on top edges\nt_star_val = 1.0\nedge_len_val = 0.5  # Length of each top edge\n\n# Top edge 1: nodes 3 and 4\nf_edge_34 = t_star_val * edge_len_val / 2\nF_global[3] += f_edge_34\nF_global[4] += f_edge_34\n\n# Top edge 2: nodes 4 and 5\nf_edge_45 = t_star_val * edge_len_val / 2\nF_global[4] += f_edge_45  # Node 4 appears in both edges!\nF_global[5] += f_edge_45\n\nprint(f\"After adding Neumann flux (t-star={t_star_val}) on top edges:\")\nprint(f\"F_global: {np.round(F_global, 4)}\")\nprint()\nprint(f\"Note: Node 4 (top-center) receives contributions from both edges.\")",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>10</span>  <span class='chapter-title'>2D Boundary Conditions: Neumann Edges and Dirichlet Lifting</span>"
+    ]
+  },
+  {
+    "objectID": "09_boundary_conditions_2d.html#enforce-dirichlet-bc-on-bottom-row-substitution",
+    "href": "09_boundary_conditions_2d.html#enforce-dirichlet-bc-on-bottom-row-substitution",
+    "title": "10  2D Boundary Conditions: Neumann Edges and Dirichlet Lifting",
+    "section": "10.4 Enforce Dirichlet BC on Bottom (Row Substitution)",
+    "text": "10.4 Enforce Dirichlet BC on Bottom (Row Substitution)\n\n# Enforce Dirichlet: u = 0 on bottom (nodes 0, 1, 2)\nK_mod, F_mod = apply_dirichlet_by_row_substitution(\n    K_global.copy(), F_global.copy(),\n    constrained_dofs=[0, 1, 2],\n    prescribed_values=[0.0, 0.0, 0.0]\n)\n\nprint(\"After enforcing u=0 on bottom (row substitution):\")\nprint(f\"Modified K:\")\nprint(np.round(K_mod, 3))\nprint(f\"\\nModified F: {np.round(F_mod, 4)}\")\n\n\n# Solve the system\nu_row = np.linalg.solve(K_mod, F_mod)\n\nprint(\"Solution (row substitution):\")\nfor i in range(n_nodes):\n    x, y = nodes[i]\n    print(f\"  u[{i}] = {u_row[i]:.6f}  (at ({x:.1f}, {y:.1f}))\")",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>10</span>  <span class='chapter-title'>2D Boundary Conditions: Neumann Edges and Dirichlet Lifting</span>"
+    ]
+  },
+  {
+    "objectID": "09_boundary_conditions_2d.html#enforce-same-bcs-using-lifting",
+    "href": "09_boundary_conditions_2d.html#enforce-same-bcs-using-lifting",
+    "title": "10  2D Boundary Conditions: Neumann Edges and Dirichlet Lifting",
+    "section": "10.5 Enforce Same BCs Using Lifting",
+    "text": "10.5 Enforce Same BCs Using Lifting\n\n# Re-assemble (lifting does not modify in place)\nK_global2 = np.zeros((n_nodes, n_nodes))\nF_global2 = np.zeros(n_nodes)\n\nfor e, (a, b, c) in enumerate(connectivity):\n    x_a, y_a = nodes[a]\n    x_b, y_b = nodes[b]\n    x_c, y_c = nodes[c]\n    \n    J = np.array([\n        [x_b - x_a, x_c - x_a],\n        [y_b - y_a, y_c - y_a],\n    ])\n    area = 0.5 * abs(np.linalg.det(J))\n    K_e = K_ref / area\n    \n    for i, global_i in enumerate([a, b, c]):\n        for j, global_j in enumerate([a, b, c]):\n            K_global2[global_i, global_j] += K_e[i, j]\n\n# Add Neumann contributions\nF_global2[3] += f_edge_34\nF_global2[4] += f_edge_34 + f_edge_45\nF_global2[5] += f_edge_45\n\nprint(\"Re-assembled global system for lifting approach\")\n\n\n# Apply lifting: decompose u = u_0 + u_D\nK_ff, F_f, free_dofs, u_lift = apply_dirichlet_by_lifting(\n    K_global2, F_global2,\n    constrained_dofs=[0, 1, 2],\n    prescribed_values=[0.0, 0.0, 0.0]\n)\n\nprint(f\"Lifting: u = u_0 + u_D where\")\nprint(f\"  u_D (lift): {u_lift}\")\nprint(f\"  Free DOFs: {free_dofs}\")\nprint(f\"\\nReduced system K_ff ({len(free_dofs)}x{len(free_dofs)}):\")\nprint(np.round(K_ff, 3))\nprint(f\"\\nModified RHS F_f: {np.round(F_f, 4)}\")\n\n\n# Solve for the free DOFs\nu0_free = np.linalg.solve(K_ff, F_f)\n\n# Expand back to full solution\nu0_full = expand_reduced_solution(u0_free, n_nodes, free_dofs, [0, 1, 2], [0.0, 0.0, 0.0])\n\n# Total solution\nu_lifting = u0_full + u_lift\n\nprint(\"Solution (lifting):\")\nfor i in range(n_nodes):\n    x, y = nodes[i]\n    print(f\"  u[{i}] = {u_lifting[i]:.6f}  (at ({x:.1f}, {y:.1f}))\")",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>10</span>  <span class='chapter-title'>2D Boundary Conditions: Neumann Edges and Dirichlet Lifting</span>"
+    ]
+  },
+  {
+    "objectID": "09_boundary_conditions_2d.html#comparison-of-both-approaches",
+    "href": "09_boundary_conditions_2d.html#comparison-of-both-approaches",
+    "title": "10  2D Boundary Conditions: Neumann Edges and Dirichlet Lifting",
+    "section": "10.6 Comparison of Both Approaches",
+    "text": "10.6 Comparison of Both Approaches\n\nprint(\"Row substitution:\", np.round(u_row, 6))\nprint(\"Lifting:         \", np.round(u_lifting, 6))\nprint()\nprint(f\"Solutions match: {np.allclose(u_row, u_lifting)}\")\nprint(f\"Max difference: {np.max(np.abs(u_row - u_lifting)):.2e}\")",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>10</span>  <span class='chapter-title'>2D Boundary Conditions: Neumann Edges and Dirichlet Lifting</span>"
+    ]
+  },
+  {
+    "objectID": "09_boundary_conditions_2d.html#exercise",
+    "href": "09_boundary_conditions_2d.html#exercise",
+    "title": "10  2D Boundary Conditions: Neumann Edges and Dirichlet Lifting",
+    "section": "10.7 Exercise",
+    "text": "10.7 Exercise\nModify the problem setup above:\n\nChange the Neumann flux value from 1.0 to 2.0 and re-solve using both approaches.\nApply a non-zero Dirichlet condition on the bottom: u(bottom) = 1.0 instead of 0.0\nChange the boundary condition on the top edge to Dirichlet (u=0 on top, keep u=0 on bottom) and compare the solution.\nVisualize the solution by plotting nodal values (e.g., a simple scatter plot at each node with the value as color).\n\nFor each case, verify that both methods still give the same result.\n\n# Your exercise code here",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>10</span>  <span class='chapter-title'>2D Boundary Conditions: Neumann Edges and Dirichlet Lifting</span>"
+    ]
+  },
+  {
+    "objectID": "10_2d_elasticity.html",
+    "href": "10_2d_elasticity.html",
+    "title": "11  2D Linear Elasticity with P1 Triangles",
+    "section": "",
+    "text": "11.1 Imports\nThis notebook extends the scalar Poisson problem to vector elasticity. Instead of a single scalar field \\(u\\), we now solve for two displacement components \\((u_x, u_y)\\) at each node. The key new concepts are:\nWe derive the element stiffness matrix \\(K_e = t A B^T D B\\) where \\(D\\) is the constitutive matrix and \\(B\\) is the strain-displacement matrix.\nimport sympy as sp\nfrom IPython.display import Math, display\nfrom symbolic_fem_workbench import (\n    build_elasticity_triangle_p1_2d, AffineTriangleMap2D,\n    ReferenceTriangleP1,\n)\nfrom symbolic_fem_workbench.elasticity import (\n    plane_stress_D, plane_strain_D, B_matrix_triangle_2d,\n    element_stiffness_BtDB,\n)",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>11</span>  <span class='chapter-title'>2D Linear Elasticity with P1 Triangles</span>"
+    ]
+  },
+  {
+    "objectID": "10_2d_elasticity.html#voigt-notation-from-tensors-to-vectors",
+    "href": "10_2d_elasticity.html#voigt-notation-from-tensors-to-vectors",
+    "title": "11  2D Linear Elasticity with P1 Triangles",
+    "section": "11.2 Voigt Notation: From Tensors to Vectors",
+    "text": "11.2 Voigt Notation: From Tensors to Vectors\nIn 2D elasticity, we work with the symmetric stress and strain tensors:\n\\[\\boldsymbol{\\sigma} = \\begin{bmatrix} \\sigma_{xx} & \\tau_{xy} \\\\ \\tau_{xy} & \\sigma_{yy} \\end{bmatrix}, \\quad \\boldsymbol{\\varepsilon} = \\begin{bmatrix} \\varepsilon_{xx} & \\gamma_{xy}/2 \\\\ \\gamma_{xy}/2 & \\varepsilon_{yy} \\end{bmatrix}\\]\nVoigt notation compresses these into 3-component vectors (for 2D problems):\n\\[\\mathbf{\\sigma} = \\begin{bmatrix} \\sigma_{xx} \\\\ \\sigma_{yy} \\\\ \\tau_{xy} \\end{bmatrix}, \\quad \\boldsymbol{\\varepsilon} = \\begin{bmatrix} \\varepsilon_{xx} \\\\ \\varepsilon_{yy} \\\\ \\gamma_{xy} \\end{bmatrix}\\]\nNote: The shear strain \\(\\gamma_{xy} = 2 \\varepsilon_{xy}\\) (engineering shear strain).\nThe advantage: we can write the constitutive relation as a matrix equation: \\[\\mathbf{\\sigma} = \\mathbf{D} \\boldsymbol{\\varepsilon}\\]\nwhere \\(\\mathbf{D}\\) is the 3×3 constitutive matrix (also called the elasticity or stiffness matrix).",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>11</span>  <span class='chapter-title'>2D Linear Elasticity with P1 Triangles</span>"
+    ]
+  },
+  {
+    "objectID": "10_2d_elasticity.html#plane-stress-vs.-plane-strain",
+    "href": "10_2d_elasticity.html#plane-stress-vs.-plane-strain",
+    "title": "11  2D Linear Elasticity with P1 Triangles",
+    "section": "11.3 Plane Stress vs. Plane Strain",
+    "text": "11.3 Plane Stress vs. Plane Strain\nFor 2D problems, we make a simplifying assumption about the out-of-plane stress/strain.\n\nE, nu = sp.symbols(\"E nu\", positive=True)\n\n# Plane stress: sigma_zz = 0 (thin plates, no out-of-plane loading)\nD_stress = plane_stress_D(E, nu)\nprint(\"Plane stress D (thin plates):\")\nprint(\"\\nD =\")\ndisplay(Math(sp.latex(D_stress)))\n\n# Plane strain: epsilon_zz = 0 (thick bodies, constrained out-of-plane)\nD_strain = plane_strain_D(E, nu)\nprint(\"\\n\\nPlane strain D (thick bodies, constrained):\")\nprint(\"\\nD =\")\ndisplay(Math(sp.latex(D_strain)))",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>11</span>  <span class='chapter-title'>2D Linear Elasticity with P1 Triangles</span>"
+    ]
+  },
+  {
+    "objectID": "10_2d_elasticity.html#strain-displacement-matrix-b-from-displacements-to-strains",
+    "href": "10_2d_elasticity.html#strain-displacement-matrix-b-from-displacements-to-strains",
+    "title": "11  2D Linear Elasticity with P1 Triangles",
+    "section": "11.4 Strain-Displacement Matrix (B): From Displacements to Strains",
+    "text": "11.4 Strain-Displacement Matrix (B): From Displacements to Strains\nFor a P1 triangle with 3 nodes and 2 DOF per node (total 6 DOF), the strain-displacement relation is:\n\\[\\boldsymbol{\\varepsilon} = \\mathbf{B} \\mathbf{d}\\]\nwhere \\(\\mathbf{d} = [u_1, v_1, u_2, v_2, u_3, v_3]^T\\) are the nodal displacements and \\(\\mathbf{B}\\) is 3×6.\nThe B matrix is built from the shape function gradients \\(\\frac{\\partial N_i}{\\partial x}\\) and \\(\\frac{\\partial N_i}{\\partial y}\\):\n\\[\\mathbf{B} = \\begin{bmatrix}\n\\frac{\\partial N_1}{\\partial x} & 0 & \\frac{\\partial N_2}{\\partial x} & 0 & \\frac{\\partial N_3}{\\partial x} & 0 \\\\\n0 & \\frac{\\partial N_1}{\\partial y} & 0 & \\frac{\\partial N_2}{\\partial y} & 0 & \\frac{\\partial N_3}{\\partial y} \\\\\n\\frac{\\partial N_1}{\\partial y} & \\frac{\\partial N_1}{\\partial x} & \\frac{\\partial N_2}{\\partial y} & \\frac{\\partial N_2}{\\partial x} & \\frac{\\partial N_3}{\\partial y} & \\frac{\\partial N_3}{\\partial x}\n\\end{bmatrix}\\]\n\n# Build B for the unit right triangle\nxi, eta = sp.symbols(\"xi eta\")\nref = ReferenceTriangleP1(xi, eta)\n\n# Unit right triangle vertices: (0,0), (1,0), (0,1)\nx1, y1 = 0, 0\nx2, y2 = 1, 0\nx3, y3 = 0, 1\n\ngeom = AffineTriangleMap2D(xi=xi, eta=eta, x1=x1, y1=y1, x2=x2, y2=y2, x3=x3, y3=y3)\n\n# Physical-space gradients via J^{-T}\nJinvT = geom.inverse_transpose_jacobian\ndN_dx = []\ndN_dy = []\nfor grad_ref in ref.shape_gradients_reference:\n    grad_phys = sp.simplify(JinvT * grad_ref)\n    dN_dx.append(grad_phys[0])\n    dN_dy.append(grad_phys[1])\n\nB = B_matrix_triangle_2d(dN_dx, dN_dy)\nprint(\"B matrix for unit right triangle (3×6):\")\nprint(\"(Each row represents one strain component: ε_xx, ε_yy, γ_xy)\")\nprint(\"(Each pair of columns represents one node's DOF: u_i, v_i)\\n\")\ndisplay(Math(r\"B = \" + sp.latex(B)))",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>11</span>  <span class='chapter-title'>2D Linear Elasticity with P1 Triangles</span>"
+    ]
+  },
+  {
+    "objectID": "10_2d_elasticity.html#element-stiffness-matrix-k_e-t-a-bt-d-b",
+    "href": "10_2d_elasticity.html#element-stiffness-matrix-k_e-t-a-bt-d-b",
+    "title": "11  2D Linear Elasticity with P1 Triangles",
+    "section": "11.5 Element Stiffness Matrix: K_e = t A B^T D B",
+    "text": "11.5 Element Stiffness Matrix: K_e = t A B^T D B\nFor a constant-strain element (P1 triangle), the strain and D are constant over the element. The weak form integral simplifies to:\n\\[K_e = t \\cdot A \\cdot B^T D B\\]\nwhere: - \\(t\\) is the plate thickness (for 2D plane stress problems) - \\(A\\) is the element area - \\(B\\) is the strain-displacement matrix (3×6) - \\(D\\) is the constitutive matrix (3×3) - \\(K_e\\) is the 6×6 element stiffness matrix\n\n# Use the pre-built workflow to get Ke\ndata = build_elasticity_triangle_p1_2d(\"plane_stress\")\nKe = data[\"Ke_unit_right_triangle\"]\n\nprint(\"6×6 element stiffness matrix for unit right triangle (plane stress):\")\nprint(\"(with E=1, ν=1/3, t=1 for readability)\\n\")\n\n# Substitute specific values for display\nKe_specific = Ke.subs({data[\"E\"]: 1, data[\"nu\"]: sp.Rational(1, 3), data[\"t\"]: 1})\ndisplay(Math(r\"K_e = \" + sp.latex(sp.simplify(Ke_specific))))\n\nprint(\"\\nProperties:\")\nprint(f\"  Symmetric: {sp.simplify(Ke - Ke.T) == sp.zeros(6, 6)}\")\nprint(f\"  Shape: {Ke.shape}\")",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>11</span>  <span class='chapter-title'>2D Linear Elasticity with P1 Triangles</span>"
+    ]
+  },
+  {
+    "objectID": "10_2d_elasticity.html#plane-stress-vs.-plane-strain-comparison",
+    "href": "10_2d_elasticity.html#plane-stress-vs.-plane-strain-comparison",
+    "title": "11  2D Linear Elasticity with P1 Triangles",
+    "section": "11.6 Plane Stress vs. Plane Strain Comparison",
+    "text": "11.6 Plane Stress vs. Plane Strain Comparison\nLet’s compare the two formulations on the same unit right triangle:\n\n# Build for both formulations\ndata_ps = build_elasticity_triangle_p1_2d(\"plane_stress\")\ndata_pe = build_elasticity_triangle_p1_2d(\"plane_strain\")\n\nKe_ps = data_ps[\"Ke_unit_right_triangle\"]\nKe_pe = data_pe[\"Ke_unit_right_triangle\"]\n\n# Compare with E=1, nu=0.3, t=1\nE_val, nu_val, t_val = 1, sp.Rational(3, 10), 1\nKe_ps_num = Ke_ps.subs({data_ps[\"E\"]: E_val, data_ps[\"nu\"]: nu_val, data_ps[\"t\"]: t_val})\nKe_pe_num = Ke_pe.subs({data_pe[\"E\"]: E_val, data_pe[\"nu\"]: nu_val, data_pe[\"t\"]: t_val})\n\nprint(\"Plane stress K_e (E=1, ν=0.3, t=1):\")\ndisplay(Math(sp.latex(Ke_ps_num)))\n\nprint(\"\\nPlane strain K_e (E=1, ν=0.3, t=1):\")\ndisplay(Math(sp.latex(Ke_pe_num)))\n\nprint(f\"\\nStiffness ratio (plane strain / plane stress):\")\nratio = sp.simplify((1 - nu_val) / (1 - 2*nu_val))\nprint(f\"  Factor ≈ {float(ratio):.4f}\")\nprint(f\"  Plane strain is stiffer due to out-of-plane constraint.\")",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>11</span>  <span class='chapter-title'>2D Linear Elasticity with P1 Triangles</span>"
+    ]
+  },
+  {
+    "objectID": "10_2d_elasticity.html#material-parameters-and-their-effect",
+    "href": "10_2d_elasticity.html#material-parameters-and-their-effect",
+    "title": "11  2D Linear Elasticity with P1 Triangles",
+    "section": "11.7 Material Parameters and Their Effect",
+    "text": "11.7 Material Parameters and Their Effect\nThe element stiffness depends on: - E (Young’s modulus): Higher E → stiffer material - ν (Poisson’s ratio): Controls how transverse strains relate to axial strains - t (thickness): For plane stress, stiffer with larger t\n\n# Show how the D matrix changes with Poisson's ratio\nD_template = plane_stress_D(1, nu)  # E=1 for simplicity\n\nprint(\"Plane stress D for E=1:\")\ndisplay(Math(sp.latex(D_template)))\n\nprint(f\"\\nKey observations:\")\nprint(f\"  - Diagonal terms scale with 1/(1-ν²), increasing with ν\")\nprint(f\"  - Off-diagonal coupling (D[0,1], D[1,0]) = ν·E/(1-ν²)\")\nprint(f\"  - Shear modulus D[2,2] = E/(2(1+ν)) decreases with ν\")\n\n# Numerical examples\nprint(f\"\\nFor E=1, plane stress:\")\nfor nu_test in [0.0, 0.2, 0.3, 0.49]:\n    D_val = D_template.subs(nu, nu_test)\n    diag_00 = float(D_val[0, 0])\n    print(f\"  ν = {nu_test:5.2f}: D[0,0] = {diag_00:8.4f}\")",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>11</span>  <span class='chapter-title'>2D Linear Elasticity with P1 Triangles</span>"
+    ]
+  },
+  {
+    "objectID": "10_2d_elasticity.html#worked-example-simple-2-element-cantilever",
+    "href": "10_2d_elasticity.html#worked-example-simple-2-element-cantilever",
+    "title": "11  2D Linear Elasticity with P1 Triangles",
+    "section": "11.8 Worked Example: Simple 2-Element Cantilever",
+    "text": "11.8 Worked Example: Simple 2-Element Cantilever\nConsider a small cantilever beam modeled with 2 right triangles. This demonstrates assembly.\n\n# Two-triangle cantilever:\n# Element 1: (0,0) - (1,0) - (0,1)\n# Element 2: (1,0) - (1,1) - (0,1)\n\nprint(\"Example mesh: Two right triangles forming a square\")\nprint(\"Nodes: (0,0), (1,0), (0,1), (1,1)\")\nprint(\"Elem 1: nodes 0-1-2\")\nprint(\"Elem 2: nodes 1-3-2\")\nprint()\nprint(\"With plane stress: E=1000, ν=0.3, t=0.1\")\n\n# Get element stiffness for one element\ndata = build_elasticity_triangle_p1_2d(\"plane_stress\")\nKe_1 = data[\"Ke_unit_right_triangle\"]\nKe_1_num = Ke_1.subs({data[\"E\"]: 1000, data[\"nu\"]: 0.3, data[\"t\"]: 0.1})\n\n# Convert to float for better display\nKe_1_float = sp.Matrix([[float(x) for x in row] for row in Ke_1_num.tolist()])\n\nprint(\"\\nElement stiffness Ke (unit right triangle):\")\nprint(Ke_1_float.evalf(3))",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>11</span>  <span class='chapter-title'>2D Linear Elasticity with P1 Triangles</span>"
+    ]
+  },
+  {
+    "objectID": "10_2d_elasticity.html#exercise",
+    "href": "10_2d_elasticity.html#exercise",
+    "title": "11  2D Linear Elasticity with P1 Triangles",
+    "section": "11.9 Exercise",
+    "text": "11.9 Exercise\n\nVerify symmetry: Show that \\(K_e = K_e^T\\) for both plane stress and plane strain formulations. Why is this property important?\nEffect of aspect ratio: Compute the B matrix and \\(K_e\\) for a tall, thin triangle with vertices at \\((0,0)\\), \\((0.1, 0)\\), \\((0, 1)\\). How do the stiffness values change compared to the unit right triangle?\n3D extension: The module also provides isotropic_3d_D() and B_matrix_tetra_3d(). Inspect these functions and explain how the Voigt notation extends to 6 components for 3D.\nPoisson effect: Fix E and t, and plot the diagonal entries of \\(K_e\\) as functions of \\(\\nu\\) for \\(\\nu \\in [0, 0.49]\\). Which entries increase or decrease with \\(\\nu\\)?\n\n\n# Exercise workspace",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>11</span>  <span class='chapter-title'>2D Linear Elasticity with P1 Triangles</span>"
+    ]
+  },
+  {
+    "objectID": "11_3d_elasticity.html",
+    "href": "11_3d_elasticity.html",
+    "title": "12  3D Linear Elasticity with P1 Tetrahedra",
+    "section": "",
+    "text": "12.1 3D Constitutive Matrix\nThis notebook extends the 2D elasticity concepts to full 3D. We derive the element stiffness matrix K_e for a linear tetrahedron under isotropic elasticity, demonstrating:\nIn 3D, stress and strain are both 6-component vectors under Voigt notation:\n\\[\\boldsymbol{\\sigma} = [\\sigma_{xx}, \\sigma_{yy}, \\sigma_{zz}, \\tau_{yz}, \\tau_{xz}, \\tau_{xy}]^T\\] \\[\\boldsymbol{\\varepsilon} = [\\varepsilon_{xx}, \\varepsilon_{yy}, \\varepsilon_{zz}, \\gamma_{yz}, \\gamma_{xz}, \\gamma_{xy}]^T\\]\nThe isotropic constitutive matrix for linear elasticity is:\nE, nu = sp.symbols(\"E nu\", positive=True)\nD = isotropic_3d_D(E, nu)\n\nprint(\"6×6 isotropic constitutive matrix:\")\ndisplay(Math(r\"D = \" + sp.latex(D)))\nprint(f\"\\nMatrix shape: {D.shape}\")",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>12</span>  <span class='chapter-title'>3D Linear Elasticity with P1 Tetrahedra</span>"
+    ]
+  },
+  {
+    "objectID": "11_3d_elasticity.html#d-constitutive-matrix",
+    "href": "11_3d_elasticity.html#d-constitutive-matrix",
+    "title": "12  3D Linear Elasticity with P1 Tetrahedra",
+    "section": "",
+    "text": "12.1.1 Material Parameters\nThe matrix is written in terms of: - E — Young’s modulus - ν — Poisson’s ratio\nThe off-diagonal shear blocks use the Lamé parameters: \\[\\lambda = \\frac{E\\nu}{(1+\\nu)(1-2\\nu)}, \\quad \\mu = \\frac{E}{2(1+\\nu)}\\]",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>12</span>  <span class='chapter-title'>3D Linear Elasticity with P1 Tetrahedra</span>"
+    ]
+  },
+  {
+    "objectID": "11_3d_elasticity.html#d-b-matrix",
+    "href": "11_3d_elasticity.html#d-b-matrix",
+    "title": "12  3D Linear Elasticity with P1 Tetrahedra",
+    "section": "12.2 3D B-Matrix",
+    "text": "12.2 3D B-Matrix\nThe strain-displacement matrix B is 6×12 for a tetrahedron with 4 nodes (3 DOFs each). It maps nodal displacements u = [u₁, v₁, w₁, u₂, v₂, w₂, u₃, v₃, w₃, u₄, v₄, w₄]^T to Voigt strains:\n\\[\\boldsymbol{\\varepsilon} = \\mathbf{B} \\mathbf{u}\\]\nFor P1 tetrahedra with constant shape function gradients, B is constant over the element.\n\n# Build the complete 3D elasticity problem for a generic tetrahedron\ndata = build_elasticity_tetra_p1_3d()\n\nprint(f\"B matrix shape: {data['B'].shape}\")\nprint(f\"\\nFor the reference tetrahedron with vertices:\")\nfor i, node in enumerate(data['reference_tetra'].nodes, 1):\n    print(f\"  Node {i}: {node}\")\n\nprint(f\"\\n3D Jacobian matrix:\")\ndisplay(Math(r\"J = \" + sp.latex(data[\"jacobian\"])))\n\n\n12.2.1 Volume Calculation\nFor an affine map, the volume is determined by the Jacobian:\n\nprint(\"Volume of tetrahedron:\")\nprint(f\"V = |det(J)| / 6 = {data['volume']}\")",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>12</span>  <span class='chapter-title'>3D Linear Elasticity with P1 Tetrahedra</span>"
+    ]
+  },
+  {
+    "objectID": "11_3d_elasticity.html#element-stiffness-k_e-v-bt-d-b",
+    "href": "11_3d_elasticity.html#element-stiffness-k_e-v-bt-d-b",
+    "title": "12  3D Linear Elasticity with P1 Tetrahedra",
+    "section": "12.3 Element Stiffness K_e = V B^T D B",
+    "text": "12.3 Element Stiffness K_e = V B^T D B\nThe element stiffness matrix is computed as:\n\\[\\mathbf{K}_e = V \\mathbf{B}^T \\mathbf{D} \\mathbf{B}\\]\nwhere V is the element volume. This is a 12×12 symmetric positive-definite matrix.\n\n# Element stiffness for the unit right tetrahedron\nKe = data[\"Ke_unit_right_tetra\"]\n\nprint(f\"K_e shape: {Ke.shape}\")\nprint(f\"Symmetric: {sp.simplify(Ke - Ke.T) == sp.zeros(12, 12)}\")\n\n# Evaluate for steel-like material: E = 210 GPa, ν = 0.3\nKe_steel = Ke.subs({E: 210e9, nu: sp.Rational(3, 10)})\nKe_steel_num = np.array(Ke_steel, dtype=float)\n\nprint(f\"\\nK_e (E=210 GPa, ν=0.3, unit tet):\")\nprint(f\"  trace(K_e) = {np.trace(Ke_steel_num):.4e}\")\nprint(f\"  max|K_e| = {np.max(np.abs(Ke_steel_num)):.4e}\")\nprint(f\"  min eigenvalue = {np.min(np.linalg.eigvals(Ke_steel_num)):.4e}\")",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>12</span>  <span class='chapter-title'>3D Linear Elasticity with P1 Tetrahedra</span>"
+    ]
+  },
+  {
+    "objectID": "11_3d_elasticity.html#symbolic-form",
+    "href": "11_3d_elasticity.html#symbolic-form",
+    "title": "12  3D Linear Elasticity with P1 Tetrahedra",
+    "section": "12.4 Symbolic Form",
+    "text": "12.4 Symbolic Form\nFor the unit right tetrahedron with volume 1/6, the symbolic stiffness is:\n\n# Show a compact form by reducing to essential parameters\nprint(\"Symbolic K_e (showing structure):\")\nprint(f\"Shape: {Ke.shape}\")\nprint(f\"First 3×3 block (DOFs at node 1):\")\nK11 = Ke[:3, :3]\ndisplay(Math(sp.latex(K11)))",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>12</span>  <span class='chapter-title'>3D Linear Elasticity with P1 Tetrahedra</span>"
+    ]
+  },
+  {
+    "objectID": "11_3d_elasticity.html#exercise",
+    "href": "11_3d_elasticity.html#exercise",
+    "title": "12  3D Linear Elasticity with P1 Tetrahedra",
+    "section": "12.5 Exercise",
+    "text": "12.5 Exercise\nCompare how Poisson’s ratio affects the stiffness matrix. Plot the eigenvalues of K_e for different values of ν (say 0.0, 0.25, 0.49) and observe: - How the bulk modulus K = E / (3(1-2ν)) behaves as ν → 0.5 (incompressibility limit) - Which eigenvalues grow largest\n\n# Exercise: Eigenvalue sensitivity to Poisson's ratio\nnu_values = [0.0, 0.25, 0.3, 0.49]\nE_val = 1.0  # Normalize to E = 1 for comparison\n\nfig, ax = plt.subplots(figsize=(10, 6))\n\nfor nu_val in nu_values:\n    Ke_num = np.array(Ke.subs({E: E_val, nu: nu_val}), dtype=float)\n    eigs = np.sort(np.linalg.eigvals(Ke_num))[::-1]  # largest first\n    ax.semilogy(range(1, len(eigs)+1), np.abs(eigs), marker='o', label=f'ν={nu_val:.2f}')\n\nax.set_xlabel('Eigenvalue index')\nax.set_ylabel('Eigenvalue magnitude')\nax.set_title('Eigenvalue Spectrum of K_e (unit tet, E=1) vs Poisson Ratio')\nax.legend()\nax.grid(True, alpha=0.3)\nplt.tight_layout()\nplt.show()\n\n# Print eigenvalue counts (rank)\nprint(\"Eigenvalue summary (E=1, unit right tet):\")\nfor nu_val in nu_values:\n    Ke_num = np.array(Ke.subs({E: E_val, nu: nu_val}), dtype=float)\n    eigs = np.linalg.eigvals(Ke_num)\n    rank = np.sum(np.abs(eigs) &gt; 1e-10)\n    print(f\"  ν={nu_val:.2f}: rank={rank}, λ_max/λ_min={np.max(np.abs(eigs))/np.max(np.abs(eigs[eigs != 0])):.2e}\")",
+    "crumbs": [
+      "2D / 3D Problems",
+      "<span class='chapter-number'>12</span>  <span class='chapter-title'>3D Linear Elasticity with P1 Tetrahedra</span>"
+    ]
+  },
+  {
+    "objectID": "12_iheartla_and_widgets.html",
+    "href": "12_iheartla_and_widgets.html",
+    "title": "13  Code Generation and Interactive Exploration",
+    "section": "",
+    "text": "13.1 Part A: I❤️LA Export\nThis notebook bridges symbolic derivations to executable code and interactive visualization. We demonstrate:\nI❤️LA (Automatically generated fast Linear Algebra) is a math-to-code compiler that takes human-readable mathematical notation and generates optimized C++ code for numerical computation.\nOur symbolic FEM workbench can export matrices and expressions in I❤️LA notation for further compilation. This bridges the gap between symbolic derivation and production-grade numerical kernels.",
+    "crumbs": [
+      "Advanced Topics",
+      "<span class='chapter-number'>13</span>  <span class='chapter-title'>Code Generation and Interactive Exploration</span>"
+    ]
+  },
+  {
+    "objectID": "12_iheartla_and_widgets.html#part-a-ila-export",
+    "href": "12_iheartla_and_widgets.html#part-a-ila-export",
+    "title": "13  Code Generation and Interactive Exploration",
+    "section": "",
+    "text": "13.1.1 1D Bar Stiffness in I❤️LA\n\n# Build the 1D bar problem\nproblem_1d = build_bar_1d_local_problem()\n\nprint(\"=== 1D Bar Element Stiffness Matrix ===\")\nprint()\nprint(iheartla_matrix_definition(\"K_e\", problem_1d[\"Ke\"]))\nprint()\nprint(\"=== 1D Bar Element Load Vector ===\")\nprint()\nprint(iheartla_matrix_definition(\"f_e\", problem_1d[\"fe\"]))\n\n\n\n13.1.2 2D Poisson Triangle in I❤️LA\n\n# Build the 2D Poisson problem\nproblem_2d = build_poisson_triangle_p1_local_problem()\n\nprint(\"=== 2D Poisson Triangle (Unit Right Triangle) ===\")\nprint()\nprint(iheartla_matrix_definition(\"K_e\", problem_2d[\"Ke_unit_right_triangle\"]))\nprint()\nprint(\"=== 2D Poisson Load Vector ===\")\nprint()\nprint(iheartla_matrix_definition(\"f_e\", problem_2d[\"fe_unit_right_triangle\"]))",
+    "crumbs": [
+      "Advanced Topics",
+      "<span class='chapter-number'>13</span>  <span class='chapter-title'>Code Generation and Interactive Exploration</span>"
+    ]
+  },
+  {
+    "objectID": "12_iheartla_and_widgets.html#part-b-interactive-parameter-exploration",
+    "href": "12_iheartla_and_widgets.html#part-b-interactive-parameter-exploration",
+    "title": "13  Code Generation and Interactive Exploration",
+    "section": "13.2 Part B: Interactive Parameter Exploration",
+    "text": "13.2 Part B: Interactive Parameter Exploration\nUsing matplotlib and optional ipywidgets, we explore how element properties change with parameters.\n\n13.2.1 1D Bar Stiffness vs Length\n\n# Create a numpy function from the symbolic Ke\nke_fn = sp.lambdify(\n    (problem_1d[\"L\"], problem_1d[\"E\"], problem_1d[\"A\"]),\n    problem_1d[\"Ke\"][0, 0],  # K_e[0,0] = EA/L\n    \"numpy\"\n)\n\ndef plot_stiffness_vs_length(E_val=200e9, A_val=1e-4):\n    \"\"\"Show how element stiffness scales with element length.\"\"\"\n    lengths = np.linspace(0.01, 2.0, 100)\n    k11_vals = [ke_fn(L, E_val, A_val) for L in lengths]\n    \n    fig, ax = plt.subplots(figsize=(10, 5))\n    ax.plot(lengths, k11_vals, linewidth=2, color='steelblue')\n    ax.set_xlabel('Element length L [m]', fontsize=12)\n    ax.set_ylabel('K_e[0,0] = EA/L [N/m]', fontsize=12)\n    ax.set_title(f'Element Stiffness vs Length\\n(E={E_val/1e9:.0f} GPa, A={A_val*1e4:.2f} cm²)', fontsize=14)\n    ax.grid(True, alpha=0.3)\n    plt.tight_layout()\n    plt.show()\n\n# Static plots with different parameters\nprint(\"Steel bar (E=210 GPa, A=1×10⁻⁴ m²):\")\nplot_stiffness_vs_length(E_val=210e9, A_val=1e-4)\n\nprint(\"\\nAluminum bar (E=70 GPa, A=1×10⁻⁴ m²):\")\nplot_stiffness_vs_length(E_val=70e9, A_val=1e-4)\n\n\n\n13.2.2 Interactive Widgets (if ipywidgets available)\n\ntry:\n    from ipywidgets import interact, FloatSlider\n    \n    @interact(\n        E_val=FloatSlider(min=1e9, max=400e9, step=10e9, value=200e9, description=\"E [Pa]\"),\n        A_val=FloatSlider(min=1e-5, max=1e-2, step=1e-5, value=1e-4, description=\"A [m²]\"),\n    )\n    def interactive_1d_stiffness(E_val, A_val):\n        plot_stiffness_vs_length(E_val, A_val)\n        \nexcept ImportError:\n    print(\"ipywidgets not available — using static plots above.\")\n    print(\"Install with: pip install ipywidgets\")",
+    "crumbs": [
+      "Advanced Topics",
+      "<span class='chapter-number'>13</span>  <span class='chapter-title'>Code Generation and Interactive Exploration</span>"
+    ]
+  },
+  {
+    "objectID": "12_iheartla_and_widgets.html#part-c-interactive-triangle-deformation",
+    "href": "12_iheartla_and_widgets.html#part-c-interactive-triangle-deformation",
+    "title": "13  Code Generation and Interactive Exploration",
+    "section": "13.3 Part C: Interactive Triangle Deformation",
+    "text": "13.3 Part C: Interactive Triangle Deformation\nExplore how the element stiffness matrix changes as we vary the triangle shape.\n\n# Compile the 2D Poisson Ke into a numpy function\ngeom = problem_2d[\"geometry\"]\nke_fn_2d = sp.lambdify(\n    (geom.x1, geom.y1, geom.x2, geom.y2, geom.x3, geom.y3),\n    problem_2d[\"Ke\"],\n    \"numpy\"\n)\n\n# Define several triangle configurations\nconfigs = [\n    (\"Unit right triangle\", (0, 0, 1, 0, 0, 1)),\n    (\"Equilateral\", (0, 0, 1, 0, 0.5, np.sqrt(3)/2)),\n    (\"Isoceles right (2×2)\", (0, 0, 2, 0, 0, 2)),\n    (\"Flat/degenerate\", (0, 0, 1, 0, 0.5, 0.01)),\n]\n\nprint(\"=== Element Stiffness Matrix Properties by Triangle Shape ===\")\nprint(f\"{'Shape':&lt;25} {'trace(K_e)':&gt;12} {'max|K_e|':&gt;12} {'cond(K_e)':&gt;12}\")\nprint(\"-\" * 62)\n\nfor name, (x1, y1, x2, y2, x3, y3) in configs:\n    Ke = np.array(ke_fn_2d(x1, y1, x2, y2, x3, y3), dtype=float)\n    trace = np.trace(Ke)\n    max_val = np.max(np.abs(Ke))\n    cond = np.linalg.cond(Ke)\n    print(f\"{name:&lt;25} {trace:&gt;12.4f} {max_val:&gt;12.4f} {cond:&gt;12.2e}\")\n\n\n13.3.1 Visualization: Stiffness vs Aspect Ratio\n\n# Vary the aspect ratio of an isoceles right triangle\naspect_ratios = np.logspace(-2, 1, 50)  # 0.01 to 10\ntraces = []\nconditions = []\n\nfor ar in aspect_ratios:\n    # Right triangle with legs of length 1 and ar\n    Ke = np.array(ke_fn_2d(0, 0, 1, 0, 0, ar), dtype=float)\n    traces.append(np.trace(Ke))\n    conditions.append(np.linalg.cond(Ke))\n\nfig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))\n\n# Trace\nax1.semilogx(aspect_ratios, traces, linewidth=2, color='steelblue')\nax1.set_xlabel('Aspect ratio (height/width)', fontsize=12)\nax1.set_ylabel('trace(K_e)', fontsize=12)\nax1.set_title('Stiffness Matrix Trace vs Triangle Aspect Ratio', fontsize=13)\nax1.grid(True, alpha=0.3)\n\n# Condition number\nax2.loglog(aspect_ratios, conditions, linewidth=2, color='coral')\nax2.set_xlabel('Aspect ratio (height/width)', fontsize=12)\nax2.set_ylabel('Condition number', fontsize=12)\nax2.set_title('Matrix Condition Number vs Aspect Ratio', fontsize=13)\nax2.grid(True, alpha=0.3, which='both')\n\nplt.tight_layout()\nplt.show()\n\nprint(f\"\\nCondition number range: {np.min(conditions):.2e} to {np.max(conditions):.2e}\")\nprint(f\"Trace range: {np.min(traces):.4f} to {np.max(traces):.4f}\")",
+    "crumbs": [
+      "Advanced Topics",
+      "<span class='chapter-number'>13</span>  <span class='chapter-title'>Code Generation and Interactive Exploration</span>"
+    ]
+  },
+  {
+    "objectID": "12_iheartla_and_widgets.html#exercise",
+    "href": "12_iheartla_and_widgets.html#exercise",
+    "title": "13  Code Generation and Interactive Exploration",
+    "section": "13.4 Exercise",
+    "text": "13.4 Exercise\nCondition number analysis:\n\nWhy does the condition number increase dramatically for very thin or very tall triangles?\nWhat does this tell you about the numerical stability of solving systems with K_e for distorted elements?\nPropose a mesh quality metric based on the aspect ratio that would flag problematic elements.\n\n\n# Optional: Implement a mesh quality metric\n# (Student exercise)\ndef element_quality_metric(x1, y1, x2, y2, x3, y3):\n    \"\"\"\n    Define a quality metric for a triangle element.\n    Some options:\n      - aspect ratio\n      - minimum angle\n      - area-to-perimeter ratio\n    \"\"\"\n    pass\n\nprint(\"Exercise: Implement element_quality_metric() above and rank the test triangles.\")",
+    "crumbs": [
+      "Advanced Topics",
+      "<span class='chapter-number'>13</span>  <span class='chapter-title'>Code Generation and Interactive Exploration</span>"
+    ]
+  },
+  {
+    "objectID": "13_time_dependent_fem.html",
+    "href": "13_time_dependent_fem.html",
+    "title": "14  Time-Dependent FEM: Mass Matrix and Time Stepping",
+    "section": "",
+    "text": "14.1 1. Symbolic Mass Matrix Derivation\nThis notebook covers the semi-discrete FEM formulation for time-dependent problems. We build the consistent mass matrix \\(M_e\\) using the workbench, assemble it alongside the stiffness matrix \\(K\\), and solve using both implicit (backward Euler) and explicit (forward Euler) time-stepping schemes.\nLearning objectives:\nFor a time-dependent heat equation \\(\\rho c \\, \\partial u / \\partial t = \\partial/\\partial x(k \\, \\partial u / \\partial x) + q\\), the FEM semi-discretization yields:\n\\[M \\dot{a} + K a = F\\]\nwhere \\(M_{ij} = \\int_0^L \\rho c \\, N_i \\, N_j \\, dx\\) is the consistent mass matrix.\nThe workbench derives this symbolically for a two-node linear element:\nmass = build_bar_1d_mass_matrix()\n\ndisplay(Markdown(\"**Element mass matrix $M_e$:**\"))\ndisplay(Math(sp.latex(mass['Me'])))\n\ndisplay(Markdown(f\"**Symbols:** L = {mass['L']}, rho = {mass['rho']}, A = {mass['A']}\"))",
+    "crumbs": [
+      "Advanced Topics",
+      "<span class='chapter-number'>14</span>  <span class='chapter-title'>Time-Dependent FEM: Mass Matrix and Time Stepping</span>"
+    ]
+  },
+  {
+    "objectID": "13_time_dependent_fem.html#symbolic-mass-matrix-derivation",
+    "href": "13_time_dependent_fem.html#symbolic-mass-matrix-derivation",
+    "title": "14  Time-Dependent FEM: Mass Matrix and Time Stepping",
+    "section": "",
+    "text": "14.1.1 Lumped Mass Matrix\nA common simplification is the lumped mass matrix, obtained by summing each row of the consistent mass matrix and placing the result on the diagonal. This makes the mass matrix diagonal, which is critical for explicit time-stepping efficiency.\n\nMe = mass['Me']\nrho, A, L = mass['rho'], mass['A'], mass['L']\n\n# Lumped mass: row-sum technique\nMe_lumped = sp.diag(*[sum(Me.row(i)) for i in range(Me.rows)])\n\ndisplay(Markdown(\"**Consistent mass matrix:**\"))\ndisplay(Math(sp.latex(Me)))\n\ndisplay(Markdown(\"**Lumped mass matrix (row-sum):**\"))\ndisplay(Math(sp.latex(Me_lumped)))\n\ndisplay(Markdown(\n    \"Note: Both have the same total mass $\\\\rho A L$, but the lumped version \"\n    \"distributes it equally to the two nodes.\"\n))",
+    "crumbs": [
+      "Advanced Topics",
+      "<span class='chapter-number'>14</span>  <span class='chapter-title'>Time-Dependent FEM: Mass Matrix and Time Stepping</span>"
+    ]
+  },
+  {
+    "objectID": "13_time_dependent_fem.html#also-retrieve-the-stiffness-matrix-and-load-vector",
+    "href": "13_time_dependent_fem.html#also-retrieve-the-stiffness-matrix-and-load-vector",
+    "title": "14  Time-Dependent FEM: Mass Matrix and Time Stepping",
+    "section": "14.2 2. Also Retrieve the Stiffness Matrix and Load Vector",
+    "text": "14.2 2. Also Retrieve the Stiffness Matrix and Load Vector\nWe need \\(K_e\\) and \\(f_e\\) for the full semi-discrete system.\n\nbar = build_bar_1d_local_problem()\n\ndisplay(Markdown(\"**Element stiffness matrix $K_e$:**\"))\ndisplay(Math(sp.latex(bar['Ke'])))\n\ndisplay(Markdown(\"**Element load vector $f_e$:**\"))\ndisplay(Math(sp.latex(bar['fe'])))",
+    "crumbs": [
+      "Advanced Topics",
+      "<span class='chapter-number'>14</span>  <span class='chapter-title'>Time-Dependent FEM: Mass Matrix and Time Stepping</span>"
+    ]
+  },
+  {
+    "objectID": "13_time_dependent_fem.html#numerical-assembly-1d-heat-equation",
+    "href": "13_time_dependent_fem.html#numerical-assembly-1d-heat-equation",
+    "title": "14  Time-Dependent FEM: Mass Matrix and Time Stepping",
+    "section": "14.3 3. Numerical Assembly: 1D Heat Equation",
+    "text": "14.3 3. Numerical Assembly: 1D Heat Equation\nWe solve the 1D transient heat equation on \\([0, 1]\\) with:\n\n\\(k = 1\\) (thermal conductivity), \\(\\rho c = 1\\)\n\\(q = 0\\) (no source)\nBC: \\(u(0,t) = 0\\), \\(u(1,t) = 0\\)\nIC: \\(u(x,0) = \\sin(\\pi x)\\)\n\nExact solution: \\(u(x,t) = \\sin(\\pi x) \\, e^{-\\pi^2 t}\\)\n\n# ---- Mesh and material parameters ----n_elem = 10L_total = 1.0k_cond = 1.0   # conductivity (plays role of EA)rho_c = 1.0     # rho * c  (plays role of rho*A)h_e = L_total / n_elemn_nodes = n_elem + 1x_nodes = np.linspace(0, L_total, n_nodes)# ---- Numerical element matrices ----# Stiffness for pure diffusion: Ke = (k/h) * [[1, -1], [-1, 1]]# We build this directly from the symbolic Ke (set q=0, P=0 for no source/traction)Ke_sym = bar['Ke']Ke_num = np.array(Ke_sym.subs({bar['E']: k_cond, bar['A']: 1, bar['L']: h_e, bar['q']: 0, bar['P']: 0})).astype(float)# Mass: Me = (rho_c * h / 6) * [[2, 1], [1, 2]]Me_num = np.array(Me.subs({rho: rho_c, A: 1, L: h_e})).astype(float)# Lumped massMe_lumped_num = np.array(Me_lumped.subs({rho: rho_c, A: 1, L: h_e})).astype(float)print(f\"Element stiffness Ke:\\n{Ke_num}\")print(f\"\\nConsistent mass Me:\\n{Me_num}\")print(f\"\\nLumped mass Me_lumped:\\n{Me_lumped_num}\")\n\n\n# ---- Global assembly ----\nK_global = np.zeros((n_nodes, n_nodes))\nM_global = np.zeros((n_nodes, n_nodes))\nM_lumped_global = np.zeros((n_nodes, n_nodes))\n\nconnectivity = [[e, e+1] for e in range(n_elem)]\n\nfor conn in connectivity:\n    assemble_dense_matrix(K_global, Ke_num, conn)\n    assemble_dense_matrix(M_global, Me_num, conn)\n    assemble_dense_matrix(M_lumped_global, Me_lumped_num, conn)\n\nprint(f\"Global K shape: {K_global.shape}\")\nprint(f\"Global M shape: {M_global.shape}\")",
+    "crumbs": [
+      "Advanced Topics",
+      "<span class='chapter-number'>14</span>  <span class='chapter-title'>Time-Dependent FEM: Mass Matrix and Time Stepping</span>"
+    ]
+  },
+  {
+    "objectID": "13_time_dependent_fem.html#time-stepping-backward-euler-implicit",
+    "href": "13_time_dependent_fem.html#time-stepping-backward-euler-implicit",
+    "title": "14  Time-Dependent FEM: Mass Matrix and Time Stepping",
+    "section": "14.4 4. Time Stepping: Backward Euler (Implicit)",
+    "text": "14.4 4. Time Stepping: Backward Euler (Implicit)\nThe backward Euler scheme for \\(M \\dot{a} + K a = F\\):\n\\[(M + \\Delta t \\, K) \\, a^{n+1} = M \\, a^n + \\Delta t \\, F^{n+1}\\]\nThis is unconditionally stable (no CFL limit), but requires solving a linear system at each time step.\n\n# ---- Backward Euler ----\ndt = 0.005\nT_final = 0.05\nn_steps = int(T_final / dt)\n\n# Initial condition: u(x,0) = sin(pi*x)\nu_be = np.sin(np.pi * x_nodes).copy()\n\n# Apply Dirichlet BCs: u(0)=0, u(1)=0 at all times\nbc_dofs = [0, n_nodes - 1]\nfree_dofs = list(range(1, n_nodes - 1))\n\n# Reduced system matrices (free DOFs only)\nM_ff = M_global[np.ix_(free_dofs, free_dofs)]\nK_ff = K_global[np.ix_(free_dofs, free_dofs)]\n\n# Effective stiffness: A_eff = M + dt*K\nA_eff = M_ff + dt * K_ff\n\n# Store solutions for plotting\nsolutions_be = [u_be.copy()]\ntimes = [0.0]\n\nfor step in range(n_steps):\n    t_new = (step + 1) * dt\n    rhs = M_ff @ u_be[free_dofs]  # F = 0 (no source)\n    u_be[free_dofs] = np.linalg.solve(A_eff, rhs)\n    # BCs remain zero\n    solutions_be.append(u_be.copy())\n    times.append(t_new)\n\nprint(f\"Backward Euler: {n_steps} steps, dt = {dt}\")",
+    "crumbs": [
+      "Advanced Topics",
+      "<span class='chapter-number'>14</span>  <span class='chapter-title'>Time-Dependent FEM: Mass Matrix and Time Stepping</span>"
+    ]
+  },
+  {
+    "objectID": "13_time_dependent_fem.html#time-stepping-forward-euler-explicit",
+    "href": "13_time_dependent_fem.html#time-stepping-forward-euler-explicit",
+    "title": "14  Time-Dependent FEM: Mass Matrix and Time Stepping",
+    "section": "14.5 5. Time Stepping: Forward Euler (Explicit)",
+    "text": "14.5 5. Time Stepping: Forward Euler (Explicit)\nThe forward Euler scheme:\n\\[M \\, a^{n+1} = (M - \\Delta t \\, K) \\, a^n + \\Delta t \\, F^n\\]\nWith a lumped (diagonal) mass matrix, no system solve is needed — just a diagonal scaling. But there is a CFL stability limit: \\(\\Delta t &lt; 2 / \\lambda_{\\max}\\) where \\(\\lambda_{\\max}\\) is the largest eigenvalue of \\(M^{-1} K\\).\n\n# ---- CFL stability analysis ----\nM_lump_ff = M_lumped_global[np.ix_(free_dofs, free_dofs)]\nM_lump_inv = np.diag(1.0 / np.diag(M_lump_ff))\neigenvalues = np.linalg.eigvalsh(M_lump_inv @ K_ff)\nlambda_max = eigenvalues.max()\ndt_crit = 2.0 / lambda_max\n\nprint(f\"Largest eigenvalue of M_lump^{{-1}} K: {lambda_max:.4f}\")\nprint(f\"Critical time step (CFL): dt_crit = {dt_crit:.6f}\")\nprint(f\"Our dt = {dt} {'&lt; dt_crit (STABLE)' if dt &lt; dt_crit else '&gt;= dt_crit (UNSTABLE!)'}\")\n\n\n# ---- Forward Euler with lumped mass ----\ndt_fe = min(dt, 0.9 * dt_crit)  # stay below CFL\nn_steps_fe = int(T_final / dt_fe)\n\nu_fe = np.sin(np.pi * x_nodes).copy()\nsolutions_fe = [u_fe.copy()]\ntimes_fe = [0.0]\n\nM_lump_diag = np.diag(M_lump_ff)\n\nfor step in range(n_steps_fe):\n    t_new = (step + 1) * dt_fe\n    rhs = M_lump_ff @ u_fe[free_dofs] - dt_fe * (K_ff @ u_fe[free_dofs])\n    u_fe[free_dofs] = rhs / M_lump_diag  # diagonal solve!\n    solutions_fe.append(u_fe.copy())\n    times_fe.append(t_new)\n\nprint(f\"Forward Euler: {n_steps_fe} steps, dt = {dt_fe:.6f}\")",
+    "crumbs": [
+      "Advanced Topics",
+      "<span class='chapter-number'>14</span>  <span class='chapter-title'>Time-Dependent FEM: Mass Matrix and Time Stepping</span>"
+    ]
+  },
+  {
+    "objectID": "13_time_dependent_fem.html#comparison-with-exact-solution",
+    "href": "13_time_dependent_fem.html#comparison-with-exact-solution",
+    "title": "14  Time-Dependent FEM: Mass Matrix and Time Stepping",
+    "section": "14.6 6. Comparison with Exact Solution",
+    "text": "14.6 6. Comparison with Exact Solution\n\ndef exact_solution(x, t):\n    return np.sin(np.pi * x) * np.exp(-np.pi**2 * t)\n\nfig, axes = plt.subplots(1, 3, figsize=(14, 4))\n\n# Plot at select times\nplot_times = [0, T_final/2, T_final]\nx_fine = np.linspace(0, L_total, 200)\n\nfor ax, t_plot in zip(axes, plot_times):\n    # Exact\n    ax.plot(x_fine, exact_solution(x_fine, t_plot), 'k-', lw=2, label='Exact')\n    \n    # Backward Euler\n    idx_be = min(range(len(times)), key=lambda i: abs(times[i] - t_plot))\n    ax.plot(x_nodes, solutions_be[idx_be], 'bo-', ms=4, label='Backward Euler')\n    \n    # Forward Euler\n    idx_fe = min(range(len(times_fe)), key=lambda i: abs(times_fe[i] - t_plot))\n    ax.plot(x_nodes, solutions_fe[idx_fe], 'rs--', ms=4, label='Forward Euler')\n    \n    ax.set_title(f't = {t_plot:.3f}')\n    ax.set_xlabel('x')\n    ax.set_ylabel('u(x,t)')\n    ax.legend(fontsize=8)\n    ax.grid(True, alpha=0.3)\n\nfig.suptitle('1D Transient Heat Equation: FEM Solutions vs Exact', fontsize=13)\nplt.tight_layout()\nplt.show()",
+    "crumbs": [
+      "Advanced Topics",
+      "<span class='chapter-number'>14</span>  <span class='chapter-title'>Time-Dependent FEM: Mass Matrix and Time Stepping</span>"
+    ]
+  },
+  {
+    "objectID": "13_time_dependent_fem.html#demonstrating-instability",
+    "href": "13_time_dependent_fem.html#demonstrating-instability",
+    "title": "14  Time-Dependent FEM: Mass Matrix and Time Stepping",
+    "section": "14.7 7. Demonstrating Instability",
+    "text": "14.7 7. Demonstrating Instability\nWhat happens if we use \\(\\Delta t &gt; \\Delta t_{\\text{crit}}\\) with the explicit scheme?\n\n# ---- Unstable forward Euler ----\ndt_unstable = 1.1 * dt_crit\nu_unstable = np.sin(np.pi * x_nodes).copy()\nn_steps_unstable = min(20, int(T_final / dt_unstable))  # limit steps to avoid overflow\n\nmax_vals = [np.max(np.abs(u_unstable))]\n\nfor step in range(n_steps_unstable):\n    rhs = M_lump_ff @ u_unstable[free_dofs] - dt_unstable * (K_ff @ u_unstable[free_dofs])\n    u_unstable[free_dofs] = rhs / M_lump_diag\n    max_vals.append(np.max(np.abs(u_unstable)))\n    if max_vals[-1] &gt; 1e6:\n        print(f\"Blew up at step {step+1}!\")\n        break\n\nfig, ax = plt.subplots(figsize=(8, 4))\nax.semilogy(range(len(max_vals)), max_vals, 'r-o', ms=4)\nax.set_xlabel('Time step')\nax.set_ylabel('max |u|')\nax.set_title(f'Forward Euler instability: dt = {dt_unstable:.6f} &gt; dt_crit = {dt_crit:.6f}')\nax.grid(True, alpha=0.3)\nplt.tight_layout()\nplt.show()",
+    "crumbs": [
+      "Advanced Topics",
+      "<span class='chapter-number'>14</span>  <span class='chapter-title'>Time-Dependent FEM: Mass Matrix and Time Stepping</span>"
+    ]
+  },
+  {
+    "objectID": "13_time_dependent_fem.html#summary",
+    "href": "13_time_dependent_fem.html#summary",
+    "title": "14  Time-Dependent FEM: Mass Matrix and Time Stepping",
+    "section": "14.8 Summary",
+    "text": "14.8 Summary\n\n\n\n\n\n\n\n\nAspect\nBackward Euler\nForward Euler (lumped M)\n\n\n\n\nStability\nUnconditionally stable\n\\(\\Delta t &lt; 2/\\lambda_{\\max}\\)\n\n\nSystem solve per step\nYes (sparse LU or CG)\nNo (diagonal scaling)\n\n\nAccuracy\n\\(O(\\Delta t)\\)\n\\(O(\\Delta t)\\)\n\n\nBest for\nStiff problems, large \\(\\Delta t\\)\nWave propagation, small \\(\\Delta t\\)\n\n\n\nKey takeaway: The mass matrix is as fundamental as the stiffness matrix in FEM. The workbench derives it symbolically from the same shape functions used for \\(K_e\\).",
+    "crumbs": [
+      "Advanced Topics",
+      "<span class='chapter-number'>14</span>  <span class='chapter-title'>Time-Dependent FEM: Mass Matrix and Time Stepping</span>"
+    ]
+  },
+  {
+    "objectID": "14_error_analysis.html",
+    "href": "14_error_analysis.html",
+    "title": "15  Error Analysis and Convergence in FEM",
+    "section": "",
+    "text": "15.1 1. Model Problem with Known Exact Solution\nThis notebook explores FEM error behaviour through numerical experiments. We solve a 1D Poisson problem with a known exact solution, measure the error in different norms, and verify the theoretical convergence rates.\nLearning objectives:\nWe solve \\(-u''(x) = f(x)\\) on \\([0, 1]\\) with \\(u(0) = 0\\), \\(u(1) = 0\\).\nChoose \\(u_{\\text{exact}}(x) = \\sin(\\pi x)\\), which gives \\(f(x) = \\pi^2 \\sin(\\pi x)\\).\nThis is a manufactured solution approach: we pick the answer first and derive the source term.\ndef u_exact(x):\n    \"\"\"Exact solution.\"\"\"\n    return np.sin(np.pi * x)\n\ndef du_exact(x):\n    \"\"\"Exact derivative.\"\"\"\n    return np.pi * np.cos(np.pi * x)\n\ndef f_source(x):\n    \"\"\"Source term: -u'' = pi^2 sin(pi x).\"\"\"\n    return np.pi**2 * np.sin(np.pi * x)",
+    "crumbs": [
+      "Advanced Topics",
+      "<span class='chapter-number'>15</span>  <span class='chapter-title'>Error Analysis and Convergence in FEM</span>"
+    ]
+  },
+  {
+    "objectID": "14_error_analysis.html#fem-solver-for-varying-mesh-sizes",
+    "href": "14_error_analysis.html#fem-solver-for-varying-mesh-sizes",
+    "title": "15  Error Analysis and Convergence in FEM",
+    "section": "15.2 2. FEM Solver for Varying Mesh Sizes",
+    "text": "15.2 2. FEM Solver for Varying Mesh Sizes\nWe solve the problem on uniform meshes with \\(n = 2, 4, 8, 16, 32, 64\\) elements and measure the error in each case.\n\ndef solve_poisson_1d(n_elem):\n    \"\"\"Solve -u'' = f on [0,1] with u(0)=u(1)=0 using n_elem linear elements.\n    \n    Returns: x_nodes, u_fem (nodal solution)\n    \"\"\"\n    L_total = 1.0\n    h = L_total / n_elem\n    n_nodes = n_elem + 1\n    x_nodes = np.linspace(0, L_total, n_nodes)\n    \n    # Element stiffness and load from the workbench (specialised numerically)\n    # Ke = (1/h) * [[1, -1], [-1, 1]] for EA=1\n    Ke = (1.0/h) * np.array([[1, -1], [-1, 1]], dtype=float)\n    \n    # Load vector via 2-point Gauss quadrature on each element\n    K_global = np.zeros((n_nodes, n_nodes))\n    F_global = np.zeros(n_nodes)\n    \n    for e in range(n_elem):\n        conn = [e, e+1]\n        x0, x1 = x_nodes[e], x_nodes[e+1]\n        \n        # Assemble stiffness\n        assemble_dense_matrix(K_global, Ke, conn)\n        \n        # Load vector: 2-point Gauss on [x0, x1]\n        # Gauss points in [-1,1]: +/- 1/sqrt(3)\n        gp = 1.0 / np.sqrt(3)\n        for xi_g, w_g in [(-gp, 1.0), (gp, 1.0)]:\n            x_g = 0.5*(x0 + x1) + 0.5*h*xi_g  # map to physical\n            N1 = 0.5*(1 - xi_g)\n            N2 = 0.5*(1 + xi_g)\n            f_val = f_source(x_g)\n            F_global[conn[0]] += w_g * N1 * f_val * (h/2)\n            F_global[conn[1]] += w_g * N2 * f_val * (h/2)\n    \n    # Apply Dirichlet BCs: u(0)=0, u(n_nodes-1)=0\n    bc_dofs = [0, n_nodes-1]\n    bc_vals = [0.0, 0.0]\n    K_ff, F_f, free_dofs = apply_dirichlet_by_reduction(\n        K_global, F_global, bc_dofs, bc_vals\n    )\n    \n    u_free = np.linalg.solve(K_ff, F_f)\n    u_fem = expand_reduced_solution(u_free, n_nodes, free_dofs, bc_dofs, bc_vals)\n    \n    return x_nodes, u_fem\n\n# Quick test\nx_test, u_test = solve_poisson_1d(8)\nprint(f\"Max nodal error with 8 elements: {np.max(np.abs(u_test - u_exact(x_test))):.6e}\")",
+    "crumbs": [
+      "Advanced Topics",
+      "<span class='chapter-number'>15</span>  <span class='chapter-title'>Error Analysis and Convergence in FEM</span>"
+    ]
+  },
+  {
+    "objectID": "14_error_analysis.html#computing-error-norms",
+    "href": "14_error_analysis.html#computing-error-norms",
+    "title": "15  Error Analysis and Convergence in FEM",
+    "section": "15.3 3. Computing Error Norms",
+    "text": "15.3 3. Computing Error Norms\nWe measure errors in three norms:\n\nNodal max error (pointwise): \\(\\max_i |u^h(x_i) - u(x_i)|\\)\n\\(L^2\\) error: \\(\\|e\\|_{L^2} = \\left( \\int_0^1 (u^h - u)^2 \\, dx \\right)^{1/2}\\)\n\\(H^1\\) semi-norm error (energy norm): \\(|e|_{H^1} = \\left( \\int_0^1 (u^{h\\prime} - u')^2 \\, dx \\right)^{1/2}\\)\n\nTheory predicts for P1 elements and smooth \\(u\\):\n\n\\(\\|e\\|_{L^2} \\leq C_1 h^2 |u|_{H^2}\\)\n\\(|e|_{H^1} \\leq C_2 h |u|_{H^2}\\)\n\n\ndef compute_errors(x_nodes, u_fem):\n    \"\"\"Compute L2 and H1 errors using 3-point Gauss quadrature per element.\"\"\"\n    n_elem = len(x_nodes) - 1\n    L2_sq = 0.0\n    H1_sq = 0.0\n    \n    # 3-point Gauss on [-1,1]\n    gp3 = np.array([-np.sqrt(3/5), 0.0, np.sqrt(3/5)])\n    gw3 = np.array([5/9, 8/9, 5/9])\n    \n    for e in range(n_elem):\n        x0, x1 = x_nodes[e], x_nodes[e+1]\n        h = x1 - x0\n        u0, u1 = u_fem[e], u_fem[e+1]\n        \n        for xi_g, w_g in zip(gp3, gw3):\n            # Physical coordinate\n            x_g = 0.5*(x0 + x1) + 0.5*h*xi_g\n            \n            # FEM interpolation at Gauss point\n            N1 = 0.5*(1 - xi_g)\n            N2 = 0.5*(1 + xi_g)\n            uh = N1*u0 + N2*u1\n            \n            # FEM derivative (constant per element)\n            duh = (u1 - u0) / h\n            \n            # Errors\n            L2_sq += w_g * (uh - u_exact(x_g))**2 * (h/2)\n            H1_sq += w_g * (duh - du_exact(x_g))**2 * (h/2)\n    \n    return np.sqrt(L2_sq), np.sqrt(H1_sq)\n\n# ---- Convergence study ----\nn_elems = [2, 4, 8, 16, 32, 64, 128]\nh_vals = [1.0/n for n in n_elems]\nL2_errors = []\nH1_errors = []\nnodal_errors = []\n\nfor n in n_elems:\n    x_n, u_n = solve_poisson_1d(n)\n    e_L2, e_H1 = compute_errors(x_n, u_n)\n    e_nodal = np.max(np.abs(u_n - u_exact(x_n)))\n    L2_errors.append(e_L2)\n    H1_errors.append(e_H1)\n    nodal_errors.append(e_nodal)\n\nL2_errors = np.array(L2_errors)\nH1_errors = np.array(H1_errors)\nnodal_errors = np.array(nodal_errors)\nh_vals = np.array(h_vals)\n\n# Print table\nprint(f\"{'n_elem':&gt;8} {'h':&gt;10} {'L2 error':&gt;12} {'H1 error':&gt;12} {'nodal max':&gt;12}\")\nprint('-' * 56)\nfor i, n in enumerate(n_elems):\n    print(f\"{n:&gt;8d} {h_vals[i]:&gt;10.4f} {L2_errors[i]:&gt;12.4e} {H1_errors[i]:&gt;12.4e} {nodal_errors[i]:&gt;12.4e}\")",
+    "crumbs": [
+      "Advanced Topics",
+      "<span class='chapter-number'>15</span>  <span class='chapter-title'>Error Analysis and Convergence in FEM</span>"
+    ]
+  },
+  {
+    "objectID": "14_error_analysis.html#convergence-rates",
+    "href": "14_error_analysis.html#convergence-rates",
+    "title": "15  Error Analysis and Convergence in FEM",
+    "section": "15.4 4. Convergence Rates",
+    "text": "15.4 4. Convergence Rates\n\n# Compute convergence rates\nL2_rates = np.log(L2_errors[:-1] / L2_errors[1:]) / np.log(h_vals[:-1] / h_vals[1:])\nH1_rates = np.log(H1_errors[:-1] / H1_errors[1:]) / np.log(h_vals[:-1] / h_vals[1:])\nnodal_rates = np.log(nodal_errors[:-1] / nodal_errors[1:]) / np.log(h_vals[:-1] / h_vals[1:])\n\nprint(f\"{'refinement':&gt;12} {'L2 rate':&gt;10} {'H1 rate':&gt;10} {'nodal rate':&gt;12}\")\nprint('-' * 46)\nfor i in range(len(L2_rates)):\n    print(f\"{n_elems[i]:&gt;4d}-&gt;{n_elems[i+1]:&gt;4d}  {L2_rates[i]:&gt;10.2f} {H1_rates[i]:&gt;10.2f} {nodal_rates[i]:&gt;12.2f}\")\n\nprint(f\"\\nExpected: L2 rate -&gt; 2.0, H1 rate -&gt; 1.0\")\nprint(f\"Nodal superconvergence for uniform meshes: rate -&gt; 2.0\")\n\n\nfig, ax = plt.subplots(figsize=(8, 6))\n\nax.loglog(h_vals, L2_errors, 'bo-', lw=2, ms=6, label=r'$\\|e\\|_{L^2}$')\nax.loglog(h_vals, H1_errors, 'rs-', lw=2, ms=6, label=r'$|e|_{H^1}$')\nax.loglog(h_vals, nodal_errors, 'g^-', lw=2, ms=6, label='Nodal max')\n\n# Reference slopes\nh_ref = np.array([h_vals[0], h_vals[-1]])\nax.loglog(h_ref, L2_errors[0] * (h_ref/h_ref[0])**2, 'b--', alpha=0.4, label=r'$O(h^2)$')\nax.loglog(h_ref, H1_errors[0] * (h_ref/h_ref[0])**1, 'r--', alpha=0.4, label=r'$O(h^1)$')\n\nax.set_xlabel('Element size h')\nax.set_ylabel('Error')\nax.set_title('FEM Convergence: P1 Elements on 1D Poisson')\nax.legend()\nax.grid(True, which='both', alpha=0.3)\nplt.tight_layout()\nplt.show()",
+    "crumbs": [
+      "Advanced Topics",
+      "<span class='chapter-number'>15</span>  <span class='chapter-title'>Error Analysis and Convergence in FEM</span>"
+    ]
+  },
+  {
+    "objectID": "14_error_analysis.html#visualising-the-error-distribution",
+    "href": "14_error_analysis.html#visualising-the-error-distribution",
+    "title": "15  Error Analysis and Convergence in FEM",
+    "section": "15.5 5. Visualising the Error Distribution",
+    "text": "15.5 5. Visualising the Error Distribution\nWhere is the error largest? For linear elements, the derivative error is constant per element, so the \\(H^1\\) error is element-wise.\n\nn_show = 8\nx_n, u_n = solve_poisson_1d(n_show)\nx_fine = np.linspace(0, 1, 500)\n\nfig, axes = plt.subplots(1, 3, figsize=(14, 4))\n\n# Solution comparison\naxes[0].plot(x_fine, u_exact(x_fine), 'k-', lw=2, label='Exact')\naxes[0].plot(x_n, u_n, 'bo-', ms=6, label=f'FEM ({n_show} elem)')\naxes[0].set_title('Solution')\naxes[0].legend()\naxes[0].grid(True, alpha=0.3)\n\n# Pointwise error\n# Interpolate FEM solution on fine grid\nu_fem_fine = np.interp(x_fine, x_n, u_n)\naxes[1].plot(x_fine, np.abs(u_fem_fine - u_exact(x_fine)), 'b-', lw=1.5)\naxes[1].set_title('Pointwise error |u_h - u|')\naxes[1].set_ylabel('|error|')\naxes[1].grid(True, alpha=0.3)\n\n# Element-wise H1 error\nelem_H1_err = []\nelem_centers = []\nfor e in range(n_show):\n    x0, x1 = x_n[e], x_n[e+1]\n    h = x1 - x0\n    xc = 0.5*(x0 + x1)\n    duh = (u_n[e+1] - u_n[e]) / h\n    # Integrate (du_h' - u')^2 with 3-point Gauss\n    gp3 = [-np.sqrt(3/5), 0.0, np.sqrt(3/5)]\n    gw3 = [5/9, 8/9, 5/9]\n    err_sq = 0.0\n    for xi_g, w_g in zip(gp3, gw3):\n        x_g = 0.5*(x0+x1) + 0.5*h*xi_g\n        err_sq += w_g * (duh - du_exact(x_g))**2 * (h/2)\n    elem_H1_err.append(np.sqrt(err_sq))\n    elem_centers.append(xc)\n\naxes[2].bar(elem_centers, elem_H1_err, width=1.0/n_show*0.8, color='salmon', edgecolor='darkred')\naxes[2].set_title(r'Element $H^1$ semi-norm error')\naxes[2].set_xlabel('x')\naxes[2].grid(True, alpha=0.3)\n\nplt.tight_layout()\nplt.show()",
+    "crumbs": [
+      "Advanced Topics",
+      "<span class='chapter-number'>15</span>  <span class='chapter-title'>Error Analysis and Convergence in FEM</span>"
+    ]
+  },
+  {
+    "objectID": "14_error_analysis.html#a-posteriori-error-estimation-element-residual",
+    "href": "14_error_analysis.html#a-posteriori-error-estimation-element-residual",
+    "title": "15  Error Analysis and Convergence in FEM",
+    "section": "15.6 6. A Posteriori Error Estimation (Element Residual)",
+    "text": "15.6 6. A Posteriori Error Estimation (Element Residual)\nIn practice, we don’t know the exact solution. The element residual indicator provides an error estimate from the computed solution alone:\n\\[\\eta_e^2 = h_e^2 \\int_{\\Omega_e} r_h^2 \\, dx + h_e \\sum_{\\text{edges}} \\int_{\\partial \\Omega_e} [\\![\\nabla u_h \\cdot n]\\!]^2 \\, ds\\]\nIn 1D, the interior residual is \\(r_h = f + u_h'' = f\\) (since \\(u_h''=0\\) for linear elements), and the jump term at each interior node is \\([\\![u_h'\\!]] = u_h'|_{\\text{right}} - u_h'|_{\\text{left}}\\).\n\ndef element_residual_indicators(x_nodes, u_fem):\n    \"\"\"Compute element residual error indicators in 1D.\"\"\"\n    n_elem = len(x_nodes) - 1\n    eta = np.zeros(n_elem)\n    \n    # Element derivatives\n    du_elem = np.diff(u_fem) / np.diff(x_nodes)\n    \n    for e in range(n_elem):\n        x0, x1 = x_nodes[e], x_nodes[e+1]\n        h = x1 - x0\n        xc = 0.5*(x0 + x1)\n        \n        # Interior residual: h^2 * integral of f^2 over element\n        # (since u_h'' = 0 for linear elements, residual r = f + u_h'' = f)\n        # Use midpoint rule for simplicity\n        r_int = h**2 * h * f_source(xc)**2\n        \n        # Jump terms at element boundaries\n        jump_sq = 0.0\n        if e &gt; 0:  # left interior node\n            jump = du_elem[e] - du_elem[e-1]\n            jump_sq += 0.5 * h * jump**2  # half goes to each element\n        if e &lt; n_elem - 1:  # right interior node\n            jump = du_elem[e+1] - du_elem[e]\n            jump_sq += 0.5 * h * jump**2\n        \n        eta[e] = np.sqrt(r_int + jump_sq)\n    \n    return eta\n\n# Compare true error vs indicator\neta = element_residual_indicators(x_n, u_n)\n\nfig, ax = plt.subplots(figsize=(8, 4))\nwidth = 0.35 / n_show\ncenters = np.array(elem_centers)\nax.bar(centers - width, elem_H1_err, width=2*width, color='steelblue', \n       alpha=0.7, label=r'True $|e|_{H^1,e}$')\nax.bar(centers + width, eta, width=2*width, color='salmon', \n       alpha=0.7, label=r'Indicator $\\eta_e$')\nax.set_xlabel('x')\nax.set_ylabel('Error / Indicator')\nax.set_title('True Error vs. A Posteriori Indicator')\nax.legend()\nax.grid(True, alpha=0.3)\nplt.tight_layout()\nplt.show()\n\n# Effectivity index\ntotal_true = np.sqrt(sum(e**2 for e in elem_H1_err))\ntotal_eta = np.sqrt(sum(e**2 for e in eta))\nprint(f\"Global true H1 error: {total_true:.6e}\")\nprint(f\"Global indicator:     {total_eta:.6e}\")\nprint(f\"Effectivity index:    {total_eta/total_true:.3f} (should be O(1))\")",
+    "crumbs": [
+      "Advanced Topics",
+      "<span class='chapter-number'>15</span>  <span class='chapter-title'>Error Analysis and Convergence in FEM</span>"
+    ]
+  },
+  {
+    "objectID": "14_error_analysis.html#summary",
+    "href": "14_error_analysis.html#summary",
+    "title": "15  Error Analysis and Convergence in FEM",
+    "section": "15.7 Summary",
+    "text": "15.7 Summary\n\n\n\nQuantity\nConvergence Rate (P1)\nMeasured\n\n\n\n\n\\(\\|e\\|_{L^2}\\)\n\\(O(h^2)\\)\n~ 2.0\n\n\n\\(|e|_{H^1}\\)\n\\(O(h)\\)\n~ 1.0\n\n\nNodal error (uniform mesh)\n\\(O(h^2)\\) superconvergence\n~ 2.0\n\n\n\nKey takeaways:\n\nThe \\(L^2\\) error converges one order faster than the \\(H^1\\) error (Aubin-Nitsche trick).\nNodal values enjoy superconvergence on uniform meshes.\nA posteriori indicators track the true error distribution and can guide adaptive mesh refinement.\nThe effectivity index (ratio of indicator to true error) should remain bounded — this is the hallmark of a reliable estimator.",
+    "crumbs": [
+      "Advanced Topics",
+      "<span class='chapter-number'>15</span>  <span class='chapter-title'>Error Analysis and Convergence in FEM</span>"
+    ]
+  }
+]

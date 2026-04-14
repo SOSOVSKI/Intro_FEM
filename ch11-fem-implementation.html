@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.37">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>12&nbsp; FEM Implementation – Introduction to the Finite Element Method</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./ch12-error-estimates.html" rel="next">
+<link href="./ch10-elasticity-3d.html" rel="prev">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-36bf55b16c7cb4b1420f41495cb5446a.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="custom.css">
+</head>
+
+<body class="nav-sidebar floating quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./ch11-fem-implementation.html">Part V: Implementation &amp; Error Analysis</a></li><li class="breadcrumb-item"><a href="./ch11-fem-implementation.html"><span class="chapter-number">12</span>&nbsp; <span class="chapter-title">FEM Implementation</span></a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="./">Introduction to the Finite Element Method</a> 
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Preface</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part I: Foundations</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch01-introduction.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Introduction and 1D Setup</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch02-algebraic-system.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Deriving the Algebraic System and Galerkin’s Method</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch03-function-spaces.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Function Spaces</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part II: 1D Finite Elements</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch04-1d-fem.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Galerkin’s Method and 1D FEM</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch05-time-dependent.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">Time-Dependent 1D Problems</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part III: Multi-Dimensional FEM</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch06-math-prelim-2d3d.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">From 1D to Multi-Dimensional FEM</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch07-b-matrix.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">The B Matrix</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch08-heat-transfer-2d.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">2D Heat Transfer</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part IV: Elasticity</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch09-continuum-mechanics.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">Continuum Mechanics Fundamentals</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch10-elasticity-3d.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">Quasi-Static Elasticity in 3D</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part V: Implementation &amp; Error Analysis</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch11-fem-implementation.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text"><span class="chapter-number">12</span>&nbsp; <span class="chapter-title">FEM Implementation</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch12-error-estimates.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">13</span>&nbsp; <span class="chapter-title">Error Estimation and Adaptivity</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch14-fenicsx.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">14</span>&nbsp; <span class="chapter-title">FEniCSx Tutorial</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part VI: Structural Elements</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch15-beams-theory.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">15</span>&nbsp; <span class="chapter-title">Structural Elements: Beam Theory</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch16-beams-fenicsx.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">16</span>&nbsp; <span class="chapter-title">Beam Elements in FEniCSx</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#discretize-the-domain" id="toc-discretize-the-domain" class="nav-link active" data-scroll-target="#discretize-the-domain"><span class="header-section-number">12.1</span> Discretize the Domain</a></li>
+  <li><a href="#approximate-fields-with-shape-functions" id="toc-approximate-fields-with-shape-functions" class="nav-link" data-scroll-target="#approximate-fields-with-shape-functions"><span class="header-section-number">12.2</span> Approximate Fields with Shape Functions</a></li>
+  <li><a href="#compute-strains-with-the-b-matrix" id="toc-compute-strains-with-the-b-matrix" class="nav-link" data-scroll-target="#compute-strains-with-the-b-matrix"><span class="header-section-number">12.3</span> Compute Strains with the B-Matrix</a></li>
+  <li><a href="#the-b-matrix-from-the-symmetric-gradient" id="toc-the-b-matrix-from-the-symmetric-gradient" class="nav-link" data-scroll-target="#the-b-matrix-from-the-symmetric-gradient"><span class="header-section-number">12.4</span> The B-Matrix from the Symmetric Gradient</a>
+  <ul class="collapse">
+  <li><a href="#start-with-the-strain-definition" id="toc-start-with-the-strain-definition" class="nav-link" data-scroll-target="#start-with-the-strain-definition"><span class="header-section-number">12.4.1</span> Start with the Strain Definition</a></li>
+  <li><a href="#form-the-voigt-strain-vector" id="toc-form-the-voigt-strain-vector" class="nav-link" data-scroll-target="#form-the-voigt-strain-vector"><span class="header-section-number">12.4.2</span> Form the Voigt Strain Vector</a></li>
+  <li><a href="#define-the-differential-operator" id="toc-define-the-differential-operator" class="nav-link" data-scroll-target="#define-the-differential-operator"><span class="header-section-number">12.4.3</span> Define the Differential Operator</a></li>
+  <li><a href="#introduce-the-fe-approximation" id="toc-introduce-the-fe-approximation" class="nav-link" data-scroll-target="#introduce-the-fe-approximation"><span class="header-section-number">12.4.4</span> Introduce the FE Approximation</a></li>
+  </ul></li>
+  <li><a href="#the-algebraic-system-k_e-d_e-f_e" id="toc-the-algebraic-system-k_e-d_e-f_e" class="nav-link" data-scroll-target="#the-algebraic-system-k_e-d_e-f_e"><span class="header-section-number">12.5</span> The Algebraic System: <span class="math inline">\(k_e d_e = f_e\)</span></a></li>
+  <li><a href="#numerical-integration" id="toc-numerical-integration" class="nav-link" data-scroll-target="#numerical-integration"><span class="header-section-number">12.6</span> Numerical Integration</a>
+  <ul class="collapse">
+  <li><a href="#application-to-element-stiffness" id="toc-application-to-element-stiffness" class="nav-link" data-scroll-target="#application-to-element-stiffness"><span class="header-section-number">12.6.1</span> Application to Element Stiffness</a></li>
+  </ul></li>
+  <li><a href="#algorithmic-overview" id="toc-algorithmic-overview" class="nav-link" data-scroll-target="#algorithmic-overview"><span class="header-section-number">12.7</span> Algorithmic Overview</a>
+  <ul class="collapse">
+  <li><a href="#step-by-step-procedure" id="toc-step-by-step-procedure" class="nav-link" data-scroll-target="#step-by-step-procedure"><span class="header-section-number">12.7.1</span> Step-by-step Procedure</a></li>
+  </ul></li>
+  <li><a href="#full-fem-algorithm" id="toc-full-fem-algorithm" class="nav-link" data-scroll-target="#full-fem-algorithm"><span class="header-section-number">12.8</span> Full FEM Algorithm</a></li>
+  <li><a href="#surface-integrals-and-nansons-formula" id="toc-surface-integrals-and-nansons-formula" class="nav-link" data-scroll-target="#surface-integrals-and-nansons-formula"><span class="header-section-number">12.9</span> Surface Integrals and Nanson’s Formula</a>
+  <ul class="collapse">
+  <li><a href="#nansons-formula" id="toc-nansons-formula" class="nav-link" data-scroll-target="#nansons-formula"><span class="header-section-number">12.9.1</span> Nanson’s Formula</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./ch11-fem-implementation.html">Part V: Implementation &amp; Error Analysis</a></li><li class="breadcrumb-item"><a href="./ch11-fem-implementation.html"><span class="chapter-number">12</span>&nbsp; <span class="chapter-title">FEM Implementation</span></a></li></ol></nav>
+<div class="quarto-title">
+<div class="quarto-title-block"><div><h1 class="title"><span class="chapter-number">12</span>&nbsp; <span class="chapter-title">FEM Implementation</span></h1><button type="button" class="btn code-tools-button" id="quarto-code-tools-source"><i class="bi"></i> Code</button></div></div>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="discretize-the-domain" class="level2" data-number="12.1">
+<h2 data-number="12.1" class="anchored" data-anchor-id="discretize-the-domain"><span class="header-section-number">12.1</span> Discretize the Domain</h2>
+<p>The first step in any Finite Element analysis is to move from the continuous domain Ω to a discrete one. We replace the single integral over the whole domain with a sum of integrals over small, simple subdomains called elements.</p>
+<p>Our weak form is:</p>
+<p><span class="math display">\[\underbrace{\int_{\Omega} \boldsymbol{\varepsilon}(\mathbf{v})^T \mathbf{L} \boldsymbol{\varepsilon}(\mathbf{u}) \, d\Omega}_{\text{Bilinear Form } B(\mathbf{u},\mathbf{v})} = \underbrace{\int{\Omega} \mathbf{v}^T \mathbf{f} \, d\Omega + \int_{\Gamma_t} \mathbf{v}^T \bar{\mathbf{t}} \, d\Gamma}_{\text{Linear Form } F(\mathbf{v})}\]</span></p>
+<p>Note: We’ve switched to transpose notation for Voigt vectors, common in implementation.</p>
+<p>We approximate the domain Ω as a mesh of <span class="math inline">\(N_{el}\)</span> finite elements, each with its own subdomain <span class="math inline">\(\Omega_e\)</span>.</p>
+<p>The integral over Ω becomes a sum of integrals over each element <span class="math inline">\(\Omega_e\)</span>:</p>
+<p>The bilinear and linear forms are now expressed as sums:</p>
+<p><span class="math display">\[B(\mathbf{u},\mathbf{v}) = \sum_{e=1}^{N_{el}} \int_{\Omega_e} \boldsymbol{\varepsilon}(\mathbf{v})^T \mathbf{L} \boldsymbol{\varepsilon}(\mathbf{u}) \, d\Omega_e\]</span></p>
+<p><span class="math display">\[F(\mathbf{v}) = \sum_{e=1}^{N_{el}} \left( \int_{\Omega_e} \mathbf{v}^T \mathbf{f} \, d\Omega_e + \int_{\Gamma_{t,e}} \mathbf{v}^T \bar{\mathbf{t}} \, d\Gamma_e \right)\]</span></p>
+<p>where <span class="math inline">\(\Gamma_{t,e}\)</span> is the part of the element’s boundary that lies on the traction boundary <span class="math inline">\(\Gamma_t\)</span>.</p>
+</section>
+<section id="approximate-fields-with-shape-functions" class="level2" data-number="12.2">
+<h2 data-number="12.2" class="anchored" data-anchor-id="approximate-fields-with-shape-functions"><span class="header-section-number">12.2</span> Approximate Fields with Shape Functions</h2>
+<p>Within each element, we approximate the continuous displacement field using simple polynomial functions (shape functions) and the displacement values at the element’s nodes.</p>
+<p>The displacement u(x) at any point inside an element is interpolated from the element’s nodal displacements <span class="math inline">\(d_e\)</span> using shape functions:</p>
+<p><span class="math display">\[\mathbf{u}(\mathbf{x}) \approx \mathbf{u}_h(\mathbf{x}) = \mathbf{N}(\mathbf{x}) \mathbf{d}_e\]</span></p>
+<p>N(x) is the shape function matrix. For a 3D problem, it relates the 3 displacement components to the nodal values. For an element with n nodes, it’s a 3×3n matrix:</p>
+<p><span class="math display">\[\mathbf{N} = \begin{bmatrix} \phi_1 &amp; 0 &amp; 0 &amp; \phi_2 &amp; 0 &amp; 0 &amp; \dots &amp; \phi_n &amp; 0 &amp; 0 \\ 0 &amp; \phi_1 &amp; 0 &amp; 0 &amp; \phi_2 &amp; 0 &amp; \dots &amp; 0 &amp; \phi_n &amp; 0 \\ 0 &amp; 0 &amp; \phi_1 &amp; 0 &amp; 0 &amp; \phi_2 &amp; \dots &amp; 0 &amp; 0 &amp; \phi_n \end{bmatrix}\]</span></p>
+<p>where <span class="math inline">\(\phi_i(x)\)</span> is the scalar shape function for node i.</p>
+<p>We do exactly the same for the test function v, relating it to a vector of arbitrary nodal values <span class="math inline">\(c_e\)</span>:</p>
+<p><span class="math display">\[\mathbf{v}(\mathbf{x}) \approx \mathbf{v}_h(\mathbf{x}) = \mathbf{N}(\mathbf{x}) \mathbf{c}_e\]</span></p>
+</section>
+<section id="compute-strains-with-the-b-matrix" class="level2" data-number="12.3">
+<h2 data-number="12.3" class="anchored" data-anchor-id="compute-strains-with-the-b-matrix"><span class="header-section-number">12.3</span> Compute Strains with the B-Matrix</h2>
+<p>With the displacement field approximated, we can find the strain by taking its derivatives. This process creates the crucial strain-displacement matrix, B.</p>
+<p>The strain vector <span class="math inline">\(\boldsymbol{\varepsilon}\)</span> is found by applying a differential operator matrix, ∂, to the displacement vector <span class="math inline">\(\boldsymbol{u}\)</span>:</p>
+<p><span class="math display">\[\boldsymbol{\varepsilon} = \partial \mathbf{u} \quad \text{where for 3D engineering strain, } \quad \partial = \begin{pmatrix} \partial_x &amp; 0 &amp; 0 \\ 0 &amp; \partial_y &amp; 0 \\ 0 &amp; 0 &amp; \partial_z \\ 0 &amp; \partial_z &amp; \partial_y \\ \partial_z &amp; 0 &amp; \partial_x \\ \partial_y &amp; \partial_x &amp; 0 \end{pmatrix}\]</span></p>
+<p>For the approximated displacement field:</p>
+<p><span class="math display">\[\boldsymbol{\varepsilon}_h = \partial \left( \mathbf{N}\mathbf{d}_e \right) = \left( \partial\mathbf{N} \right) \mathbf{d}_e\]</span></p>
+<p>We define the strain-displacement matrix B as the derivatives of the shape function matrix:</p>
+<p><span class="math display">\[\mathbf{B} := \partial\mathbf{N}\]</span></p>
+<p>This gives the direct algebraic relationship between strain and nodal displacements for an element:</p>
+<p><span class="math display">\[\boldsymbol{\varepsilon}_h = \mathbf{B} \mathbf{d}_e\]</span></p>
+<p>The B matrix contains the spatial derivatives of the shape functions and is a function of the position within the element.</p>
+</section>
+<section id="the-b-matrix-from-the-symmetric-gradient" class="level2" data-number="12.4">
+<h2 data-number="12.4" class="anchored" data-anchor-id="the-b-matrix-from-the-symmetric-gradient"><span class="header-section-number">12.4</span> The B-Matrix from the Symmetric Gradient</h2>
+<p>The crucial B-matrix is not arbitrary; it arises directly from the fundamental definition of the small strain tensor, ε, as the symmetric part of the displacement gradient.</p>
+<section id="start-with-the-strain-definition" class="level3" data-number="12.4.1">
+<h3 data-number="12.4.1" class="anchored" data-anchor-id="start-with-the-strain-definition"><span class="header-section-number">12.4.1</span> Start with the Strain Definition</h3>
+<p><span class="math display">\[\boldsymbol{\varepsilon} = \frac{1}{2} \left( \nabla\mathbf{u} + (\nabla\mathbf{u})^T \right)\]</span></p>
+</section>
+<section id="form-the-voigt-strain-vector" class="level3" data-number="12.4.2">
+<h3 data-number="12.4.2" class="anchored" data-anchor-id="form-the-voigt-strain-vector"><span class="header-section-number">12.4.2</span> Form the Voigt Strain Vector</h3>
+<p>For implementation, we use Voigt notation with engineering shear strains <span class="math inline">\(\gamma_{ij}\)</span>, where <span class="math inline">\(\gamma_{ij} = \varepsilon_{ij} + \varepsilon_{ji}\)</span>, so <span class="math inline">\(\gamma_{ij} = 2\varepsilon_{ij}\)</span> for symmetric strains:</p>
+<p><span class="math display">\[\boldsymbol{\varepsilon}_{\text{Voigt}} = \begin{pmatrix} \varepsilon_{xx} \\ \varepsilon_{yy} \\ \varepsilon_{zz} \\ \gamma_{yz} \\ \gamma_{xz} \\ \gamma_{xy} \end{pmatrix} = \begin{pmatrix} \partial u / \partial x \\ \partial v / \partial y \\ \partial w / \partial z \\ (\partial v / \partial z) + (\partial w / \partial y) \\ (\partial u / \partial z) + (\partial w / \partial x) \\ (\partial u / \partial y) + (\partial v / \partial x) \end{pmatrix}\]</span></p>
+</section>
+<section id="define-the-differential-operator" class="level3" data-number="12.4.3">
+<h3 data-number="12.4.3" class="anchored" data-anchor-id="define-the-differential-operator"><span class="header-section-number">12.4.3</span> Define the Differential Operator</h3>
+<p>We can express this relationship using a differential operator matrix, ∂, that acts on the displacement vector:</p>
+<p><span class="math display">\[\boldsymbol{\varepsilon}_{\text{Voigt}} = \underbrace{ \begin{pmatrix} \partial_x &amp; 0 &amp; 0 \\ 0 &amp; \partial_y &amp; 0 \\ 0 &amp; 0 &amp; \partial_z \\ 0 &amp; \partial_z &amp; \partial_y \\ \partial_z &amp; 0 &amp; \partial_x \\ \partial_y &amp; \partial_x &amp; 0 \end{pmatrix} }_{\partial} \underbrace{ \begin{pmatrix} u \\ v \\ w \end{pmatrix} }_{\mathbf{u}}\]</span></p>
+<p>This explicitly shows how the structure of ∂ is determined by the physics of strain.</p>
+</section>
+<section id="introduce-the-fe-approximation" class="level3" data-number="12.4.4">
+<h3 data-number="12.4.4" class="anchored" data-anchor-id="introduce-the-fe-approximation"><span class="header-section-number">12.4.4</span> Introduce the FE Approximation</h3>
+<p>Finally, substitute the approximation for the displacement field, <span class="math inline">\(u_h=Nd_e\)</span>, into the strain definition:</p>
+<p><span class="math display">\[\boldsymbol{\varepsilon}_h = \partial (\mathbf{N}\mathbf{d}_e) = (\partial\mathbf{N})\mathbf{d}_e\]</span></p>
+<p>This gives us our definition of the B-matrix, <span class="math inline">\(B:=\partial N\)</span>, and the final element-level relationship:</p>
+<p><span class="math display">\[\boldsymbol{\varepsilon}_h = \mathbf{B}\mathbf{d}_e\]</span></p>
+</section>
+</section>
+<section id="the-algebraic-system-k_e-d_e-f_e" class="level2" data-number="12.5">
+<h2 data-number="12.5" class="anchored" data-anchor-id="the-algebraic-system-k_e-d_e-f_e"><span class="header-section-number">12.5</span> The Algebraic System: <span class="math inline">\(k_e d_e = f_e\)</span></h2>
+<p>By substituting the shape function approximations for u and v into the element integral, we transform the differential equation into a system of linear algebraic equations.</p>
+<p>Consider the bilinear form for one element, and substitute <span class="math inline">\(\boldsymbol{\varepsilon}(u)=\boldsymbol{B}\boldsymbol{d}_e\)</span> and <span class="math inline">\(\boldsymbol{\varepsilon}(v)=\boldsymbol{B}\boldsymbol{c}_e\)</span>:</p>
+<p><span class="math display">\[ \int_{\Omega_e} (\mathbf{B}\mathbf{c}_e)^T \mathbf{L} (\mathbf{B}\mathbf{d}_e) \, d\Omega_e = \mathbf{c}_e^T \left( \int{\Omega_e} \mathbf{B}^T \mathbf{L} \mathbf{B} \, d\Omega_e \right) \mathbf{d}_e \]</span></p>
+<p>We define the term in the parentheses as the <strong>element stiffness matrix</strong> <span class="math inline">\(k_e\)</span>:</p>
+<p><span class="math display">\[ \mathbf{k}_e := \int{\Omega_e} \mathbf{B}^T \mathbf{L} \mathbf{B} \, d\Omega_e \]</span></p>
+<p>Similarly, for the linear form, we get the <strong>element force vector</strong> <span class="math inline">\(f_e\)</span>:</p>
+<p><span class="math display">\[ \mathbf{f}_e := \int{\Omega_e} \mathbf{N}^T \mathbf{f} \, d\Omega_e + \int_{\Gamma_{t,e}} \mathbf{N}^T \bar{\mathbf{t}} \, d\Gamma_e \]</span></p>
+<p>The weak form for the element must hold for any arbitrary <span class="math inline">\(c_e\)</span>, which can only be true if:</p>
+<p><span class="math display">\[ \mathbf{k}_e \mathbf{d}_e = \mathbf{f}_e \]</span></p>
+</section>
+<section id="numerical-integration" class="level2" data-number="12.6">
+<h2 data-number="12.6" class="anchored" data-anchor-id="numerical-integration"><span class="header-section-number">12.6</span> Numerical Integration</h2>
+<p>The integrals for <span class="math inline">\(k_e\)</span> and <span class="math inline">\(f_e\)</span> involve the B and N matrices, which can be complex polynomials. These are almost always computed numerically using <strong>Gaussian Quadrature</strong>.</p>
+<p>The idea is to approximate an integral by a weighted sum of the integrand’s value at specific sample points, known as Gauss points.</p>
+<p>First, we map the element <span class="math inline">\(\Omega_e\)</span> to a simple reference element. The integral transforms as:</p>
+<p><span class="math display">\[\int_{\Omega_e} g(\mathbf{x}) \, d\Omega_e = \int_{\hat{\Omega}} g(\mathbf{x}(\boldsymbol{\xi})) \, |\mathbf{J}(\boldsymbol{\xi})| \, d\hat{\Omega}\]</span></p>
+<p>where ∣J∣ is the determinant of the Jacobian of the coordinate mapping.</p>
+<p>The integral over the reference element is then approximated by the sum:</p>
+<p><span class="math display">\[\int_{\hat{\Omega}} \tilde{g}(\boldsymbol{\xi}) \, d\hat{\Omega} \approx \sum_{i=1}^{N_{gp}} w_i \tilde{g}(\boldsymbol{\xi}_i)\]</span></p>
+<p>where <span class="math inline">\(w_i\)</span> are the Gauss weights and <span class="math inline">\(\boldsymbol{\xi}_i\)</span> are the Gauss point coordinates.</p>
+<section id="application-to-element-stiffness" class="level3" data-number="12.6.1">
+<h3 data-number="12.6.1" class="anchored" data-anchor-id="application-to-element-stiffness"><span class="header-section-number">12.6.1</span> Application to Element Stiffness</h3>
+<p>Applying this to our stiffness matrix:</p>
+<p><span class="math display">\[\mathbf{k}_e = \int{\Omega_e} \mathbf{B}^T \mathbf{L} \mathbf{B} \, d\Omega \approx \sum_{i=1}^{N_{gp}} \left( \mathbf{B}(\boldsymbol{\xi}_i)^T \mathbf{L} \mathbf{B}(\boldsymbol{\xi}_i) \right) |\mathbf{J}(\boldsymbol{\xi}_i)| w_i\]</span></p>
+<p>The force vector <span class="math inline">\(f_e\)</span> is computed in the same way:</p>
+<p><span class="math display">\[\mathbf{f}_e = \int{\Omega_e} \mathbf{N}^T \mathbf{f} \, d\Omega_e + \int_{\Gamma_{t,e}} \mathbf{N}^T \mathbf{t}^* \, d\Gamma_e \approx \sum_{i=1}^{N_{gp}} \left( \mathbf{N}(\boldsymbol{\xi}_i)^T \mathbf{f}(\boldsymbol{\xi}_i) + \mathbf{N}(\boldsymbol{\xi}_i)^T \mathbf{t}^*(\boldsymbol{\xi}_i) \right) |\mathbf{J}(\boldsymbol{\xi}_i)| w_i\]</span></p>
+</section>
+</section>
+<section id="algorithmic-overview" class="level2" data-number="12.7">
+<h2 data-number="12.7" class="anchored" data-anchor-id="algorithmic-overview"><span class="header-section-number">12.7</span> Algorithmic Overview</h2>
+<section id="step-by-step-procedure" class="level3" data-number="12.7.1">
+<h3 data-number="12.7.1" class="anchored" data-anchor-id="step-by-step-procedure"><span class="header-section-number">12.7.1</span> Step-by-step Procedure</h3>
+<ol type="1">
+<li><p>Initialize: Create empty global stiffness matrix K and force vector F.</p></li>
+<li><p>Loop over Elements: For each element e in the mesh…</p></li>
+<li><p>Initialize Element Matrices: Create empty local stiffness matrix <span class="math inline">\(k_e\)</span> and force vector <span class="math inline">\(f_e\)</span>.</p></li>
+<li><p>Loop over Gauss Points: For each Gauss point i in the element…</p></li>
+<li><p>Calculate at Point: Evaluate the B matrix and the Jacobian determinant ∣J∣ at this point’s coordinates.</p></li>
+<li><p>Accumulate Integral: Compute the integrand for <span class="math inline">\(k_e\)</span> and <span class="math inline">\(f_e\)</span>. Multiply by the Gauss weight and ∣J∣ and add to the element matrices.</p></li>
+<li><p>Assemble: Once the loops over Gauss points are done, add the completed element matrices <span class="math inline">\(k_e\)</span> and <span class="math inline">\(f_e\)</span> into the global <span class="math inline">\(K\)</span> and <span class="math inline">\(F\)</span> based on the element’s node numbering.</p></li>
+<li><p>Apply Boundary Conditions: Modify the global system <span class="math inline">\(K d = F\)</span> to enforce the prescribed Dirichlet displacements.</p></li>
+<li><p>Solve: Solve the final system of linear equations for the vector of all nodal displacements d.</p></li>
+<li><p>Post-Process: Use the computed displacements d to find element strains and stresses using the same matrices B and L as before at the Gauss points.</p></li>
+</ol>
+</section>
+</section>
+<section id="full-fem-algorithm" class="level2" data-number="12.8">
+<h2 data-number="12.8" class="anchored" data-anchor-id="full-fem-algorithm"><span class="header-section-number">12.8</span> Full FEM Algorithm</h2>
+<div class="callout callout-style-default callout-note no-icon callout-titled" title="Algorithm: Finite Element Procedure for 3D Elasticity">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Algorithm: Finite Element Procedure for 3D Elasticity
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>Input:</strong> Mesh (<span class="math inline">\({\Omega_e}\)</span>), Material Properties (<span class="math inline">\(\mathbf{L}\)</span>), Body Forces (<span class="math inline">\(\mathbf{f}\)</span>), Boundary Conditions (<span class="math inline">\(\bar{\mathbf{u}}, \bar{\mathbf{t}}\)</span>)</p>
+<p><strong>Output:</strong> Nodal Displacements (<span class="math inline">\(\mathbf{d}\)</span>), Element Stresses (<span class="math inline">\(\boldsymbol{\sigma}\)</span>), Element Strains (<span class="math inline">\(\boldsymbol{\varepsilon}\)</span>)</p>
+<p><strong>Steps:</strong></p>
+<p>Initialize Global Stiffness <span class="math inline">\(\mathbf{K} \leftarrow \mathbf{0}\)</span> and Force <span class="math inline">\(\mathbf{F} \leftarrow \mathbf{0}\)</span>.</p>
+<p>For each element e in the mesh:</p>
+<ol type="a">
+<li><p>Initialize Element Stiffness <span class="math inline">\(\mathbf{k}_e \leftarrow \mathbf{0}\)</span> and Force <span class="math inline">\(\mathbf{f}_e \leftarrow \mathbf{0}\)</span>.</p></li>
+<li><p>For each Gauss point i in element e:</p>
+<ul>
+<li><p>Compute <span class="math inline">\(\mathbf{B}(\boldsymbol{\xi}_i)\)</span>, Jacobian determinant <span class="math inline">\(|\mathbf{J}(\boldsymbol{\xi}_i)|\)</span>, and weight <span class="math inline">\(w_i\)</span>.</p></li>
+<li><p>Accumulate stiffness: <span class="math inline">\(\mathbf{k}_e \mathrel{+}= \mathbf{B}^T \mathbf{L} \mathbf{B} \, |\mathbf{J}| w_i\)</span></p></li>
+<li><p>Accumulate body forces: <span class="math inline">\(\mathbf{f}_e \mathrel{+}= \mathbf{N}^T \mathbf{f} \, |\mathbf{J}| w_i\)</span></p></li>
+</ul></li>
+<li><p>Assemble traction boundary forces into <span class="math inline">\(\mathbf{f}_e\)</span> if applicable.</p></li>
+<li><p>Assemble local into global: Assemble<span class="math inline">\((\mathbf{K}, \mathbf{F}, \mathbf{k}_e, \mathbf{f}_e)\)</span>.</p></li>
+</ol>
+<p>Apply Dirichlet boundary conditions to the global system <span class="math inline">\((\mathbf{K}, \mathbf{F})\)</span>.</p>
+<p>Solve the linear system <span class="math inline">\(\mathbf{K}\mathbf{d} = \mathbf{F}\)</span> for the displacement vector <span class="math inline">\(\mathbf{d}\)</span>.</p>
+<p>For each element e in the mesh (Post-processing):</p>
+<ol type="a">
+<li><p>Extract element displacements <span class="math inline">\(d_e\)</span> from global d.</p></li>
+<li><p>Compute strains <span class="math inline">\(\boldsymbol{\varepsilon}_e = \mathbf{B} d_e\)</span> and stresses <span class="math inline">\(\boldsymbol{\sigma}_e = \mathbf{L} \boldsymbol{\varepsilon}_e\)</span> at desired points.</p></li>
+</ol>
+</div>
+</div>
+</section>
+<section id="surface-integrals-and-nansons-formula" class="level2" data-number="12.9">
+<h2 data-number="12.9" class="anchored" data-anchor-id="surface-integrals-and-nansons-formula"><span class="header-section-number">12.9</span> Surface Integrals and Nanson’s Formula</h2>
+<p>To compute integrals over an element’s surface in the real domain, such as for traction boundary conditions, we must map them back to the simple reference domain. This requires a transformation for the surface area element itself.</p>
+<p>Consider the surface integral over the traction boundary <span class="math inline">\(\Gamma_t\)</span> of an element:</p>
+<p><span class="math display">\[\int_{\Gamma_{t,e}} \bar{\mathbf{t}} \, d\Gamma_e\]</span></p>
+<p>The integration domain <span class="math inline">\(\Gamma_{t,e}\)</span> is a 2D surface of the 3D element <span class="math inline">\(\Gamma_e\)</span>. The surface domain <span class="math inline">\(\Gamma_{t,e}\)</span> is potentially distorted in real space. Mapping it to the reference element will allow us to perform the surface integral over a planar well-defined surface (e.g.&nbsp;a triangle or quadrilateral).</p>
+<p>The mapping between the reference (<span class="math inline">\(\boldsymbol{\xi}\)</span>) and real space (<span class="math inline">\(\boldsymbol{x}\)</span>) is done using the coordinate mapping and its gradient (Jacobian):</p>
+<p><span class="math display">\[|\boldsymbol{F}| = |\frac{\partial \boldsymbol{x}}{\partial \boldsymbol{\xi}}| = \boldsymbol{J}\]</span></p>
+<p>The traction <span class="math inline">\(\bar{\mathbf{t}}\)</span> is defined by the stress and the vector normal to the surface <span class="math inline">\(\mathbf{n}\)</span>:</p>
+<p><span class="math display">\[\bar{\mathbf{t}} = \boldsymbol{\sigma} \cdot \mathbf{n}\]</span></p>
+<section id="nansons-formula" class="level3" data-number="12.9.1">
+<h3 data-number="12.9.1" class="anchored" data-anchor-id="nansons-formula"><span class="header-section-number">12.9.1</span> Nanson’s Formula</h3>
+<p><strong>Nanson’s Formula</strong> provides the transformation for surface integrals:</p>
+<p><span class="math display">\[\boldsymbol{n}d\Gamma_e = |\boldsymbol{J}|\boldsymbol{J}^{-T}\cdot \boldsymbol{N} d\hat{\Gamma}\]</span></p>
+<p>where <span class="math inline">\(\boldsymbol{N}\)</span> is the normal vector in the reference element, and <span class="math inline">\(d\hat{\Gamma}=d\xi_i d\xi_j\)</span> is the differential area in the reference element:</p>
+<p><span class="math display">\[\mathbf{n} d\Gamma = \det(\mathbf{J}) (\mathbf{J}^{-T}) \hat{\mathbf{n}}  d\hat{\Gamma}\]</span></p>
+<p>The surface Jacobian is defined as:</p>
+<p><span class="math display">\[J_s =  \det(\mathbf{J}) (\mathbf{J}^{-T}) \hat{\mathbf{n}}\]</span></p>
+<p>The surface integral becomes:</p>
+<p><span class="math display">\[\int_{\Gamma_e} g(\mathbf{x})  d\Gamma = \int_{\hat{\Gamma}} g(\mathbf{x}(\boldsymbol{\xi})) J_s(\boldsymbol{\xi})  d\hat{\Gamma}\]</span></p>
+
+
+<!-- -->
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+    const viewSource = window.document.getElementById('quarto-view-source') ||
+                       window.document.getElementById('quarto-code-tools-source');
+    if (viewSource) {
+      const sourceUrl = viewSource.getAttribute("data-quarto-source-url");
+      viewSource.addEventListener("click", function(e) {
+        if (sourceUrl) {
+          // rstudio viewer pane
+          if (/\bcapabilities=\b/.test(window.location)) {
+            window.open(sourceUrl);
+          } else {
+            window.location.href = sourceUrl;
+          }
+        } else {
+          const modal = new bootstrap.Modal(document.getElementById('quarto-embedded-source-code-modal'));
+          modal.show();
+        }
+        return false;
+      });
+    }
+    function toggleCodeHandler(show) {
+      return function(e) {
+        const detailsSrc = window.document.querySelectorAll(".cell > details > .sourceCode");
+        for (let i=0; i<detailsSrc.length; i++) {
+          const details = detailsSrc[i].parentElement;
+          if (show) {
+            details.open = true;
+          } else {
+            details.removeAttribute("open");
+          }
+        }
+        const cellCodeDivs = window.document.querySelectorAll(".cell > .sourceCode");
+        const fromCls = show ? "hidden" : "unhidden";
+        const toCls = show ? "unhidden" : "hidden";
+        for (let i=0; i<cellCodeDivs.length; i++) {
+          const codeDiv = cellCodeDivs[i];
+          if (codeDiv.classList.contains(fromCls)) {
+            codeDiv.classList.remove(fromCls);
+            codeDiv.classList.add(toCls);
+          } 
+        }
+        return false;
+      }
+    }
+    const hideAllCode = window.document.getElementById("quarto-hide-all-code");
+    if (hideAllCode) {
+      hideAllCode.addEventListener("click", toggleCodeHandler(false));
+    }
+    const showAllCode = window.document.getElementById("quarto-show-all-code");
+    if (showAllCode) {
+      showAllCode.addEventListener("click", toggleCodeHandler(true));
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="./ch10-elasticity-3d.html" class="pagination-link" aria-label="Quasi-Static Elasticity in 3D">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">Quasi-Static Elasticity in 3D</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="./ch12-error-estimates.html" class="pagination-link" aria-label="Error Estimation and Adaptivity">
+        <span class="nav-page-text"><span class="chapter-number">13</span>&nbsp; <span class="chapter-title">Error Estimation and Adaptivity</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> "FEM Implementation"</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">## Discretize the Domain</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>The first step in any Finite Element analysis is to move from the continuous domain Ω to a discrete one. We replace the single integral over the whole domain with a sum of integrals over small, simple subdomains called elements.</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>Our weak form is:</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>$$\underbrace{\int_{\Omega} \boldsymbol{\varepsilon}(\mathbf{v})^T \mathbf{L} \boldsymbol{\varepsilon}(\mathbf{u}) \, d\Omega}_{\text{Bilinear Form } B(\mathbf{u},\mathbf{v})} = \underbrace{\int{\Omega} \mathbf{v}^T \mathbf{f} \, d\Omega + \int_{\Gamma_t} \mathbf{v}^T \bar{\mathbf{t}} \, d\Gamma}_{\text{Linear Form } F(\mathbf{v})}$$</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>Note: We've switched to transpose notation for Voigt vectors, common in implementation.</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>We approximate the domain Ω as a mesh of $N_{el}$ finite elements, each with its own subdomain $\Omega_e$.</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>The integral over Ω becomes a sum of integrals over each element $\Omega_e$:</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>The bilinear and linear forms are now expressed as sums:</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>$$B(\mathbf{u},\mathbf{v}) = \sum_{e=1}^{N_{el}} \int_{\Omega_e} \boldsymbol{\varepsilon}(\mathbf{v})^T \mathbf{L} \boldsymbol{\varepsilon}(\mathbf{u}) \, d\Omega_e$$</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>$$F(\mathbf{v}) = \sum_{e=1}^{N_{el}} \left( \int_{\Omega_e} \mathbf{v}^T \mathbf{f} \, d\Omega_e + \int_{\Gamma_{t,e}} \mathbf{v}^T \bar{\mathbf{t}} \, d\Gamma_e \right)$$</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>where $\Gamma_{t,e}$ is the part of the element's boundary that lies on the traction boundary $\Gamma_t$.</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="fu">## Approximate Fields with Shape Functions</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>Within each element, we approximate the continuous displacement field using simple polynomial functions (shape functions) and the displacement values at the element's nodes.</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>The displacement u(x) at any point inside an element is interpolated from the element's nodal displacements $d_e$ using shape functions:</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>$$\mathbf{u}(\mathbf{x}) \approx \mathbf{u}_h(\mathbf{x}) = \mathbf{N}(\mathbf{x}) \mathbf{d}_e$$</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>N(x) is the shape function matrix. For a 3D problem, it relates the 3 displacement components to the nodal values. For an element with n nodes, it's a 3×3n matrix:</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>$$\mathbf{N} = \begin{bmatrix} \phi_1 &amp; 0 &amp; 0 &amp; \phi_2 &amp; 0 &amp; 0 &amp; \dots &amp; \phi_n &amp; 0 &amp; 0 <span class="sc">\\</span> 0 &amp; \phi_1 &amp; 0 &amp; 0 &amp; \phi_2 &amp; 0 &amp; \dots &amp; 0 &amp; \phi_n &amp; 0 <span class="sc">\\</span> 0 &amp; 0 &amp; \phi_1 &amp; 0 &amp; 0 &amp; \phi_2 &amp; \dots &amp; 0 &amp; 0 &amp; \phi_n \end{bmatrix}$$</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>where $\phi_i(x)$ is the scalar shape function for node i.</span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>We do exactly the same for the test function v, relating it to a vector of arbitrary nodal values $c_e$:</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>$$\mathbf{v}(\mathbf{x}) \approx \mathbf{v}_h(\mathbf{x}) = \mathbf{N}(\mathbf{x}) \mathbf{c}_e$$</span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a><span class="fu">## Compute Strains with the B-Matrix</span></span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>With the displacement field approximated, we can find the strain by taking its derivatives. This process creates the crucial strain-displacement matrix, B.</span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>The strain vector $\boldsymbol{\varepsilon}$ is found by applying a differential operator matrix, ∂, to the displacement vector $\boldsymbol{u}$:</span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>$$\boldsymbol{\varepsilon} = \partial \mathbf{u} \quad \text{where for 3D engineering strain, } \quad \partial = \begin{pmatrix} \partial_x &amp; 0 &amp; 0 <span class="sc">\\</span> 0 &amp; \partial_y &amp; 0 <span class="sc">\\</span> 0 &amp; 0 &amp; \partial_z <span class="sc">\\</span> 0 &amp; \partial_z &amp; \partial_y <span class="sc">\\</span> \partial_z &amp; 0 &amp; \partial_x <span class="sc">\\</span> \partial_y &amp; \partial_x &amp; 0 \end{pmatrix}$$</span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a>For the approximated displacement field:</span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>$$\boldsymbol{\varepsilon}_h = \partial \left( \mathbf{N}\mathbf{d}_e \right) = \left( \partial\mathbf{N} \right) \mathbf{d}_e$$</span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a>We define the strain-displacement matrix B as the derivatives of the shape function matrix:</span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a>$$\mathbf{B} := \partial\mathbf{N}$$</span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a>This gives the direct algebraic relationship between strain and nodal displacements for an element:</span>
+<span id="cb1-62"><a href="#cb1-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-63"><a href="#cb1-63" aria-hidden="true" tabindex="-1"></a>$$\boldsymbol{\varepsilon}_h = \mathbf{B} \mathbf{d}_e$$</span>
+<span id="cb1-64"><a href="#cb1-64" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-65"><a href="#cb1-65" aria-hidden="true" tabindex="-1"></a>The B matrix contains the spatial derivatives of the shape functions and is a function of the position within the element.</span>
+<span id="cb1-66"><a href="#cb1-66" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-67"><a href="#cb1-67" aria-hidden="true" tabindex="-1"></a><span class="fu">## The B-Matrix from the Symmetric Gradient</span></span>
+<span id="cb1-68"><a href="#cb1-68" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-69"><a href="#cb1-69" aria-hidden="true" tabindex="-1"></a>The crucial B-matrix is not arbitrary; it arises directly from the fundamental definition of the small strain tensor, ε, as the symmetric part of the displacement gradient.</span>
+<span id="cb1-70"><a href="#cb1-70" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-71"><a href="#cb1-71" aria-hidden="true" tabindex="-1"></a><span class="fu">### Start with the Strain Definition</span></span>
+<span id="cb1-72"><a href="#cb1-72" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-73"><a href="#cb1-73" aria-hidden="true" tabindex="-1"></a>$$\boldsymbol{\varepsilon} = \frac{1}{2} \left( \nabla\mathbf{u} + (\nabla\mathbf{u})^T \right)$$</span>
+<span id="cb1-74"><a href="#cb1-74" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-75"><a href="#cb1-75" aria-hidden="true" tabindex="-1"></a><span class="fu">### Form the Voigt Strain Vector</span></span>
+<span id="cb1-76"><a href="#cb1-76" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-77"><a href="#cb1-77" aria-hidden="true" tabindex="-1"></a>For implementation, we use Voigt notation with engineering shear strains $\gamma_{ij}$, where $\gamma_{ij} = \varepsilon_{ij} + \varepsilon_{ji}$, so $\gamma_{ij} = 2\varepsilon_{ij}$ for symmetric strains:</span>
+<span id="cb1-78"><a href="#cb1-78" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-79"><a href="#cb1-79" aria-hidden="true" tabindex="-1"></a>$$\boldsymbol{\varepsilon}_{\text{Voigt}} = \begin{pmatrix} \varepsilon_{xx} \\ \varepsilon_{yy} \\ \varepsilon_{zz} \\ \gamma_{yz} \\ \gamma_{xz} \\ \gamma_{xy} \end{pmatrix} = \begin{pmatrix} \partial u / \partial x <span class="sc">\\</span> \partial v / \partial y <span class="sc">\\</span> \partial w / \partial z <span class="sc">\\</span> (\partial v / \partial z) + (\partial w / \partial y) <span class="sc">\\</span> (\partial u / \partial z) + (\partial w / \partial x) <span class="sc">\\</span> (\partial u / \partial y) + (\partial v / \partial x) \end{pmatrix}$$</span>
+<span id="cb1-80"><a href="#cb1-80" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-81"><a href="#cb1-81" aria-hidden="true" tabindex="-1"></a><span class="fu">### Define the Differential Operator</span></span>
+<span id="cb1-82"><a href="#cb1-82" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-83"><a href="#cb1-83" aria-hidden="true" tabindex="-1"></a>We can express this relationship using a differential operator matrix, ∂, that acts on the displacement vector:</span>
+<span id="cb1-84"><a href="#cb1-84" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-85"><a href="#cb1-85" aria-hidden="true" tabindex="-1"></a>$$\boldsymbol{\varepsilon}_{\text{Voigt}} = \underbrace{ \begin{pmatrix} \partial_x &amp; 0 &amp; 0 \\ 0 &amp; \partial_y &amp; 0 \\ 0 &amp; 0 &amp; \partial_z \\ 0 &amp; \partial_z &amp; \partial_y \\ \partial_z &amp; 0 &amp; \partial_x \\ \partial_y &amp; \partial_x &amp; 0 \end{pmatrix} }_{\partial} \underbrace{ \begin{pmatrix} u \\ v \\ w \end{pmatrix} }_{\mathbf{u}}$$</span>
+<span id="cb1-86"><a href="#cb1-86" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-87"><a href="#cb1-87" aria-hidden="true" tabindex="-1"></a>This explicitly shows how the structure of ∂ is determined by the physics of strain.</span>
+<span id="cb1-88"><a href="#cb1-88" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-89"><a href="#cb1-89" aria-hidden="true" tabindex="-1"></a><span class="fu">### Introduce the FE Approximation</span></span>
+<span id="cb1-90"><a href="#cb1-90" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-91"><a href="#cb1-91" aria-hidden="true" tabindex="-1"></a>Finally, substitute the approximation for the displacement field, $u_h=Nd_e$, into the strain definition:</span>
+<span id="cb1-92"><a href="#cb1-92" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-93"><a href="#cb1-93" aria-hidden="true" tabindex="-1"></a>$$\boldsymbol{\varepsilon}_h = \partial (\mathbf{N}\mathbf{d}_e) = (\partial\mathbf{N})\mathbf{d}_e$$</span>
+<span id="cb1-94"><a href="#cb1-94" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-95"><a href="#cb1-95" aria-hidden="true" tabindex="-1"></a>This gives us our definition of the B-matrix, $B:=\partial N$, and the final element-level relationship:</span>
+<span id="cb1-96"><a href="#cb1-96" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-97"><a href="#cb1-97" aria-hidden="true" tabindex="-1"></a>$$\boldsymbol{\varepsilon}_h = \mathbf{B}\mathbf{d}_e$$</span>
+<span id="cb1-98"><a href="#cb1-98" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-99"><a href="#cb1-99" aria-hidden="true" tabindex="-1"></a><span class="fu">## The Algebraic System: $k_e d_e = f_e$</span></span>
+<span id="cb1-100"><a href="#cb1-100" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-101"><a href="#cb1-101" aria-hidden="true" tabindex="-1"></a>By substituting the shape function approximations for u and v into the element integral, we transform the differential equation into a system of linear algebraic equations.</span>
+<span id="cb1-102"><a href="#cb1-102" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-103"><a href="#cb1-103" aria-hidden="true" tabindex="-1"></a>Consider the bilinear form for one element, and substitute $\boldsymbol{\varepsilon}(u)=\boldsymbol{B}\boldsymbol{d}_e$ and $\boldsymbol{\varepsilon}(v)=\boldsymbol{B}\boldsymbol{c}_e$:</span>
+<span id="cb1-104"><a href="#cb1-104" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-105"><a href="#cb1-105" aria-hidden="true" tabindex="-1"></a>$$ \int_{\Omega_e} (\mathbf{B}\mathbf{c}_e)^T \mathbf{L} (\mathbf{B}\mathbf{d}_e) \, d\Omega_e = \mathbf{c}_e^T \left( \int{\Omega_e} \mathbf{B}^T \mathbf{L} \mathbf{B} \, d\Omega_e \right) \mathbf{d}_e $$</span>
+<span id="cb1-106"><a href="#cb1-106" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-107"><a href="#cb1-107" aria-hidden="true" tabindex="-1"></a>We define the term in the parentheses as the **element stiffness matrix** $k_e$:</span>
+<span id="cb1-108"><a href="#cb1-108" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-109"><a href="#cb1-109" aria-hidden="true" tabindex="-1"></a>$$ \mathbf{k}_e := \int{\Omega_e} \mathbf{B}^T \mathbf{L} \mathbf{B} \, d\Omega_e $$</span>
+<span id="cb1-110"><a href="#cb1-110" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-111"><a href="#cb1-111" aria-hidden="true" tabindex="-1"></a>Similarly, for the linear form, we get the **element force vector** $f_e$:</span>
+<span id="cb1-112"><a href="#cb1-112" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-113"><a href="#cb1-113" aria-hidden="true" tabindex="-1"></a>$$ \mathbf{f}_e := \int{\Omega_e} \mathbf{N}^T \mathbf{f} \, d\Omega_e + \int_{\Gamma_{t,e}} \mathbf{N}^T \bar{\mathbf{t}} \, d\Gamma_e $$</span>
+<span id="cb1-114"><a href="#cb1-114" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-115"><a href="#cb1-115" aria-hidden="true" tabindex="-1"></a>The weak form for the element must hold for any arbitrary $c_e$, which can only be true if:</span>
+<span id="cb1-116"><a href="#cb1-116" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-117"><a href="#cb1-117" aria-hidden="true" tabindex="-1"></a>$$ \mathbf{k}_e \mathbf{d}_e = \mathbf{f}_e $$</span>
+<span id="cb1-118"><a href="#cb1-118" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-119"><a href="#cb1-119" aria-hidden="true" tabindex="-1"></a><span class="fu">## Numerical Integration</span></span>
+<span id="cb1-120"><a href="#cb1-120" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-121"><a href="#cb1-121" aria-hidden="true" tabindex="-1"></a>The integrals for $k_e$ and $f_e$ involve the B and N matrices, which can be complex polynomials. These are almost always computed numerically using **Gaussian Quadrature**.</span>
+<span id="cb1-122"><a href="#cb1-122" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-123"><a href="#cb1-123" aria-hidden="true" tabindex="-1"></a>The idea is to approximate an integral by a weighted sum of the integrand's value at specific sample points, known as Gauss points.</span>
+<span id="cb1-124"><a href="#cb1-124" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-125"><a href="#cb1-125" aria-hidden="true" tabindex="-1"></a>First, we map the element $\Omega_e$ to a simple reference element. The integral transforms as:</span>
+<span id="cb1-126"><a href="#cb1-126" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-127"><a href="#cb1-127" aria-hidden="true" tabindex="-1"></a>$$\int_{\Omega_e} g(\mathbf{x}) \, d\Omega_e = \int_{\hat{\Omega}} g(\mathbf{x}(\boldsymbol{\xi})) \, |\mathbf{J}(\boldsymbol{\xi})| \, d\hat{\Omega}$$</span>
+<span id="cb1-128"><a href="#cb1-128" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-129"><a href="#cb1-129" aria-hidden="true" tabindex="-1"></a>where ∣J∣ is the determinant of the Jacobian of the coordinate mapping.</span>
+<span id="cb1-130"><a href="#cb1-130" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-131"><a href="#cb1-131" aria-hidden="true" tabindex="-1"></a>The integral over the reference element is then approximated by the sum:</span>
+<span id="cb1-132"><a href="#cb1-132" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-133"><a href="#cb1-133" aria-hidden="true" tabindex="-1"></a>$$\int_{\hat{\Omega}} \tilde{g}(\boldsymbol{\xi}) \, d\hat{\Omega} \approx \sum_{i=1}^{N_{gp}} w_i \tilde{g}(\boldsymbol{\xi}_i)$$</span>
+<span id="cb1-134"><a href="#cb1-134" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-135"><a href="#cb1-135" aria-hidden="true" tabindex="-1"></a>where $w_i$ are the Gauss weights and $\boldsymbol{\xi}_i$ are the Gauss point coordinates.</span>
+<span id="cb1-136"><a href="#cb1-136" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-137"><a href="#cb1-137" aria-hidden="true" tabindex="-1"></a><span class="fu">### Application to Element Stiffness</span></span>
+<span id="cb1-138"><a href="#cb1-138" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-139"><a href="#cb1-139" aria-hidden="true" tabindex="-1"></a>Applying this to our stiffness matrix:</span>
+<span id="cb1-140"><a href="#cb1-140" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-141"><a href="#cb1-141" aria-hidden="true" tabindex="-1"></a>$$\mathbf{k}_e = \int{\Omega_e} \mathbf{B}^T \mathbf{L} \mathbf{B} \, d\Omega \approx \sum_{i=1}^{N_{gp}} \left( \mathbf{B}(\boldsymbol{\xi}_i)^T \mathbf{L} \mathbf{B}(\boldsymbol{\xi}_i) \right) |\mathbf{J}(\boldsymbol{\xi}_i)| w_i$$</span>
+<span id="cb1-142"><a href="#cb1-142" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-143"><a href="#cb1-143" aria-hidden="true" tabindex="-1"></a>The force vector $f_e$ is computed in the same way:</span>
+<span id="cb1-144"><a href="#cb1-144" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-145"><a href="#cb1-145" aria-hidden="true" tabindex="-1"></a>$$\mathbf{f}_e = \int{\Omega_e} \mathbf{N}^T \mathbf{f} \, d\Omega_e + \int_{\Gamma_{t,e}} \mathbf{N}^T \mathbf{t}^* \, d\Gamma_e \approx \sum_{i=1}^{N_{gp}} \left( \mathbf{N}(\boldsymbol{\xi}_i)^T \mathbf{f}(\boldsymbol{\xi}_i) + \mathbf{N}(\boldsymbol{\xi}_i)^T \mathbf{t}^*(\boldsymbol{\xi}_i) \right) |\mathbf{J}(\boldsymbol{\xi}_i)| w_i$$</span>
+<span id="cb1-146"><a href="#cb1-146" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-147"><a href="#cb1-147" aria-hidden="true" tabindex="-1"></a><span class="fu">## Algorithmic Overview</span></span>
+<span id="cb1-148"><a href="#cb1-148" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-149"><a href="#cb1-149" aria-hidden="true" tabindex="-1"></a><span class="fu">### Step-by-step Procedure</span></span>
+<span id="cb1-150"><a href="#cb1-150" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-151"><a href="#cb1-151" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>Initialize: Create empty global stiffness matrix K and force vector F.</span>
+<span id="cb1-152"><a href="#cb1-152" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-153"><a href="#cb1-153" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>Loop over Elements: For each element e in the mesh...</span>
+<span id="cb1-154"><a href="#cb1-154" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-155"><a href="#cb1-155" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>Initialize Element Matrices: Create empty local stiffness matrix $k_e$ and force vector $f_e$.</span>
+<span id="cb1-156"><a href="#cb1-156" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-157"><a href="#cb1-157" aria-hidden="true" tabindex="-1"></a><span class="ss">4. </span>Loop over Gauss Points: For each Gauss point i in the element...</span>
+<span id="cb1-158"><a href="#cb1-158" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-159"><a href="#cb1-159" aria-hidden="true" tabindex="-1"></a><span class="ss">5. </span>Calculate at Point: Evaluate the B matrix and the Jacobian determinant ∣J∣ at this point's coordinates.</span>
+<span id="cb1-160"><a href="#cb1-160" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-161"><a href="#cb1-161" aria-hidden="true" tabindex="-1"></a><span class="ss">6. </span>Accumulate Integral: Compute the integrand for $k_e$ and $f_e$. Multiply by the Gauss weight and ∣J∣ and add to the element matrices.</span>
+<span id="cb1-162"><a href="#cb1-162" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-163"><a href="#cb1-163" aria-hidden="true" tabindex="-1"></a><span class="ss">7. </span>Assemble: Once the loops over Gauss points are done, add the completed element matrices $k_e$ and $f_e$ into the global $K$ and $F$ based on the element's node numbering.</span>
+<span id="cb1-164"><a href="#cb1-164" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-165"><a href="#cb1-165" aria-hidden="true" tabindex="-1"></a><span class="ss">8. </span>Apply Boundary Conditions: Modify the global system $K d = F$ to enforce the prescribed Dirichlet displacements.</span>
+<span id="cb1-166"><a href="#cb1-166" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-167"><a href="#cb1-167" aria-hidden="true" tabindex="-1"></a><span class="ss">9. </span>Solve: Solve the final system of linear equations for the vector of all nodal displacements d.</span>
+<span id="cb1-168"><a href="#cb1-168" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-169"><a href="#cb1-169" aria-hidden="true" tabindex="-1"></a><span class="ss">10. </span>Post-Process: Use the computed displacements d to find element strains and stresses using the same matrices B and L as before at the Gauss points.</span>
+<span id="cb1-170"><a href="#cb1-170" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-171"><a href="#cb1-171" aria-hidden="true" tabindex="-1"></a><span class="fu">## Full FEM Algorithm</span></span>
+<span id="cb1-172"><a href="#cb1-172" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-173"><a href="#cb1-173" aria-hidden="true" tabindex="-1"></a>::: {.callout-note icon=false title="Algorithm: Finite Element Procedure for 3D Elasticity"}</span>
+<span id="cb1-174"><a href="#cb1-174" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-175"><a href="#cb1-175" aria-hidden="true" tabindex="-1"></a>**Input:**</span>
+<span id="cb1-176"><a href="#cb1-176" aria-hidden="true" tabindex="-1"></a>Mesh (${\Omega_e}$), Material Properties ($\mathbf{L}$), Body Forces ($\mathbf{f}$), Boundary Conditions ($\bar{\mathbf{u}}, \bar{\mathbf{t}}$)</span>
+<span id="cb1-177"><a href="#cb1-177" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-178"><a href="#cb1-178" aria-hidden="true" tabindex="-1"></a>**Output:** Nodal Displacements ($\mathbf{d}$), Element Stresses ($\boldsymbol{\sigma}$), Element Strains ($\boldsymbol{\varepsilon}$)</span>
+<span id="cb1-179"><a href="#cb1-179" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-180"><a href="#cb1-180" aria-hidden="true" tabindex="-1"></a>**Steps:**</span>
+<span id="cb1-181"><a href="#cb1-181" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-182"><a href="#cb1-182" aria-hidden="true" tabindex="-1"></a>Initialize Global Stiffness $\mathbf{K} \leftarrow \mathbf{0}$ and Force $\mathbf{F} \leftarrow \mathbf{0}$.</span>
+<span id="cb1-183"><a href="#cb1-183" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-184"><a href="#cb1-184" aria-hidden="true" tabindex="-1"></a>For each element e in the mesh:</span>
+<span id="cb1-185"><a href="#cb1-185" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-186"><a href="#cb1-186" aria-hidden="true" tabindex="-1"></a>a. Initialize Element Stiffness $\mathbf{k}_e \leftarrow \mathbf{0}$ and Force $\mathbf{f}_e \leftarrow \mathbf{0}$.</span>
+<span id="cb1-187"><a href="#cb1-187" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-188"><a href="#cb1-188" aria-hidden="true" tabindex="-1"></a>b. For each Gauss point i in element e:</span>
+<span id="cb1-189"><a href="#cb1-189" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-190"><a href="#cb1-190" aria-hidden="true" tabindex="-1"></a><span class="ss">   - </span>Compute $\mathbf{B}(\boldsymbol{\xi}_i)$, Jacobian determinant $|\mathbf{J}(\boldsymbol{\xi}_i)|$, and weight $w_i$.</span>
+<span id="cb1-191"><a href="#cb1-191" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-192"><a href="#cb1-192" aria-hidden="true" tabindex="-1"></a><span class="ss">   - </span>Accumulate stiffness: $\mathbf{k}_e \mathrel{+}= \mathbf{B}^T \mathbf{L} \mathbf{B} \, |\mathbf{J}| w_i$</span>
+<span id="cb1-193"><a href="#cb1-193" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-194"><a href="#cb1-194" aria-hidden="true" tabindex="-1"></a><span class="ss">   - </span>Accumulate body forces: $\mathbf{f}_e \mathrel{+}= \mathbf{N}^T \mathbf{f} \, |\mathbf{J}| w_i$</span>
+<span id="cb1-195"><a href="#cb1-195" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-196"><a href="#cb1-196" aria-hidden="true" tabindex="-1"></a>c. Assemble traction boundary forces into $\mathbf{f}_e$ if applicable.</span>
+<span id="cb1-197"><a href="#cb1-197" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-198"><a href="#cb1-198" aria-hidden="true" tabindex="-1"></a>d. Assemble local into global: Assemble$(\mathbf{K}, \mathbf{F}, \mathbf{k}_e, \mathbf{f}_e)$.</span>
+<span id="cb1-199"><a href="#cb1-199" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-200"><a href="#cb1-200" aria-hidden="true" tabindex="-1"></a>Apply Dirichlet boundary conditions to the global system $(\mathbf{K}, \mathbf{F})$.</span>
+<span id="cb1-201"><a href="#cb1-201" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-202"><a href="#cb1-202" aria-hidden="true" tabindex="-1"></a>Solve the linear system $\mathbf{K}\mathbf{d} = \mathbf{F}$ for the displacement vector $\mathbf{d}$.</span>
+<span id="cb1-203"><a href="#cb1-203" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-204"><a href="#cb1-204" aria-hidden="true" tabindex="-1"></a>For each element e in the mesh (Post-processing):</span>
+<span id="cb1-205"><a href="#cb1-205" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-206"><a href="#cb1-206" aria-hidden="true" tabindex="-1"></a>a. Extract element displacements $d_e$ from global d.</span>
+<span id="cb1-207"><a href="#cb1-207" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-208"><a href="#cb1-208" aria-hidden="true" tabindex="-1"></a>b. Compute strains $\boldsymbol{\varepsilon}_e = \mathbf{B} d_e$ and stresses $\boldsymbol{\sigma}_e = \mathbf{L} \boldsymbol{\varepsilon}_e$ at desired points.</span>
+<span id="cb1-209"><a href="#cb1-209" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-210"><a href="#cb1-210" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb1-211"><a href="#cb1-211" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-212"><a href="#cb1-212" aria-hidden="true" tabindex="-1"></a><span class="fu">## Surface Integrals and Nanson's Formula</span></span>
+<span id="cb1-213"><a href="#cb1-213" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-214"><a href="#cb1-214" aria-hidden="true" tabindex="-1"></a>To compute integrals over an element's surface in the real domain, such as for traction boundary conditions, we must map them back to the simple reference domain. This requires a transformation for the surface area element itself.</span>
+<span id="cb1-215"><a href="#cb1-215" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-216"><a href="#cb1-216" aria-hidden="true" tabindex="-1"></a>Consider the surface integral over the traction boundary $\Gamma_t$ of an element:</span>
+<span id="cb1-217"><a href="#cb1-217" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-218"><a href="#cb1-218" aria-hidden="true" tabindex="-1"></a>$$\int_{\Gamma_{t,e}} \bar{\mathbf{t}} \, d\Gamma_e$$</span>
+<span id="cb1-219"><a href="#cb1-219" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-220"><a href="#cb1-220" aria-hidden="true" tabindex="-1"></a>The integration domain $\Gamma_{t,e}$ is a 2D surface of the 3D element $\Gamma_e$. The surface domain $\Gamma_{t,e}$ is potentially distorted in real space. Mapping it to the reference element will allow us to perform the surface integral over a planar well-defined surface (e.g. a triangle or quadrilateral).</span>
+<span id="cb1-221"><a href="#cb1-221" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-222"><a href="#cb1-222" aria-hidden="true" tabindex="-1"></a>The mapping between the reference ($\boldsymbol{\xi}$) and real space ($\boldsymbol{x}$) is done using the coordinate mapping and its gradient (Jacobian):</span>
+<span id="cb1-223"><a href="#cb1-223" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-224"><a href="#cb1-224" aria-hidden="true" tabindex="-1"></a>$$|\boldsymbol{F}| = |\frac{\partial \boldsymbol{x}}{\partial \boldsymbol{\xi}}| = \boldsymbol{J}$$</span>
+<span id="cb1-225"><a href="#cb1-225" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-226"><a href="#cb1-226" aria-hidden="true" tabindex="-1"></a>The traction $\bar{\mathbf{t}}$ is defined by the stress and the vector normal to the surface $\mathbf{n}$:</span>
+<span id="cb1-227"><a href="#cb1-227" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-228"><a href="#cb1-228" aria-hidden="true" tabindex="-1"></a>$$\bar{\mathbf{t}} = \boldsymbol{\sigma} \cdot \mathbf{n}$$</span>
+<span id="cb1-229"><a href="#cb1-229" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-230"><a href="#cb1-230" aria-hidden="true" tabindex="-1"></a><span class="fu">### Nanson's Formula</span></span>
+<span id="cb1-231"><a href="#cb1-231" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-232"><a href="#cb1-232" aria-hidden="true" tabindex="-1"></a>**Nanson's Formula** provides the transformation for surface integrals:</span>
+<span id="cb1-233"><a href="#cb1-233" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-234"><a href="#cb1-234" aria-hidden="true" tabindex="-1"></a>$$\boldsymbol{n}d\Gamma_e = |\boldsymbol{J}|\boldsymbol{J}^{-T}\cdot \boldsymbol{N} d\hat{\Gamma}$$</span>
+<span id="cb1-235"><a href="#cb1-235" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-236"><a href="#cb1-236" aria-hidden="true" tabindex="-1"></a>where $\boldsymbol{N}$ is the normal vector in the reference element, and $d\hat{\Gamma}=d\xi_i d\xi_j$ is the differential area in the reference element:</span>
+<span id="cb1-237"><a href="#cb1-237" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-238"><a href="#cb1-238" aria-hidden="true" tabindex="-1"></a>$$\mathbf{n} d\Gamma = \det(\mathbf{J}) (\mathbf{J}^{-T}) \hat{\mathbf{n}}  d\hat{\Gamma}$$</span>
+<span id="cb1-239"><a href="#cb1-239" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-240"><a href="#cb1-240" aria-hidden="true" tabindex="-1"></a>The surface Jacobian is defined as:</span>
+<span id="cb1-241"><a href="#cb1-241" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-242"><a href="#cb1-242" aria-hidden="true" tabindex="-1"></a>$$J_s =  \det(\mathbf{J}) (\mathbf{J}^{-T}) \hat{\mathbf{n}}$$</span>
+<span id="cb1-243"><a href="#cb1-243" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-244"><a href="#cb1-244" aria-hidden="true" tabindex="-1"></a>The surface integral becomes:</span>
+<span id="cb1-245"><a href="#cb1-245" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-246"><a href="#cb1-246" aria-hidden="true" tabindex="-1"></a>$$\int_{\Gamma_e} g(\mathbf{x})  d\Gamma = \int_{\hat{\Gamma}} g(\mathbf{x}(\boldsymbol{\xi})) J_s(\boldsymbol{\xi})  d\hat{\Gamma}$$</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
+</div></div></div></div></div>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
