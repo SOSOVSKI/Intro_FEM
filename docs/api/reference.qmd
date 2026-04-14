@@ -1,0 +1,194 @@
+---
+title: "`reference`"
+subtitle: "Reference elements and affine maps"
+---
+
+Reference-element and affine-mapping helpers for teaching examples.
+
+
+## `ReferenceIntervalP1`
+
+Reference linear interval element on [0, 1]. Two nodes at endpoints.  Provides shape
+functions N₁ = 1 - ξ, N₂ = ξ and their constant derivatives. This is the 1D counterpart to
+ReferenceTriangleP1 for consistency.
+
+
+## `ReferenceTriangleP1`
+
+Reference P1 triangle with vertices at (0,0), (1,0), (0,1). Provides barycentric shape
+functions N₁ = 1-ξ-η, N₂ = ξ, N₃ = η and their constant gradients.
+
+
+## `ReferenceQuadrilateralQ1`
+
+Reference bilinear quadrilateral on [-1,1]². Four nodes at corners, bilinear shape
+functions.
+
+
+## `ReferenceQuadrilateralQ2`
+
+Reference biquadratic quadrilateral on [-1,1]². Nine nodes (corners + edges + center),
+tensor-product Lagrange shape functions.
+
+
+## `ReferenceHexahedronQ1`
+
+Reference trilinear hexahedron on [-1,1]³. Eight corner nodes, trilinear shape functions.
+
+
+## `ReferenceTetrahedronP1`
+
+Reference linear tetrahedron with vertices at (0,0,0), (1,0,0), (0,1,0), (0,0,1).
+Barycentric shape functions.
+
+
+## `ReferenceTetrahedronP2`
+
+Reference quadratic tetrahedron with 10 nodes. Second-order barycentric shape functions.
+
+
+## `AffineTriangleMap2D`
+
+Affine mapping from the reference triangle to a physical triangle defined by vertices
+(x₁,y₁), (x₂,y₂), (x₃,y₃). Provides the Jacobian matrix J, its determinant, the inverse
+transpose J^{-T} for gradient pullback, and the coordinate mapping formulas.
+
+
+## `nodes(self)`
+
+*No docstring.*
+
+
+## `shape_functions(self)`
+
+*No docstring.*
+
+
+## `shape_gradients_reference(self)`
+
+*No docstring.*
+
+
+## `nodes(self)`
+
+*No docstring.*
+
+
+## `shape_functions(self)`
+
+*No docstring.*
+
+
+## `shape_gradients_reference(self)`
+
+*No docstring.*
+
+
+## `exact_domain(self)`
+
+*No docstring.*
+
+
+## `nodes(self)`
+
+*No docstring.*
+
+
+## `shape_functions(self)`
+
+*No docstring.*
+
+
+## `shape_gradients_reference(self)`
+
+*No docstring.*
+
+
+## `nodes(self)`
+
+*No docstring.*
+
+
+## `shape_functions(self)`
+
+*No docstring.*
+
+
+## `shape_gradients_reference(self)`
+
+*No docstring.*
+
+
+## `nodes(self)`
+
+*No docstring.*
+
+
+## `shape_functions(self)`
+
+*No docstring.*
+
+
+## `shape_gradients_reference(self)`
+
+*No docstring.*
+
+
+## `nodes(self)`
+
+*No docstring.*
+
+
+## `shape_functions(self)`
+
+*No docstring.*
+
+
+## `shape_gradients_reference(self)`
+
+*No docstring.*
+
+
+## `nodes(self)`
+
+*No docstring.*
+
+
+## `shape_functions(self)`
+
+*No docstring.*
+
+
+## `shape_gradients_reference(self)`
+
+*No docstring.*
+
+
+## `jacobian(self)`
+
+*No docstring.*
+
+
+## `det_jacobian(self)`
+
+*No docstring.*
+
+
+## `area(self)`
+
+*No docstring.*
+
+
+## `inverse_transpose_jacobian(self)`
+
+*No docstring.*
+
+
+## `x_map(self)`
+
+*No docstring.*
+
+
+## `y_map(self)`
+
+*No docstring.*

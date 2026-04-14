@@ -1,0 +1,84 @@
+---
+title: "symbolic_fem_workbench"
+subtitle: "A teaching-first symbolic FEM toolkit for learning, not production"
+---
+
+## What is this?
+
+`symbolic_fem_workbench` is a small Python library that lives alongside the
+*Introduction to the Finite Element Method* lecture notes. Its purpose is
+narrow and deliberate: **to let students work through FEM derivations
+step by step using live symbolic mathematics**, so that every matrix entry,
+every integration-by-parts move, and every shape-function coefficient can
+be inspected rather than taken on faith.
+
+::: {.callout-important}
+## This is a teaching tool, not a production FEM solver
+
+`symbolic_fem_workbench` is intentionally simple, slow, and explicit.
+It is **not** a replacement for production FEM software such as
+[FEniCSx](https://fenicsproject.org), [deal.II](https://www.dealii.org),
+or [Firedrake](https://www.firedrakeproject.org).
+
+- It will not scale beyond small academic examples.
+- It prioritises readability over performance at every design decision.
+- SymPy symbolic computation is used throughout, which is orders of magnitude
+  slower than compiled code.
+- There is no mesh partitioning, no sparse storage, no iterative solvers.
+
+If you are building engineering software, use FEniCSx. If you want to
+*understand why* FEniCSx works the way it does, start here.
+:::
+
+## Design philosophy
+
+The library is organised around the **workflow a student follows on paper**:
+
+1. Write down the strong form of a PDE.
+2. Multiply by a test function and integrate over the domain.
+3. Apply integration by parts to reduce the smoothness requirement.
+4. Enforce boundary conditions.
+5. Substitute a finite-dimensional approximation.
+6. Extract the element stiffness matrix and load vector.
+7. Assemble into a global system.
+8. Solve.
+
+Each module owns exactly one of these steps. There are no hidden
+shortcuts. When a function does something non-trivial it says so in its
+docstring, and you can read the source in a few minutes.
+
+## Module overview
+
+| Module | Responsibility |
+|---|---|
+| `symbols` | Symbolic fields, domains, and coordinate helpers |
+| `forms` | Containers for domain integrals and boundary terms |
+| `fe_spaces` | Shape functions and local field expansions |
+| `reference` | Reference elements (P1 interval, triangle, tetrahedron) and affine maps |
+| `quadrature` | Exact and Gaussian quadrature on reference elements |
+| `transforms` | Symbolic transformations: IBP, Neumann flux, Galerkin substitution |
+| `extract` | Extract element matrices and vectors from discretised forms |
+| `assembly` | Manual element-to-global assembly (dense, educational) |
+| `elasticity` | Constitutive matrices and B-matrices for 2D/3D elasticity |
+| `workflow` | High-level helpers that string multiple steps together |
+| `viz` | Matplotlib-based plotting of shape functions and solutions |
+| `codegen` | Emit I❤LA source from symbolic expressions |
+
+## What the companion notebooks show
+
+The fourteen [companion notebooks](../notebooks/_output/index.html) walk
+through the full FEM pipeline from scratch using this library. Each one
+corresponds to a topic in the lecture notes and is designed to be run
+interactively while reading the relevant chapter.
+
+## Installation
+
+```bash
+# Clone the repository and install in editable mode
+git clone https://github.com/shmuelosovski/IntroFem
+cd IntroFem
+pip install -e ".[lectures]"
+```
+
+See [Getting Started](getting-started.qmd) for the full environment setup
+including FEniCSx.

@@ -1,0 +1,94 @@
+project:
+  type: book
+  output-dir: _output
+
+book:
+  title: "FEM Companion Notebooks"
+  author: "Shmuel Osovski"
+  date: "2025"
+  chapters:
+    - index.qmd
+    - part: "Foundations"
+      chapters:
+        - 01_strong_to_weak_form.ipynb
+        - 02_galerkin_discretization.ipynb
+        - 03_1d_element_stiffness.ipynb
+    - part: "Integration & Elements"
+      chapters:
+        - 04_exact_vs_gauss_integration.ipynb
+        - 05_reference_element_gallery.ipynb
+    - part: "2D / 3D Problems"
+      chapters:
+        - 06_2d_triangle_poisson.ipynb
+        - 07_manual_assembly_2d.ipynb
+        - 08_boundary_conditions_1d.ipynb
+        - 09_boundary_conditions_2d.ipynb
+        - 10_2d_elasticity.ipynb
+        - 11_3d_elasticity.ipynb
+    - part: "Advanced Topics"
+      chapters:
+        - 12_iheartla_and_widgets.ipynb
+        - 13_time_dependent_fem.ipynb
+        - 14_error_analysis.ipynb
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    number-sections: true
+    code-fold: false
+    code-tools: true
+
+  pdf:
+    pdf-engine: pdflatex
+    toc: true
+    number-sections: true
+    echo: true
+    include-in-header:
+      text: |
+        \usepackage{fvextra}
+        \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\{\}}
+        \usepackage{pmboxdraw}
+        \usepackage{newunicodechar}
+        \newunicodechar{²}{\textsuperscript{2}}
+        \newunicodechar{¹}{\textsuperscript{1}}
+        \newunicodechar{⁴}{\textsuperscript{4}}
+        \newunicodechar{⁻}{\textsuperscript{-}}
+        \newunicodechar{×}{\ensuremath{\times}}
+        \newunicodechar{·}{\ensuremath{\cdot}}
+        \newunicodechar{≈}{\ensuremath{\approx}}
+        \newunicodechar{→}{\ensuremath{\rightarrow}}
+        \newunicodechar{α}{\ensuremath{\alpha}}
+        \newunicodechar{γ}{\ensuremath{\gamma}}
+        \newunicodechar{ε}{\ensuremath{\varepsilon}}
+        \newunicodechar{ζ}{\ensuremath{\zeta}}
+        \newunicodechar{λ}{\ensuremath{\lambda}}
+        \newunicodechar{μ}{\ensuremath{\mu}}
+        \newunicodechar{ν}{\ensuremath{\nu}}
+        \newunicodechar{π}{\ensuremath{\pi}}
+        \newunicodechar{φ}{\ensuremath{\varphi}}
+        \newunicodechar{Ω}{\ensuremath{\Omega}}
+        \newunicodechar{₀}{\textsubscript{0}}
+        \newunicodechar{₁}{\textsubscript{1}}
+        \newunicodechar{₂}{\textsubscript{2}}
+        \newunicodechar{₃}{\textsubscript{3}}
+        \newunicodechar{₄}{\textsubscript{4}}
+        \newunicodechar{∂}{\ensuremath{\partial}}
+        \newunicodechar{∈}{\ensuremath{\in}}
+        \newunicodechar{∉}{\ensuremath{\notin}}
+        \newunicodechar{∫}{\ensuremath{\int}}
+        \newunicodechar{∣}{\ensuremath{\vert}}
+        \newunicodechar{⋅}{\ensuremath{\cdot}}
+        \newunicodechar{↑}{\ensuremath{\uparrow}}
+        \newunicodechar{ᵢ}{\textsubscript{i}}
+        \newunicodechar{ⱼ}{\textsubscript{j}}
+        \newunicodechar{ᴸ}{\textsuperscript{L}}
+        \newunicodechar{❤}{\ensuremath{\heartsuit}}
+        \newunicodechar{️}{}
+
+execute:
+  echo: true
+  warning: false
+  freeze: auto
+
+jupyter: python3

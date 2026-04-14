@@ -1,0 +1,59 @@
+project:
+  type: website
+  output-dir: _output
+
+website:
+  title: "symbolic_fem_workbench"
+  description: "A teaching-first symbolic FEM toolkit"
+  navbar:
+    left:
+      - text: "Overview"
+        href: index.qmd
+      - text: "Getting Started"
+        href: getting-started.qmd
+      - text: "API Reference"
+        menu:
+          - text: "symbols"
+            href: api/symbols.qmd
+          - text: "forms"
+            href: api/forms.qmd
+          - text: "fe_spaces"
+            href: api/fe_spaces.qmd
+          - text: "reference"
+            href: api/reference.qmd
+          - text: "quadrature"
+            href: api/quadrature.qmd
+          - text: "transforms"
+            href: api/transforms.qmd
+          - text: "extract"
+            href: api/extract.qmd
+          - text: "assembly"
+            href: api/assembly.qmd
+          - text: "elasticity"
+            href: api/elasticity.qmd
+          - text: "workflow"
+            href: api/workflow.qmd
+          - text: "viz"
+            href: api/viz.qmd
+          - text: "codegen"
+            href: api/codegen.qmd
+      - text: "Lecture Notes"
+        href: ../book/_output/index.html
+      - text: "Companion Notebooks"
+        href: ../notebooks/_output/index.html
+    right:
+      - icon: github
+        href: https://github.com/shmuelosovski/IntroFem
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+
+execute:
+  echo: true
+  warning: false
+  freeze: auto
+
+jupyter: python3

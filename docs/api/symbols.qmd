@@ -1,0 +1,24 @@
+---
+title: "`symbols`"
+subtitle: "Symbol and domain helpers"
+---
+
+Symbol and domain helpers for teaching-first symbolic FEM workflows.
+
+
+## `ScalarField`
+
+A thin wrapper around a SymPy scalar field expression.
+
+
+## `make_field_1d(name, x)`
+
+Create a symbolic 1D scalar field as a SymPy Function application. Returns
+Function(name)(x), which SymPy treats as an undefined function of x, suitable for
+differentiation and integration.
+
+
+## `make_field_2d(name, x, y)`
+
+Create a symbolic 2D scalar field as a SymPy Function application. Returns
+Function(name)(x, y).

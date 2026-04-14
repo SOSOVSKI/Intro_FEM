@@ -1,0 +1,19 @@
+---
+title: "`codegen`"
+subtitle: "I❤LA code generation"
+---
+
+Very small backend wrapper around the I❤️LA printer.
+
+This module intentionally stops at source generation. Compilation to NumPy is left to the
+external I❤️LA toolchain so the course can keep that boundary explicit.
+
+
+## `emit_iheartla_scalar(name, expr, declarations)`
+
+*No docstring.*
+
+
+## `emit_iheartla_matrix(name, matrix, declarations)`
+
+*No docstring.*

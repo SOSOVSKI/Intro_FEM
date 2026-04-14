@@ -1,0 +1,117 @@
+---
+title: "`transforms`"
+subtitle: "Symbolic transformations"
+---
+
+Explicit symbolic transformations for the teaching workflow.
+
+
+## `weighted_residual(lhs, rhs, test, domain)`
+
+Construct the weighted residual from a strong-form equation. Given a strong form lhs =
+rhs, multiplies the residual (lhs - rhs) by the test function and integrates over the
+domain. This is the first step in deriving the weak form. Parameters: lhs - left-hand side
+of the strong form, rhs - right-hand side, test - test (weight) function, domain - 1D
+domain tuple (x, x_min, x_max). Returns a WeightedResidual container.
+
+
+## `integrate_divergence_1d(flux, test, x, domain)`
+
+Apply integration by parts to a flux-divergence term in 1D. Converts ∫ (d(flux)/dx)·v dx
+into -∫ flux·(dv/dx) dx plus boundary terms [flux·v] evaluated at both ends. This reduces
+the smoothness requirement on the trial function by shifting one derivative onto the test
+function. Parameters: flux - the flux expression (e.g. E·A·du/dx), test - the test
+function v, x - the spatial coordinate symbol, domain - 1D domain tuple. Returns
+(domain_integral, (boundary_left, boundary_right)).
+
+
+## `drop_dirichlet_boundary(boundary_term, test)`
+
+Enforce a homogeneous Dirichlet condition by setting the test function to zero at a
+boundary. In FEM, the test space vanishes on the essential (Dirichlet) boundary. This
+function evaluates the boundary term and substitutes v=0 at the specified location.
+Parameters: boundary_term - a BoundaryContribution object, test - the test function
+expression. Returns the simplified (typically zero) boundary contribution.
+
+
+## `apply_neumann_flux(boundary_term, flux_expr, prescribed_flux)`
+
+Apply a prescribed Neumann (natural) boundary condition. Substitutes the known flux value
+into a boundary term and evaluates at the boundary location. Parameters: boundary_term - a
+BoundaryContribution object, flux_expr - the symbolic flux to replace, prescribed_flux -
+the known boundary flux value. Returns the evaluated boundary contribution.
+
+
+## `split_linear_weak_form(expr, trial, test)`
+
+Split a weak-form expression into its bilinear and linear parts. Identifies which terms
+depend on both trial and test functions (bilinear form a(u,v)) and which depend only on
+the test function (linear form F(v), moved to the RHS). Parameters: expr - the combined
+weak form expression, trial - the trial field, test - the test field. Returns a WeakForm
+with .bilinear and .linear attributes.
+
+
+## `grad_2d(expr, x, y)`
+
+Return the 2D gradient as a column vector.
+
+
+## `pullback_gradient_2d(gradient_ref, jacobian)`
+
+Map a reference-space gradient into physical coordinates using J^{-T}.
+
+
+## `substitute_field(expr, field, replacement)`
+
+Replace a symbolic field with a finite-element expansion in an expression. Handles
+derivatives of all orders: finds the maximum derivative order present, then substitutes
+from highest to lowest to avoid partial matches. This implements the Galerkin
+discretization step u(x) → Σ Nᵢ dᵢ. Parameters: expr - the expression to substitute into,
+field - the symbolic field (e.g. u(x)), replacement - the FE expansion, *coordinates - the
+spatial coordinate symbols. Returns the expanded expression with all field references
+replaced.
+
+
+## `substitute_fe(expr, replacements)`
+
+Apply multiple field substitutions for Galerkin discretization. Convenience wrapper that
+calls substitute_field for each (field, replacement) pair. Typically used to substitute
+both trial u→u_h and test v→v_h simultaneously. Parameters: expr - the expression,
+replacements - dict mapping fields to their FE expansions, *coordinates - spatial
+coordinates. Returns the fully discretized expression.
+
+
+## `gateaux_derivative(form, trial_var, increment_var)`
+
+Compute the Gateaux (directional) derivative for linearization. Evaluates d/dε[form(u +
+ε·δu)]|_{ε=0}. Used in Newton-Raphson linearization of nonlinear problems. Parameters:
+form - the nonlinear form expression, trial_var - the current solution variable,
+increment_var - the increment/perturbation variable. Returns the linearized expression.
+
+
+## `integrate_boundary_edge_1d(integrand, t, t_start, t_end)`
+
+Integrate an expression along a 1D parametric edge.  In 2D FEM, boundary integrals arise
+from integration by parts of the flux-divergence term.  When the divergence theorem
+converts a domain integral to a boundary integral, the result is a line integral along
+each boundary edge:      ∫_Γ (flux · n) v ds  For a straight edge parameterised by t ∈
+[t_start, t_end], this function evaluates ∫ integrand dt.  Parameters ---------- integrand
+: sp.Expr     The boundary integrand (already including the edge Jacobian / length
+factor if the parameterisation is not unit-speed). t : sp.Symbol     The parameterisation
+variable. t_start, t_end : sp.Expr     Limits of integration.  Returns ------- sp.Expr
+The simplified result of the line integral.
+
+
+## `neumann_load_vector_triangle_edge(ref_element, edge_local_nodes, prescribed_flux, edge_length, xi, eta)`
+
+Compute the Neumann contribution to the element load vector for one edge.  For a P1
+triangle with a Neumann BC t* on one edge, the boundary integral contributes:      f_e[i]
++= ∫_edge t* N_i ds  On a straight edge of length |e|, with a linear parameterisation, the
+shape functions restrict to 1D linear functions on the edge. For constant t*, the result
+is  t* |e| / 2  for each of the two edge nodes, and 0 for the interior node.  Parameters
+---------- ref_element     Reference element (e.g. ReferenceTriangleP1) with
+.shape_functions. edge_local_nodes : tuple[int, int]     Local node indices (0-based) of
+the two nodes on the boundary edge. prescribed_flux : sp.Expr     The prescribed Neumann
+flux value t*. edge_length : sp.Expr     Physical length of the edge. xi, eta : sp.Symbol
+Reference coordinate symbols.  Returns ------- sp.Matrix     Column vector of length
+n_nodes with the boundary contributions.

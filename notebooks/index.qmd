@@ -1,0 +1,23 @@
+---
+title: "FEM Companion Notebooks"
+---
+
+These notebooks accompany the *Introduction to the Finite Element Method* lecture notes.
+Each one is a hands-on exercise that lets you work through the key ideas symbolically and numerically using the `symbolic_fem_workbench` package.
+
+| # | Notebook | Topic |
+|---|----------|-------|
+| 1 | [Strong to Weak Form](01_strong_to_weak_form.ipynb) | Weighted residuals, integration by parts |
+| 2 | [Galerkin Discretization](02_galerkin_discretization.ipynb) | Element matrices from weak form |
+| 3 | [1D Element Stiffness](03_1d_element_stiffness.ipynb) | Symbolic → numerical assembly |
+| 4 | [Exact vs. Gauss Integration](04_exact_vs_gauss_integration.ipynb) | Quadrature rules |
+| 5 | [Reference Element Gallery](05_reference_element_gallery.ipynb) | Shape functions in 1D/2D/3D |
+| 6 | [2D Triangle Poisson](06_2d_triangle_poisson.ipynb) | Gradient pullback, local tensors |
+| 7 | [Manual 2D Assembly](07_manual_assembly_2d.ipynb) | Global stiffness from local elements |
+| 8 | [Boundary Conditions 1D](08_boundary_conditions_1d.ipynb) | Dirichlet & Neumann in 1D |
+| 9 | [Boundary Conditions 2D](09_boundary_conditions_2d.ipynb) | Neumann edges, Dirichlet lifting |
+| 10 | [2D Elasticity](10_2d_elasticity.ipynb) | P1 triangles, stress/strain |
+| 11 | [3D Elasticity](11_3d_elasticity.ipynb) | P1 tetrahedra |
+| 12 | [Code Generation & Widgets](12_iheartla_and_widgets.ipynb) | Interactive exploration |
+| 13 | [Time-Dependent FEM](13_time_dependent_fem.ipynb) | Mass matrix, time stepping |
+| 14 | [Error Analysis](14_error_analysis.ipynb) | Convergence rates |

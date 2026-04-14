@@ -1,0 +1,46 @@
+---
+title: "`forms`"
+subtitle: "Form containers"
+---
+
+Structured form containers used by the symbolic FEM workflow.
+
+
+## `DomainIntegral`
+
+A domain integral ∫ integrand dx over a 1D domain. Call .as_integral() to get a SymPy
+Integral object.
+
+
+## `BoundaryContribution`
+
+A boundary term from integration by parts. Stores the expression, coordinate, evaluation
+point, and optional label. Call .evaluate() to substitute the coordinate and simplify.
+
+
+## `WeightedResidual`
+
+The complete weighted residual before splitting into bilinear/linear forms. Contains
+domain integrals and boundary contributions. Call .as_expression() to combine into a
+single SymPy expression.
+
+
+## `WeakForm`
+
+The split weak form with bilinear part a(u,v) and linear part F(v). The bilinear form
+contains terms with both trial and test functions. The linear form is the right-hand side.
+
+
+## `as_integral(self)`
+
+*No docstring.*
+
+
+## `evaluate(self)`
+
+*No docstring.*
+
+
+## `as_expression(self)`
+
+*No docstring.*

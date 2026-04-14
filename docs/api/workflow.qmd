@@ -1,0 +1,45 @@
+---
+title: "`workflow`"
+subtitle: "High-level workflow helpers"
+---
+
+Small workflow helpers for course-ready examples.
+
+
+## `build_bar_1d_local_problem()`
+
+Build the complete 1D bar/Poisson local element problem symbolically. Derives the weak
+form from the strong form d/dx(EA·du/dx) + q = 0, applies integration by parts, enforces
+homogeneous Dirichlet at x=0 and Neumann traction P at x=L, substitutes P1 shape
+functions, and extracts the 2×2 element stiffness matrix and 2×1 load vector. Returns a
+dict with keys: x, L, E, A, q, P (symbols); u, v (fields); weak_bilinear, weak_linear
+(forms); Ke (2×2 Matrix), fe (2×1 Matrix).
+
+
+## `build_poisson_triangle_p1_local_problem()`
+
+Build a teaching-first local P1 triangle problem for scalar Poisson/diffusion.
+
+
+## `build_bar_1d_mass_matrix()`
+
+Build the consistent mass matrix for a 1D bar element.  Derives M_e from the L2 inner
+product ∫ ρA·u·v dx on a two-node linear element. Used in time-dependent problems:
+M·a_ddot + K·a = F.  Returns a dict with keys: x, L, rho, A (symbols); Me (2×2 Matrix).
+
+
+## `build_elasticity_triangle_p1_2d(formulation)`
+
+Build local element matrices for 2D linear elasticity on a P1 triangle.  Demonstrates the
+full pipeline: constitutive matrix D, gradient pullback, B-matrix construction, and K_e =
+t A B^T D B.  Parameters ---------- formulation : str     Either "plane_stress" or
+"plane_strain".  Returns a dict with: E_sym, nu (material); D (3×3 constitutive); B (3×6
+strain-displacement); Ke (6×6 element stiffness); geometry; etc.
+
+
+## `build_elasticity_tetra_p1_3d()`
+
+Build local element matrices for 3D linear elasticity on a P1 tetrahedron.  Derives the
+full pipeline: 6×6 constitutive matrix D, gradient pullback via 3×3 Jacobian, B-matrix
+(6×12), and K_e = V B^T D B (12×12).  Returns a dict with: E, nu (material); D (6×6); B
+(6×12); Ke (12×12); vertex symbols; etc.

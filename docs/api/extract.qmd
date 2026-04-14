@@ -1,0 +1,25 @@
+---
+title: "`extract`"
+subtitle: "Element matrix/vector extraction"
+---
+
+Helpers for extracting local element matrices and vectors from symbolic forms.
+
+
+## `extract_coefficient_matrix(expr, trial_dofs, test_dofs)`
+
+Extract the local element stiffness matrix from a discretized bilinear form. After
+Galerkin substitution, the bilinear form is a polynomial in trial DOFs (d₀, d₁, ...) and
+test DOFs (w₀, w₁, ...). This function extracts the coefficient of each (wᵢ, dⱼ) pair to
+build the element matrix K_e[i,j]. Parameters: expr - the discretized bilinear form
+expression, trial_dofs - list of trial DOF symbols, test_dofs - list of test DOF symbols.
+Returns a SymPy Matrix of shape (n_test, n_trial).
+
+
+## `extract_coefficient_vector(expr, test_dofs)`
+
+Extract the local element load vector from a discretized linear form. After Galerkin
+substitution, the linear form is a polynomial in test DOFs (w₀, w₁, ...). This function
+extracts the coefficient of each wᵢ to build the element load vector f_e[i]. Parameters:
+expr - the discretized linear form expression, test_dofs - list of test DOF symbols.
+Returns a SymPy column Matrix of length n_test.

@@ -1,0 +1,18 @@
+name: fem-env
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  # Python version pinned to match FEniCSx 0.9.0 support
+  - python=3.11
+
+  # FEniCSx stack — must come from conda-forge (not available on PyPI)
+  - fenics-dolfinx=0.9.0
+  - mpich
+  - pyvista=0.45.2
+
+  # uv is installed here so it's available inside the conda env
+  - pip
+  - pip:
+    - uv

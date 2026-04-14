@@ -1,71 +1,127 @@
-# symbolic-fem-workbench
+# Introduction to the Finite Element Method
 
-A pedagogical symbolic FEM workbench built on top of SymPy.
+Course materials for the *Introduction to the Finite Element Method* graduate course at the Technion — Israel Institute of Technology.
 
-This package is designed for teaching finite elements without turning the derivation into a black box. It supports explicit symbolic steps from strong form to weak form, finite-dimensional substitution at the element level, extraction of local tensors, and optional export of finalized local algebra to I❤️LA-ready text.
+The repository contains three interconnected components:
 
-## Design goals
+| Component | What it is | Where |
+|---|---|---|
+| **Lecture notes** | Quarto book (HTML + PDF) covering theory through implementation | `book/` |
+| **Companion notebooks** | 14 Jupyter notebooks for hands-on practice | `notebooks/` |
+| **`symbolic_fem_workbench`** | Teaching Python package used by the notebooks | `src/symbolic_fem_workbench/` |
 
-- keep every analytical step visible,
-- reduce sign, derivative, and indexing mistakes,
-- separate calculus from topology and global assembly,
-- support teaching-first workflows,
-- stay narrow in scope for the first phase.
-
-## Current scope
-
-### 1D
-
-- 1D linear scalar problems in divergence form,
-- weighted residual construction,
-- integration by parts for divergence terms,
-- explicit Dirichlet and Neumann boundary handling,
-- P1 interval finite elements,
-- element matrix/vector extraction.
-
-### 2D phase 1
-
-- local P1 triangle geometry helpers,
-- affine reference-to-physical mapping,
-- gradient pullback using `J^{-T}`,
-- exact integration on the reference triangle,
-- local stiffness/load extraction for scalar Poisson-type forms.
-
-## Package layout
-
-```text
-src/symbolic_fem_workbench/
-    symbols.py
-    forms.py
-    transforms.py
-    fe_spaces.py
-    reference.py
-    quadrature.py
-    extract.py
-    validate.py
-    workflow.py
-    assembly.py
-    printers/
-        iheartla_printer.py
-    codegen/
-        iheartla_backend.py
-```
+---
 
 ## Quick start
 
-See:
+### 1. Set up the environment
 
-- `examples/bar_1d_workflow.py`
-- `examples/triangle_p1_poisson_workflow.py`
-- `examples/manual_assembly_square_4tri.py`
-- `examples/triangle_p1_poisson_workflow.py`
+FEniCSx (chapters 14 and 16) is only available through conda-forge. Everything else is pure Python.
 
-## What this package does not do
+```bash
+conda env create -f environment.yml
+conda activate fem-env
+uv pip install -e ".[lectures,dev]"
+```
 
-- global assembly,
-- mesh generation,
-- full boundary-condition management in 2D,
-- nonlinear automation,
-- replacement of a real FEM framework.
+### 2. Build everything
 
-That is intentional. Students should still write their own assembly and topology code, because that is where most of the method actually becomes real.
+```bash
+make all
+```
+
+This renders the lecture-note book (HTML + PDF), the companion notebooks (HTML + PDF), and the revealjs lecture slides.
+
+### 3. Open the materials
+
+| Output | Path |
+|---|---|
+| Book (HTML) | `book/_output/index.html` |
+| Book (PDF) | `book/_output/Introduction-to-the-Finite-Element-Method.pdf` |
+| Notebooks (HTML) | `notebooks/_output/index.html` |
+| Notebooks (PDF) | `notebooks/_output/FEM-Companion-Notebooks.pdf` |
+| Lecture slides | `book/_slides/ch01-introduction.html` … |
+| Package docs | `docs/_output/index.html` |
+
+---
+
+## Repository layout
+
+```
+IntroFem/
+├── book/                  # Lecture note source (Quarto book)
+│   ├── _quarto.yml        #   Book configuration
+│   ├── index.qmd          #   Preface
+│   ├── ch01–ch16 *.qmd    #   Chapters
+│   ├── _slides/           #   Generated revealjs slides (gitignored)
+│   └── _output/           #   Generated HTML + PDF (gitignored)
+│
+├── notebooks/             # Companion Jupyter notebooks
+│   ├── _quarto.yml        #   Book configuration
+│   ├── 01–14 *.ipynb      #   Exercises (14 notebooks)
+│   └── _output/           #   Generated HTML + PDF (gitignored)
+│
+├── src/
+│   └── symbolic_fem_workbench/   # Teaching Python package
+│
+├── docs/                  # Package documentation (Quarto website)
+├── examples/              # Standalone usage examples
+├── tests/                 # Test suite (pytest)
+├── environment.yml        # conda environment (Python 3.11 + FEniCSx)
+├── pyproject.toml         # Python package metadata
+└── Makefile               # All build targets
+```
+
+---
+
+## Build targets
+
+```bash
+make all               # build everything
+make book              # lecture notes HTML + PDF
+make book-html         # HTML only
+make book-pdf          # PDF only
+make notebooks         # companion notebooks HTML + PDF
+make slides            # revealjs lecture slides
+make docs              # package documentation website
+make purge             # remove all build outputs and freeze caches
+```
+
+---
+
+## Course structure
+
+The lecture notes cover FEM from first principles through 3D implementation in FEniCSx.
+
+**Part I — Foundations:** Strong and weak forms, algebraic system, function spaces
+
+**Part II — 1D Finite Elements:** Shape functions, assembly, time-dependent problems
+
+**Part III — Multi-Dimensional FEM:** Reference elements, isoparametric mapping, 2D heat transfer
+
+**Part IV — Elasticity:** Continuum mechanics, 3D elasticity
+
+**Part V — Implementation & Error Analysis:** FEM software, error estimates, FEniCSx tutorial
+
+**Part VI — Structural Elements:** Beam theory (Euler-Bernoulli and Timoshenko), FEniCSx implementation
+
+---
+
+## The `symbolic_fem_workbench` package
+
+A small, teaching-first symbolic FEM library built on SymPy. Every step from strong form to element matrix is explicit and inspectable. It is **not** a production FEM solver — see `docs/` for the full rationale and API reference.
+
+```python
+from symbolic_fem_workbench.workflow import build_bar_1d_local_problem
+result = build_bar_1d_local_problem()
+print(result["Ke"])   # 2×2 symbolic stiffness matrix
+```
+
+---
+
+## Requirements
+
+- Python 3.11
+- conda / mamba (for FEniCSx)
+- [Quarto](https://quarto.org) ≥ 1.4
+- pdflatex (TeX Live 2023 or later)

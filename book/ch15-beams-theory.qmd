@@ -1,0 +1,513 @@
+---
+title: "Structural Elements: Beam Theory"
+---
+
+## Structural Elements
+When analyzing large structures like bridges, aircraft wings, or building frames, creating a full 3D solid model can be computationally prohibitive.
+
+**Advantage:** 
+
+- **Computational Efficiency**: Reduce 3D problems to 1D or 2D
+- **Physical Insight**: Directly incorporate structural behavior
+- **Engineering Relevance**: Match real-world design practices
+- **Reduced DOF**: Significantly fewer degrees of freedom
+
+**Common Structural Elements:** 
+
+- **Truss Elements**: Axial loading only
+- **Beam Elements**: Bending, shear, and axial loads
+- **Frame Elements**: Combined beam behavior with rigid connections
+- **Shell Elements**: Thin-walled structures
+- **Plate Elements**: Flat structural components
+
+## What Kind of Beam? It Depends on the Physics
+We will focus on 1D beam elements, but even here, we have choices based on the underlying physical assumptions.
+
+| Element Type | Resists | Key Assumption | Best For |
+|---|---|---|---|
+| **Strut/Bar** | Axial Loads | Joints are perfect pins. | Trusses |
+| **Euler-Bernoulli Beam** | Bending & Axial | Sections stay plane and **perpendicular** to the axis. | Long, thin beams |
+| **Timoshenko Beam** | Bending, Axial & **Shear**| Sections stay plane but **not necessarily perpendicular**. | Short, thick beams |
+
+## Review of Beam Theory
+Consider a straight rod undergoing pure bending in 2D
+
+Let the rod be aligned with the x-axis, and let the z-axis be the down pointing vertical axis.
+
+Assuming that:
+
+- The Cross-sections remain straight
+- Horizontal displacement are described by the rotation $\psi(x)$
+- Small strain approximation applies (so the vertical displacement $w(x)$ is much larger that the contribution of the rotation)
+
+For a given deflection $w(x)$ and rotation $\psi(x)$ the displacemnt field is given by:
+
+$$
+\mathbf{u} = \begin{bmatrix} -\psi(x)z \\ 0 \\ w(x) \end{bmatrix}
+$$
+
+The strain field is given by:
+
+$$
+\boldsymbol{\varepsilon} = \begin{pmatrix} - \psi'(x) z & 0 & \frac{1}{2}(w'(x) - \psi(x)) \\ 0 & 0 & 0 \\ \frac{1}{2}(w'(x) - \psi(x)) & 0 & 0 \end{pmatrix}.
+$$
+
+Using Hooke's law, the stress field is given by:
+
+$$\sigma_{11}(x,z) = E\varepsilon_{11}(x,z) = -E\psi'(x)z$$
+
+$$\sigma_{13}(x,z) = 2G\varepsilon_{13}(x,z) = G(w'(x) - \psi(x))$$
+
+where:
+- $E$: Young's modulus
+- $G$: Shear modulus
+
+## Resultant Forces and Moments
+**Normal Force:**
+$$
+N(x) = \int_A \sigma_{11}(x,z) \, dA = -\int_A E\psi'(x)z \, dA = -E\psi'(x) \int_A z \, dA
+$$
+
+Assumin that the x-axis is going through the nuetral axis we obtain:
+
+$$
+N(x) =  -E\psi'(x) \int_A z \, dA =0
+$$
+
+**Shear Force:**
+$$
+Q(x) = \int_A \sigma_{13}(x,z) \, dA =  \mu A(w'(x) - \psi(x))
+$$
+
+**Bending Moment:**
+$$
+M(x) = \int_A z\sigma_{11}(x,z) \, dA = -EI_y\psi'(x)
+$$
+
+**Area Moment of Inertia**
+$$I_y = \int_A z^2 \, dA$$
+
+## Shear Correction Factor
+### Physical Justification
+- Shear stress varies across cross-section
+- Must be zero at free edges
+- Correction factor $\kappa$ accounts for non-uniform distribution
+
+$$
+Q(x) = k\mu A(w'(x) - \psi(x))
+$$
+
+**Typical Values**
+
+* Rectangular cross-section:
+$$\kappa = \frac{10(1+\nu)}{12+11\nu} \approx \frac{5}{6}$$
+
+* Circular cross-section:
+$$\kappa = \frac{6(1+\nu)}{7+6\nu} \approx \frac{6}{7}$$
+
+## Equilibrium Relations
+Assume a distributed load $q(x)$ acting along the beam.
+
+**Force Equilibrium**
+
+From equilibrium of infinitesimal beam segment:
+
+$$
+Q(x+dx) -Q(x) = -q(x)dx
+$$
+rearranging, and taking the limit as $dx \to 0$ gives:
+
+$$
+q(x) = -\frac{Q(x+dx) -Q(x)}{dx} \to -\frac{dQ}{dx}(x)
+$$
+
+**Moment Equilibrium**
+
+Angular momentum balance yields:
+$$
+M(x+dx)-M(x)-(Q(x+dx)+Q(x))\frac{dx}{2} = 0
+$$
+
+Approximating $(Q(x+dx)+Q(x))dx$ as $(Q(x)+dQ+Q(x))dx$ and assuming that $dQ$ is small enough to be neglected, we can write:
+$$Q(x) \to \frac{dM}{dx}(x)$$
+
+**Combined Relations**
+$$
+\begin{aligned}
+q(x)=-Q'(x) \\
+M'(x) = Q(x) \\
+M''(x) = -q(x)
+\end{aligned}
+$$
+
+## Beam Element Types
+### Three Main Categories
+
+1. **Strut Elements**
+   - Axial deformation only
+   - No bending resistance
+   - 1 DOF per node (axial displacement)
+
+2. **Euler-Bernoulli Beams**
+   - Plane sections remain plane and perpendicular
+   - The beam is sufficiently slender such that the transverse force is negligible: $Q(x) \approx 0$
+
+3. **Timoshenko Beams**
+   - Plane sections remain plane but not necessarily perpendicular
+   - we solve for both the transverse displacement $w(x)$ and the rotation $\psi(x)$
+
+## Euler-Bernoulli vs Timoshenko
+#### Euler-Bernoulli Theory
+
+**Key Assumption:**
+$$Q(x) \approx 0 \Rightarrow \psi(x) \approx w'(x)$$
+
+**Governing Equation:**
+$$M(x) = -EI_y w''(x)$$
+$$M''(x)=-\frac{d^2}{dx^2}(EI_y w''(x)) = -q(x)$$
+
+For constant $EI_y$:
+
+$$
+\begin{aligned}
+EI_y w''''(x) &= q(x) \\
+EI_y w'''(x) &= -Q(x) \\
+EI_y w''(x) &= -M(x) 
+\end{aligned}
+$$
+
+### Timoshenko Theory
+
+**Independent Variables:** $w(x)$ and $\psi(x)$
+
+**Governing Equations:**
+$$
+\begin{aligned}
+&(EI_y\psi'(x))'' = q(x) \\
+&w'(x) = \psi(x) - \frac{1}{\kappa \mu A}(EI_y\psi'(x))'
+\end{aligned}
+$$
+
+## When to Use Each Theory?
+### Euler-Bernoulli Applications
+- **Slender beams**: $L/h > 10$
+- Static analysis of thin beams
+- Simple bending problems
+
+### Timoshenko Applications
+- **Short/thick beams**: $L/h < 10$
+- High-frequency dynamic analysis
+- Composite beams
+- When shear deformation is significant
+
+## Finite element Analysis with beam elements
+For Euler-Bernoulli beam we can derive the energy density as:
+
+$$
+W = \frac{1}{2}\varepsilon_{11} \sigma_{11} = \frac{1}{2}E (\psi'(x))^2 z^2 
+$$
+
+And since $\psi(x) \approx w'(x)$ we can write:
+$$
+W = \frac{1}{2}EI_y (w''(x))^2
+$$
+
+Assuming a homogeneous beam (constant $E$), the total potential energy of the beam is given by:
+
+$$
+\Pi = \int_0^L W \, dA = EI_yw''(x)^2 
+$$
+
+## Problem Description
+We will look at a linear homogeneous beam with constant $EI_y$ subjected to:
+
+1. A distributed load $q(x)$ acting in the z-direction
+2. Bending moments $M_1$ and $M_2$ about the y-axis (which is the axis into the plane)
+3. Two forces $F_1$ and $F_2$ at the ends of the beam  acting in opposite directions in the z-direction
+
+**The Strong Form**
+
+$$
+EI_y \frac{d^4 w(x)}{dx^4} = q(x)
+$$
+
+With boundary conditions:
+
+$$
+\begin{aligned}
+F_1 = EI_y\frac{d^3 w(0)}{dx^3} \quad &, \quad F_2 =-EI_y\frac{d^3 w(L)}{dx^3} \\
+M_1 = EI_y\frac{d^2 w(0)}{dx^2} \quad &, \quad M_2 = -EI_y\frac{d^2 w(L)}{dx^2}
+\end{aligned}
+$$
+
+For a deflection $w(x)$ we can write the potential energy functional as:
+
+$$
+\begin{aligned}
+\int_0^L \left[\frac{1}{2}EI_y(w'')^2 - q(x)w(x)\right] dx \\
+&- F_1 w(0) - F_2 w(L) + M_1 \frac{dw}{dx}|_{x=0} + M_2 \frac{dw}{dx}|_{x=L}
+\end{aligned}
+$$
+
+where we used the fact that for small deflections the beam rotation is approximated by the first derivative of the defkection and thus the work done by the torque is simplified to $M\theta = M \frac{dw}{dx}$.
+
+## Weak Formulation
+Continuing from the potential energy functional
+
+$$
+\begin{aligned}
+\int_0^L \left[\frac{1}{2}EI_y(w'')^2 - q(x)w(x)\right] dx \\
+&- F_1 w(0) - F_2 w(L) + M_1 \frac{dw}{dx}|_{x=0} + M_2 \frac{dw}{dx}|_{x=L}
+\end{aligned}
+$$
+
+We note that the deflection $w(x)$ must poses second derivatives which are square integrable. 
+
+**Dirichlet Boundary Conditions**
+
+defining the Dirichlet boundary conditions as:
+
+- **Deflection**: $w = \hat{w}$
+
+- **Rotation**: $w' = \hat{\theta}$
+
+We require the space of admissible functions to be:
+
+$$
+w \in \mathcal{V} = [w \in H^2(0,L) \, : \, w = \hat{w}, \, \frac{dw}{dx}=\hat{\theta} \quad \text{at the boundaries}]
+$$
+
+Following the standard procedure, we can derive the weak form from the potential energy functional, arriving at :
+
+$$
+\begin{aligned}
+\mathcal{I} &= \frac{1}{2}\mathcal{B}(w,v) - \mathcal{L}(w) \\
+\text{with} \\
+\mathcal{B}(w,v) &= \int_0^L EI_y \frac{d^2w}{dx^2}\frac{d^2v}{dx^2}dx \\
+\mathcal{L}(w) &= \int_0^L qwdx + F_1 w(0) + F_2 w(L) - M_1 \frac{dw}{dx}|_{x=0} - M_2 \frac{dw}{dx}|_{x=L}
+\end{aligned}
+$$
+
+## Shape Functions
+To solve the weak form, we need to approximate the deflection $w(x)$ as $w^h(x)$ using shape functions.
+
+$$
+w^h(x) = \sum_{i=1}^n N_i(x) w_i
+$$
+
+and we can write the algebric problem as:
+
+$$
+\mathbf{K} \mathbf{w} = \mathbf{f}
+$$
+
+with $\mathbf{w}$ veing the vector of unknown coefficients $w_i$ and $\mathbf{f}$ being the vector of load contributions.
+
+The stiffness matrix $\mathbf{K}$ is given by:
+
+$$
+\mathbf{K}_{ij} = \int_0^L EI_y \frac{d^2N_i}{dx^2}\frac{d^2N_j}{dx^2}dx
+$$
+
+Let's consider an Euler-Bernoulli beam element with two nodes.
+
+From the construction of $\mathbf{K}$ it is evident that the if we use polynomial shape functions, they must be quadratic at least, so that they will have two continuous derivatives.
+
+As the beam equation is a fourth order differential equation, we will choose the shape functions to be spanned by the basis $\{1,x,x^2,x^3\}$, such that:
+
+$$
+w^h_e(x) = a_0+a_1x+a_2x^2+a_3x^3 \quad \text{for } x \in [0,L_e]
+$$
+
+Now, we have four unknown coefficients $a_i$ for each two noded element.
+
+We will assign them such that each node will have 2 degrees of freedom: the deflection $w_i$ and the deflection angle $\theta=\frac{dw}{dx}$.
+
+Our Nodal conditions are thus easily shown to be:
+
+$$
+w^h_e(0) = w_1^e, \quad w^h_e(L_e) = w_2^e
+$$
+$$
+w^h_{e,x}(0) = \theta_1^e, \quad w^h_{e,x}(L_e) = \theta_2^e
+$$
+
+And we can rewrite $w^h(x)$ as:
+
+$$w^h_e(x) = \sum_{i=1}^{2} [N_i^e(x) w_i^e + M_i^e(x) \theta_i^e]$$
+
+where $N_i^e(x)$ are the shape functions for the deflection and $M_i^e(x)$ are the shape functions for the rotation.
+
+This finally leads us to the following shape functions:
+
+$$
+\begin{aligned}
+N_1^e(x) &= 1 - 3\left(\frac{x}{L_e}\right)^2 + 2\left(\frac{x}{L_e}\right)^3\\
+N_2^e(x) &= 3\left(\frac{x}{L_e}\right)^2 - 2\left(\frac{x}{L_e}\right)^3 \\
+M_1^e(x) &= x-2\frac{x^2}{L_e}+2\frac{x^3}{L_e^2} \\
+M_2^e(x) &= -\frac{x^2}{L_e}+\frac{x^3}{L_e^2}
+\end{aligned}
+$$
+
+These polynomials are known as "Hermite polynomials"
+
+## Element Stiffness Matrix
+It is common to write the nodal degrees of freedom as:
+
+$$
+\mathbf{w}^e = \begin{bmatrix} w_1^e \\ \theta_1^e \\ w_2^e \\ \theta_2^e \end{bmatrix}
+$$
+and thus the shape functions follow the same order:
+$$
+\mathbf{N}^e = \begin{bmatrix} N_1^e(x) \\ M_1^e(x) \\ N_2^e(x) \\ M_2^e(x) \end{bmatrix}
+$$  
+
+**Second Derivatives of Shape Functions**
+$$N_{1,xx} = \frac{1}{L_e^2}(-6 + 12\frac{x}{L_e})$$
+$$N_{2,xx} = \frac{1}{L_e^2}(6 - 12\frac{x}{L_e})$$
+$$M_{1,xx} = \frac{1}{L_e}(-4 + 6\frac{x}{L_e})$$
+$$M_{2,xx} = \frac{1}{L_e}(-2 + 6\frac{x}{L_e})$$
+
+**Element Stiffness Matrix**
+$$
+\mathbf{K}^e = \frac{2EI_y}{L_e^3} \begin{bmatrix}
+6 & 3L_e & -6 & 3L_e \\
+3L_e & 2L_e^2 & -3L_e & L_e^2 \\
+-6 & -3L_e & 6 & -3L_e \\
+3L_e & L_e^2 & -3L_e & 2L_e^2
+\end{bmatrix}
+$$
+
+and the force vector is given by:
+$$
+\tilde{\mathbf{F}}^e = \begin{bmatrix} F_1 \\ M_1 \\ F_2 \\ M_2 \end{bmatrix}
+$$
+
+So that the algebric problem for the element is given by:
+
+$$
+ \frac{2EI_y}{L_e^3} \begin{bmatrix}
+6 & 3L_e & -6 & 3L_e \\
+3L_e & 2L_e^2 & -3L_e & L_e^2 \\
+-6 & -3L_e & 6 & -3L_e \\
+3L_e & L_e^2 & -3L_e & 2L_e^2
+\end{bmatrix}
+\begin{bmatrix} w_1^e \\ \theta_1^e \\ w_2^e \\ \theta_2^e \end{bmatrix} = \begin{bmatrix} F_1 \\ M_1 \\ F_2 \\ M_2 \end{bmatrix}
+$$
+
+## Timoshenko Beam Elements
+For Timoshenko beam elements, The element stiffness matrix is given by:
+$$
+\tilde{\mathbf{K}}^e = \frac{EI_y}{L_e^3(1+\Phi)} \begin{bmatrix}
+12 & 6L_e & -12 & 6L_e \\
+6L_e & (4+\Phi)L_e^2 & -6L_e & (2-\Phi)L_e^2 \\
+-12 & -6L_e & 12 & -6L_e \\
+6L_e & (2-\Phi)L_e^2 & -6L_e & (4+\Phi)L_e^2
+\end{bmatrix}
+$$
+
+where 
+
+$$
+\Phi = \frac{12EI_y}{\kappa \mu AL_e^2}
+$$
+
+$\Phi$ represents the ratio between bending and shearing of the beam. for a beam whose shear deformation is negligible, $\Phi \to 0$ and we recover the Euler-Bernoulli beam element.
+
+## Shear Locking Phenomenon
+### When Does Shear Locking Occur?
+For very slender beams ($\Phi \to 0$):
+- Timoshenko elements become overly stiff
+- Shear strain $\gamma = w' - \theta \to 0$
+- Artificial constraint leads to poor results
+
+### Remedies for Shear Locking
+1. **Reduced Integration**: Under-integrate shear terms
+2. **Enhanced Elements**: Add internal DOFs
+3. **Mixed Formulations**: Treat shear strain as independent variable
+4. **Use Euler-Bernoulli**: For slender beams
+
+## Comparison: Euler-Bernoulli vs Timoshenko
+| Aspect | Euler-Bernoulli | Timoshenko |
+|--------|-----------------|------------|
+| **Continuity** | $C^1$ | $C^0$ |
+| **DOFs/node** | 2 ($w$, $w'$) | 2 ($w$, $\psi$) |
+| **Shape Functions** | Hermite cubic | Linear |
+| **Coupling** | $\psi = w'$ | Independent $w$, $\psi$ |
+| **Shear** | Neglected | Included |
+| **Applications** | Slender beams | All beam types |
+| **PDE Order** | 4th order | 2nd order system |
+
+## Industrial Applications
+### Structural Engineering
+- **Building frames**: Steel and concrete structures
+- **Bridges**: Continuous and simply supported spans
+- **Towers**: Communication and transmission towers
+
+### Mechanical Engineering
+- **Machine frames**: Manufacturing equipment
+- **Automotive**: Chassis and suspension components
+- **Aerospace**: Wing and fuselage structures
+
+### Civil Infrastructure
+- **Pipelines**: Long-span pipe supports
+- **Cranes**: Boom and jib analysis
+- **Offshore**: Platform and jacket structures
+
+## Advanced Topics
+### Geometric Nonlinearity
+- **Large deformations**: $P-\Delta$ effects
+- **Buckling analysis**: Eigenvalue problems
+- **Co-rotational formulations**: Update element orientation
+
+### Material Nonlinearity
+- **Plastic hinges**: Concentrated plasticity
+- **Distributed plasticity**: Fiber models
+- **Composite materials**: Layered beam theory
+
+### Dynamic Analysis
+- **Mass matrices**: Consistent vs lumped
+- **Modal analysis**: Natural frequencies and modes
+- **Time integration**: Newmark, HHT-α methods
+
+### Advanced Beam Theories
+- **Refined beam theories**: Reddy, Levinson theories
+- **Warping effects**: Non-uniform torsion
+- **Composite beams**: Multi-layer analysis
+
+### Computational Advances
+- **Isogeometric analysis**: NURBS-based elements
+- **Meshfree methods**: Moving least squares
+- **Machine learning**: Data-driven constitutive models
+
+### Multi-objective Optimization
+- **Minimize weight**
+- **Maximize stiffness**
+- **Control natural frequencies**
+- **Satisfy stress constraints**
+
+### Multiphysics Applications
+- **Thermal effects**: Thermal expansion and buckling
+- **Fluid-structure interaction**: Wind and seismic loading
+- **Electromagnetic**: Induction heating analysis
+
+## Summary and Key Takeaways
+
+### Element Selection Guidelines
+1. **Use Euler-Bernoulli** for slender beams (L/h > 10)
+2. **Use Timoshenko** for thick beams or dynamics
+3. **Consider shear locking** for very slender beams with Timoshenko elements
+4. **Choose appropriate mesh density** based on length scales
+
+### Implementation Best Practices
+1. **Always verify** solutions with analytical benchmarks
+2. **Perform convergence studies** for new problems
+3. **Check boundary conditions** carefully
+4. **Consider element aspect ratios**
+
+### Physical Understanding
+1. **C¹ continuity** required for Euler-Bernoulli beams
+2. **Independent rotation field** in Timoshenko theory
+3. **Shear deformation** becomes important for thick beams
+4. **Coordinate transformations** essential for general orientations
+

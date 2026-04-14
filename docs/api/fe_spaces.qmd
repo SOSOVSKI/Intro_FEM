@@ -1,0 +1,35 @@
+---
+title: "`fe_spaces`"
+subtitle: "FE interpolation helpers"
+---
+
+Finite-element interpolation helpers.
+
+
+## `LinearElement1D`
+
+A two-node linear (P1) finite element on an interval [x0, x1]. Provides symbolic shape
+functions N₁ = (x₁ - x) / L and N₂ = (x - x₀) / L where L = x₁ - x₀.
+
+
+## `local_trial_expansion(shape_functions, dofs)`
+
+Build the local trial field expansion u_h = Σ Nᵢ dᵢ. Parameters: shape_functions - tuple
+of shape function expressions, dofs - list of DOF symbols. Returns the expanded
+polynomial.
+
+
+## `local_test_expansion(shape_functions, dofs)`
+
+Build the local test field expansion v_h = Σ Nᵢ wᵢ. Identical to local_trial_expansion
+(Galerkin method uses the same basis for trial and test).
+
+
+## `length(self)`
+
+*No docstring.*
+
+
+## `shape_functions(self)`
+
+*No docstring.*

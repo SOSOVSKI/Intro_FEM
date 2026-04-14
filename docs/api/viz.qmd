@@ -1,0 +1,34 @@
+---
+title: "`viz`"
+subtitle: "Visualization helpers"
+---
+
+Visualization helpers for teaching FEM concepts.
+
+Provides matplotlib-based functions for plotting shape functions,
+reference-to-physical mappings, and FEM solution fields.
+
+
+## `plot_triangle_shape_functions(reference_element, xi_sym, eta_sym, ax)`
+
+Plot 2D contour plots of triangle shape functions on the reference element.  Parameters
+---------- reference_element     A reference triangle object with .shape_functions
+property. xi_sym, eta_sym     SymPy symbols for the reference coordinates. ax     Optional
+matplotlib axes (creates new figure if None).  Returns ------- fig : matplotlib Figure
+
+
+## `plot_affine_mapping(geom, xi_sym, eta_sym, vertex_subs, ax)`
+
+Visualize the affine mapping from reference to physical triangle.  Parameters ----------
+geom : AffineTriangleMap2D xi_sym, eta_sym : sp.Symbol vertex_subs : dict     Substitution
+dict mapping symbolic vertices to numerical values,     e.g. {x1: 0, y1: 0, x2: 2, y2: 0,
+x3: 1, y3: 1.5}. ax : optional matplotlib axes pair (ax_ref, ax_phys)  Returns ------- fig
+: matplotlib Figure
+
+
+## `plot_mesh_solution(nodes, elements, u, ax, title)`
+
+Plot a scalar FEM solution on a triangular mesh.  Parameters ---------- nodes : ndarray of
+shape (n_nodes, 2) elements : list of 3-tuples (connectivity) u : ndarray of shape
+(n_nodes,) — nodal values ax : optional matplotlib axes title : str  Returns ------- fig :
+matplotlib Figure

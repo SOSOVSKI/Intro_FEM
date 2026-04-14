@@ -1,0 +1,85 @@
+---
+title: "Getting Started"
+---
+
+## Prerequisites
+
+You need Python 3.11 and either `conda`/`mamba` or `uv`.
+
+## Installation
+
+### With conda + uv (recommended)
+
+The FEniCSx chapters (14 and 16) require packages that are only available
+through conda-forge. Everything else is pure Python and handled by `uv`.
+
+```bash
+# 1. Create the conda environment (Python 3.11 + FEniCSx + pyvista)
+conda env create -f environment.yml
+conda activate fem-env
+
+# 2. Install the workbench and remaining Python deps
+uv pip install -e ".[lectures,dev]"
+```
+
+### Without FEniCSx (core only)
+
+If you only need the symbolic workbench and the companion notebooks (no
+FEniCSx chapters):
+
+```bash
+pip install -e ".[lectures]"
+```
+
+## Verify the installation
+
+```python
+import symbolic_fem_workbench as sfem
+
+# Quick smoke-test: build the 1D bar element problem
+result = sfem.workflow.build_bar_1d_local_problem()
+print(result["Ke"])   # 2×2 symbolic stiffness matrix
+```
+
+## Running the companion notebooks
+
+```bash
+# From the project root
+jupyter lab notebooks/
+```
+
+Or render the full HTML site with output:
+
+```bash
+make notebooks-html
+```
+
+## Build everything
+
+```bash
+make all          # notebooks (HTML + PDF) + book (HTML + PDF) + slides
+make book         # lecture-note book only
+make notebooks    # companion notebooks only
+make slides       # revealjs lecture slides only
+```
+
+## Package layout
+
+```
+src/
+└── symbolic_fem_workbench/
+    ├── __init__.py       # public API surface
+    ├── symbols.py        # domains and symbolic fields
+    ├── forms.py          # form containers
+    ├── fe_spaces.py      # shape functions
+    ├── reference.py      # reference elements + affine maps
+    ├── quadrature.py     # integration rules
+    ├── transforms.py     # IBP, Neumann, Galerkin substitution
+    ├── extract.py        # element matrix / vector extraction
+    ├── assembly.py       # global assembly helpers
+    ├── elasticity.py     # constitutive matrices, B-matrix
+    ├── workflow.py       # high-level end-to-end helpers
+    ├── viz.py            # matplotlib plotting
+    ├── codegen/          # I❤LA code generation
+    └── printers/         # custom SymPy printers
+```

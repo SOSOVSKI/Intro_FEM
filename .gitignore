@@ -1,10 +1,43 @@
-# Python-generated files
+# ── Python ────────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[oc]
 build/
 dist/
 wheels/
-*.egg-info
+*.egg-info/
 
-# Virtual environments
-.venv
+# ── Virtual environments ───────────────────────────────────────────────────────
+.venv/
+venv/
+
+# ── Quarto build outputs ───────────────────────────────────────────────────────
+_output/
+_freeze/
+_slides/
+*.tex
+*.log
+*.aux
+*.toc
+*.out
+*.fls
+*.fdb_latexmk
+.quarto/
+
+# ── Jupyter ────────────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+
+# ── macOS ─────────────────────────────────────────────────────────────────────
+.DS_Store
+
+# ── Editors ───────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── FEniCSx / simulation artefacts ────────────────────────────────────────────
+*.h5
+*.xdmf
+*.pvd
+*.vtu
+u_time.gif
