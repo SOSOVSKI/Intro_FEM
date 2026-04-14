@@ -54,15 +54,13 @@ jobs:
             texlive-plain-generic \
             lmodern
 
-      # ── Build HTML ──────────────────────────────────────────────────────────
-      - name: Render lecture-note book (HTML)
-        run: quarto render book --to html
-
-      # Single-file PDF of the whole lecture book. Output lands in
-      # book/_output/Intro-FEM-Lecture-Notes.pdf and the HTML sidebar exposes
-      # it via `book.downloads: [pdf]` in book/_quarto.yml.
-      - name: Render lecture-note book (PDF)
-        run: quarto render book --to pdf
+      # ── Build HTML + PDF ────────────────────────────────────────────────────
+      # Render both formats in a SINGLE quarto call. Running `--to html` and
+      # `--to pdf` as separate steps causes the second render to wipe
+      # book/_output/ before writing, leaving only the PDF — which is what
+      # took the book HTML down and caused every chapter URL to 404.
+      - name: Render lecture-note book (HTML + PDF)
+        run: quarto render book
 
       - name: Render companion notebooks (HTML)
         run: quarto render notebooks --to html
