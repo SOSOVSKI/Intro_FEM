@@ -2,6 +2,16 @@
 title: "Quasi-Static Elasticity in 3D"
 ---
 
+::: {.content-visible when-format="html"}
+::: {.callout-tip}
+## Companion notebooks
+Work through these hands-on notebooks alongside this chapter:
+
+- [10 – 2D Elasticity](notebooks/10_2d_elasticity.html)
+- [11 – 3D Elasticity](notebooks/11_3d_elasticity.html)
+:::
+:::
+
 ## Strong Form and Method of Weighted Residuals
 
 Starting from the equation of motion in the quasi-static case:

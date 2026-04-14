@@ -14,6 +14,12 @@ The chapters follow the lecture sequence. Each chapter contains:
 - Python code demonstrating the concepts computationally (click to expand code blocks)
 - Key definitions and results highlighted in callout boxes
 
+::: {.content-visible when-format="html"}
+## Companion Notebooks
+
+A parallel set of hands-on Jupyter notebooks — the **[FEM Companion Notebooks](notebooks/)** — accompanies these lecture notes. Each notebook lets you work through the key ideas symbolically and numerically using the `symbolic_fem_workbench` package. Relevant notebooks are linked at the top of each chapter, and the full index is available at [notebooks/](notebooks/).
+:::
+
 ## Prerequisites
 
 Students should be familiar with:

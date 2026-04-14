@@ -2,6 +2,17 @@
 title: "2D Heat Transfer"
 ---
 
+::: {.content-visible when-format="html"}
+::: {.callout-tip}
+## Companion notebooks
+Work through these hands-on notebooks alongside this chapter:
+
+- [06 – 2D Triangle Poisson](notebooks/06_2d_triangle_poisson.html)
+- [07 – Manual 2D Assembly](notebooks/07_manual_assembly_2d.html)
+- [09 – Boundary Conditions 2D](notebooks/09_boundary_conditions_2d.html)
+:::
+:::
+
 ## The Strong Form
 
 The governing equation for 2D heat transfer is:

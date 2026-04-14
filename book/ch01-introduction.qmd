@@ -2,6 +2,16 @@
 title: "Introduction and 1D Setup"
 ---
 
+::: {.content-visible when-format="html"}
+::: {.callout-tip}
+## Companion notebooks
+Work through these hands-on notebooks alongside this chapter:
+
+- [01 – Strong to Weak Form](notebooks/01_strong_to_weak_form.html)
+- [03 – 1D Element Stiffness](notebooks/03_1d_element_stiffness.html)
+:::
+:::
+
 ## Setup
 
 ```{python}

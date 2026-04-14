@@ -2,6 +2,15 @@
 title: "Time-Dependent 1D Problems"
 ---
 
+::: {.content-visible when-format="html"}
+::: {.callout-tip}
+## Companion notebooks
+Work through these hands-on notebooks alongside this chapter:
+
+- [13 – Time-Dependent FEM](notebooks/13_time_dependent_fem.html)
+:::
+:::
+
 ## Problem Introduction
 
 In the following, we use the FEM methods for spatial discretization and the finite difference method for time discretization.
