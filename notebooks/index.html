@@ -137,6 +137,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div class="pt-lg-2 mt-2 text-left sidebar-header">
     <div class="sidebar-title mb-0 py-0">
       <a href="./">FEM Companion Notebooks</a> 
+        <div class="sidebar-tools-main tools-wide">
+    <a href="https://github.com/SOSOVSKI/Intro_FEM" title="Source Repository" class="quarto-navigation-tool px-1" aria-label="Source Repository"><i class="bi bi-github"></i></a>
+    <a href="./../" title="Lecture Notes" class="quarto-navigation-tool px-1" aria-label="Lecture Notes"><i class="bi bi-book"></i></a>
+    <a href="./../docs/" title="Package Docs" class="quarto-navigation-tool px-1" aria-label="Package Docs"><i class="bi bi-file-earmark-code"></i></a>
+    <a href="https://github.com/SOSOVSKI/Intro_FEM/tree/main/notebooks/" title="Source Code" class="quarto-navigation-tool px-1" aria-label="Source Code"><i class="bi bi-github"></i></a>
+</div>
     </div>
       </div>
         <div class="mt-2 flex-shrink-0 align-items-center">
@@ -323,6 +329,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <p>These notebooks accompany the <em>Introduction to the Finite Element Method</em> lecture notes. Each one is a hands-on exercise that lets you work through the key ideas symbolically and numerically using the <code>symbolic_fem_workbench</code> package.</p>
+<p>Related resources:</p>
+<ul>
+<li><strong><a href="../">Lecture Notes</a></strong> — each chapter links to its companion notebooks at the top, and a single-file <a href="../Intro-FEM-Lecture-Notes.pdf">PDF download</a> of the whole book is available.</li>
+<li><strong><a href="../docs/">Package Documentation</a></strong> — API reference for the <code>symbolic_fem_workbench</code> package used below.</li>
+<li><strong><a href="https://github.com/SOSOVSKI/Intro_FEM">Source Repository</a></strong> — issues and edit-on-GitHub links on every notebook.</li>
+</ul>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -877,26 +889,34 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>These notebooks accompany the *Introduction to the Finite Element Method* lecture notes.</span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>Each one is a hands-on exercise that lets you work through the key ideas symbolically and numerically using the <span class="in">`symbolic_fem_workbench`</span> package.</span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> # <span class="pp">|</span> Notebook <span class="pp">|</span> Topic <span class="pp">|</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="pp">|---|----------|-------|</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 1 <span class="pp">|</span> <span class="co">[</span><span class="ot">Strong to Weak Form</span><span class="co">](01_strong_to_weak_form.ipynb)</span> <span class="pp">|</span> Weighted residuals, integration by parts <span class="pp">|</span></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 2 <span class="pp">|</span> <span class="co">[</span><span class="ot">Galerkin Discretization</span><span class="co">](02_galerkin_discretization.ipynb)</span> <span class="pp">|</span> Element matrices from weak form <span class="pp">|</span></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 3 <span class="pp">|</span> <span class="co">[</span><span class="ot">1D Element Stiffness</span><span class="co">](03_1d_element_stiffness.ipynb)</span> <span class="pp">|</span> Symbolic → numerical assembly <span class="pp">|</span></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 4 <span class="pp">|</span> <span class="co">[</span><span class="ot">Exact vs. Gauss Integration</span><span class="co">](04_exact_vs_gauss_integration.ipynb)</span> <span class="pp">|</span> Quadrature rules <span class="pp">|</span></span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 5 <span class="pp">|</span> <span class="co">[</span><span class="ot">Reference Element Gallery</span><span class="co">](05_reference_element_gallery.ipynb)</span> <span class="pp">|</span> Shape functions in 1D/2D/3D <span class="pp">|</span></span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 6 <span class="pp">|</span> <span class="co">[</span><span class="ot">2D Triangle Poisson</span><span class="co">](06_2d_triangle_poisson.ipynb)</span> <span class="pp">|</span> Gradient pullback, local tensors <span class="pp">|</span></span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 7 <span class="pp">|</span> <span class="co">[</span><span class="ot">Manual 2D Assembly</span><span class="co">](07_manual_assembly_2d.ipynb)</span> <span class="pp">|</span> Global stiffness from local elements <span class="pp">|</span></span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 8 <span class="pp">|</span> <span class="co">[</span><span class="ot">Boundary Conditions 1D</span><span class="co">](08_boundary_conditions_1d.ipynb)</span> <span class="pp">|</span> Dirichlet &amp; Neumann in 1D <span class="pp">|</span></span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 9 <span class="pp">|</span> <span class="co">[</span><span class="ot">Boundary Conditions 2D</span><span class="co">](09_boundary_conditions_2d.ipynb)</span> <span class="pp">|</span> Neumann edges, Dirichlet lifting <span class="pp">|</span></span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 10 <span class="pp">|</span> <span class="co">[</span><span class="ot">2D Elasticity</span><span class="co">](10_2d_elasticity.ipynb)</span> <span class="pp">|</span> P1 triangles, stress/strain <span class="pp">|</span></span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 11 <span class="pp">|</span> <span class="co">[</span><span class="ot">3D Elasticity</span><span class="co">](11_3d_elasticity.ipynb)</span> <span class="pp">|</span> P1 tetrahedra <span class="pp">|</span></span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 12 <span class="pp">|</span> <span class="co">[</span><span class="ot">Code Generation &amp; Widgets</span><span class="co">](12_iheartla_and_widgets.ipynb)</span> <span class="pp">|</span> Interactive exploration <span class="pp">|</span></span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 13 <span class="pp">|</span> <span class="co">[</span><span class="ot">Time-Dependent FEM</span><span class="co">](13_time_dependent_fem.ipynb)</span> <span class="pp">|</span> Mass matrix, time stepping <span class="pp">|</span></span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 14 <span class="pp">|</span> <span class="co">[</span><span class="ot">Error Analysis</span><span class="co">](14_error_analysis.ipynb)</span> <span class="pp">|</span> Convergence rates <span class="pp">|</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>::: {.content-visible when-format="html"}</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>Related resources:</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**[Lecture Notes](../)** — each chapter links to its companion notebooks at the top, and a single-file <span class="co">[</span><span class="ot">PDF download</span><span class="co">](../Intro-FEM-Lecture-Notes.pdf)</span> of the whole book is available.</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**[Package Documentation](../docs/)** — API reference for the <span class="in">`symbolic_fem_workbench`</span> package used below.</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**[Source Repository](https://github.com/SOSOVSKI/Intro_FEM)** — issues and edit-on-GitHub links on every notebook.</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> # <span class="pp">|</span> Notebook <span class="pp">|</span> Topic <span class="pp">|</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="pp">|---|----------|-------|</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 1 <span class="pp">|</span> <span class="co">[</span><span class="ot">Strong to Weak Form</span><span class="co">](01_strong_to_weak_form.ipynb)</span> <span class="pp">|</span> Weighted residuals, integration by parts <span class="pp">|</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 2 <span class="pp">|</span> <span class="co">[</span><span class="ot">Galerkin Discretization</span><span class="co">](02_galerkin_discretization.ipynb)</span> <span class="pp">|</span> Element matrices from weak form <span class="pp">|</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 3 <span class="pp">|</span> <span class="co">[</span><span class="ot">1D Element Stiffness</span><span class="co">](03_1d_element_stiffness.ipynb)</span> <span class="pp">|</span> Symbolic → numerical assembly <span class="pp">|</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 4 <span class="pp">|</span> <span class="co">[</span><span class="ot">Exact vs. Gauss Integration</span><span class="co">](04_exact_vs_gauss_integration.ipynb)</span> <span class="pp">|</span> Quadrature rules <span class="pp">|</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 5 <span class="pp">|</span> <span class="co">[</span><span class="ot">Reference Element Gallery</span><span class="co">](05_reference_element_gallery.ipynb)</span> <span class="pp">|</span> Shape functions in 1D/2D/3D <span class="pp">|</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 6 <span class="pp">|</span> <span class="co">[</span><span class="ot">2D Triangle Poisson</span><span class="co">](06_2d_triangle_poisson.ipynb)</span> <span class="pp">|</span> Gradient pullback, local tensors <span class="pp">|</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 7 <span class="pp">|</span> <span class="co">[</span><span class="ot">Manual 2D Assembly</span><span class="co">](07_manual_assembly_2d.ipynb)</span> <span class="pp">|</span> Global stiffness from local elements <span class="pp">|</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 8 <span class="pp">|</span> <span class="co">[</span><span class="ot">Boundary Conditions 1D</span><span class="co">](08_boundary_conditions_1d.ipynb)</span> <span class="pp">|</span> Dirichlet &amp; Neumann in 1D <span class="pp">|</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 9 <span class="pp">|</span> <span class="co">[</span><span class="ot">Boundary Conditions 2D</span><span class="co">](09_boundary_conditions_2d.ipynb)</span> <span class="pp">|</span> Neumann edges, Dirichlet lifting <span class="pp">|</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 10 <span class="pp">|</span> <span class="co">[</span><span class="ot">2D Elasticity</span><span class="co">](10_2d_elasticity.ipynb)</span> <span class="pp">|</span> P1 triangles, stress/strain <span class="pp">|</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 11 <span class="pp">|</span> <span class="co">[</span><span class="ot">3D Elasticity</span><span class="co">](11_3d_elasticity.ipynb)</span> <span class="pp">|</span> P1 tetrahedra <span class="pp">|</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 12 <span class="pp">|</span> <span class="co">[</span><span class="ot">Code Generation &amp; Widgets</span><span class="co">](12_iheartla_and_widgets.ipynb)</span> <span class="pp">|</span> Interactive exploration <span class="pp">|</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 13 <span class="pp">|</span> <span class="co">[</span><span class="ot">Time-Dependent FEM</span><span class="co">](13_time_dependent_fem.ipynb)</span> <span class="pp">|</span> Mass matrix, time stepping <span class="pp">|</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 14 <span class="pp">|</span> <span class="co">[</span><span class="ot">Error Analysis</span><span class="co">](14_error_analysis.ipynb)</span> <span class="pp">|</span> Convergence rates <span class="pp">|</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
 
 
 
 
-</body></html>
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions"><ul><li><a href="https://github.com/SOSOVSKI/Intro_FEM/edit/main/notebooks/index.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/SOSOVSKI/Intro_FEM/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li><li><a href="https://github.com/SOSOVSKI/Intro_FEM/blob/main/notebooks/index.qmd" class="toc-action"><i class="bi empty"></i>View source</a></li></ul></div></div></div></footer></body></html>
