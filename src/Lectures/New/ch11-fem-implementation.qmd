@@ -1,0 +1,246 @@
+---
+title: "FEM Implementation"
+---
+
+## Discretize the Domain
+
+The first step in any Finite Element analysis is to move from the continuous domain Ω to a discrete one. We replace the single integral over the whole domain with a sum of integrals over small, simple subdomains called elements.
+
+Our weak form is:
+
+$$\underbrace{\int_{\Omega} \boldsymbol{\varepsilon}(\mathbf{v})^T \mathbf{L} \boldsymbol{\varepsilon}(\mathbf{u}) \, d\Omega}_{\text{Bilinear Form } B(\mathbf{u},\mathbf{v})} = \underbrace{\int{\Omega} \mathbf{v}^T \mathbf{f} \, d\Omega + \int_{\Gamma_t} \mathbf{v}^T \bar{\mathbf{t}} \, d\Gamma}_{\text{Linear Form } F(\mathbf{v})}$$
+
+Note: We've switched to transpose notation for Voigt vectors, common in implementation.
+
+We approximate the domain Ω as a mesh of $N_{el}$ finite elements, each with its own subdomain $\Omega_e$.
+
+The integral over Ω becomes a sum of integrals over each element $\Omega_e$:
+
+The bilinear and linear forms are now expressed as sums:
+
+$$B(\mathbf{u},\mathbf{v}) = \sum_{e=1}^{N_{el}} \int_{\Omega_e} \boldsymbol{\varepsilon}(\mathbf{v})^T \mathbf{L} \boldsymbol{\varepsilon}(\mathbf{u}) \, d\Omega_e$$
+
+$$F(\mathbf{v}) = \sum_{e=1}^{N_{el}} \left( \int_{\Omega_e} \mathbf{v}^T \mathbf{f} \, d\Omega_e + \int_{\Gamma_{t,e}} \mathbf{v}^T \bar{\mathbf{t}} \, d\Gamma_e \right)$$
+
+where $\Gamma_{t,e}$ is the part of the element's boundary that lies on the traction boundary $\Gamma_t$.
+
+## Approximate Fields with Shape Functions
+
+Within each element, we approximate the continuous displacement field using simple polynomial functions (shape functions) and the displacement values at the element's nodes.
+
+The displacement u(x) at any point inside an element is interpolated from the element's nodal displacements $d_e$ using shape functions:
+
+$$\mathbf{u}(\mathbf{x}) \approx \mathbf{u}_h(\mathbf{x}) = \mathbf{N}(\mathbf{x}) \mathbf{d}_e$$
+
+N(x) is the shape function matrix. For a 3D problem, it relates the 3 displacement components to the nodal values. For an element with n nodes, it's a 3×3n matrix:
+
+$$\mathbf{N} = \begin{bmatrix} \phi_1 & 0 & 0 & \phi_2 & 0 & 0 & \dots & \phi_n & 0 & 0 \\ 0 & \phi_1 & 0 & 0 & \phi_2 & 0 & \dots & 0 & \phi_n & 0 \\ 0 & 0 & \phi_1 & 0 & 0 & \phi_2 & \dots & 0 & 0 & \phi_n \end{bmatrix}$$
+
+where $\phi_i(x)$ is the scalar shape function for node i.
+
+We do exactly the same for the test function v, relating it to a vector of arbitrary nodal values $c_e$:
+
+$$\mathbf{v}(\mathbf{x}) \approx \mathbf{v}_h(\mathbf{x}) = \mathbf{N}(\mathbf{x}) \mathbf{c}_e$$
+
+## Compute Strains with the B-Matrix
+
+With the displacement field approximated, we can find the strain by taking its derivatives. This process creates the crucial strain-displacement matrix, B.
+
+The strain vector $\boldsymbol{\varepsilon}$ is found by applying a differential operator matrix, ∂, to the displacement vector $\boldsymbol{u}$:
+
+$$\boldsymbol{\varepsilon} = \partial \mathbf{u} \quad \text{where for 3D engineering strain, } \quad \partial = \begin{pmatrix} \partial_x & 0 & 0 \\ 0 & \partial_y & 0 \\ 0 & 0 & \partial_z \\ 0 & \partial_z & \partial_y \\ \partial_z & 0 & \partial_x \\ \partial_y & \partial_x & 0 \end{pmatrix}$$
+
+For the approximated displacement field:
+
+$$\boldsymbol{\varepsilon}_h = \partial \left( \mathbf{N}\mathbf{d}_e \right) = \left( \partial\mathbf{N} \right) \mathbf{d}_e$$
+
+We define the strain-displacement matrix B as the derivatives of the shape function matrix:
+
+$$\mathbf{B} := \partial\mathbf{N}$$
+
+This gives the direct algebraic relationship between strain and nodal displacements for an element:
+
+$$\boldsymbol{\varepsilon}_h = \mathbf{B} \mathbf{d}_e$$
+
+The B matrix contains the spatial derivatives of the shape functions and is a function of the position within the element.
+
+## The B-Matrix from the Symmetric Gradient
+
+The crucial B-matrix is not arbitrary; it arises directly from the fundamental definition of the small strain tensor, ε, as the symmetric part of the displacement gradient.
+
+### Start with the Strain Definition
+
+$$\boldsymbol{\varepsilon} = \frac{1}{2} \left( \nabla\mathbf{u} + (\nabla\mathbf{u})^T \right)$$
+
+### Form the Voigt Strain Vector
+
+For implementation, we use Voigt notation with engineering shear strains $\gamma_{ij}$, where $\gamma_{ij} = \varepsilon_{ij} + \varepsilon_{ji}$, so $\gamma_{ij} = 2\varepsilon_{ij}$ for symmetric strains:
+
+$$\boldsymbol{\varepsilon}_{\text{Voigt}} = \begin{pmatrix} \varepsilon_{xx} \\ \varepsilon_{yy} \\ \varepsilon_{zz} \\ \gamma_{yz} \\ \gamma_{xz} \\ \gamma_{xy} \end{pmatrix} = \begin{pmatrix} \partial u / \partial x \\ \partial v / \partial y \\ \partial w / \partial z \\ (\partial v / \partial z) + (\partial w / \partial y) \\ (\partial u / \partial z) + (\partial w / \partial x) \\ (\partial u / \partial y) + (\partial v / \partial x) \end{pmatrix}$$
+
+### Define the Differential Operator
+
+We can express this relationship using a differential operator matrix, ∂, that acts on the displacement vector:
+
+$$\boldsymbol{\varepsilon}_{\text{Voigt}} = \underbrace{ \begin{pmatrix} \partial_x & 0 & 0 \\ 0 & \partial_y & 0 \\ 0 & 0 & \partial_z \\ 0 & \partial_z & \partial_y \\ \partial_z & 0 & \partial_x \\ \partial_y & \partial_x & 0 \end{pmatrix} }_{\partial} \underbrace{ \begin{pmatrix} u \\ v \\ w \end{pmatrix} }_{\mathbf{u}}$$
+
+This explicitly shows how the structure of ∂ is determined by the physics of strain.
+
+### Introduce the FE Approximation
+
+Finally, substitute the approximation for the displacement field, $u_h=Nd_e$, into the strain definition:
+
+$$\boldsymbol{\varepsilon}_h = \partial (\mathbf{N}\mathbf{d}_e) = (\partial\mathbf{N})\mathbf{d}_e$$
+
+This gives us our definition of the B-matrix, $B:=\partial N$, and the final element-level relationship:
+
+$$\boldsymbol{\varepsilon}_h = \mathbf{B}\mathbf{d}_e$$
+
+## The Algebraic System: $k_e d_e = f_e$
+
+By substituting the shape function approximations for u and v into the element integral, we transform the differential equation into a system of linear algebraic equations.
+
+Consider the bilinear form for one element, and substitute $\boldsymbol{\varepsilon}(u)=\boldsymbol{B}\boldsymbol{d}_e$ and $\boldsymbol{\varepsilon}(v)=\boldsymbol{B}\boldsymbol{c}_e$:
+
+$$ \int_{\Omega_e} (\mathbf{B}\mathbf{c}_e)^T \mathbf{L} (\mathbf{B}\mathbf{d}_e) \, d\Omega_e = \mathbf{c}_e^T \left( \int{\Omega_e} \mathbf{B}^T \mathbf{L} \mathbf{B} \, d\Omega_e \right) \mathbf{d}_e $$
+
+We define the term in the parentheses as the **element stiffness matrix** $k_e$:
+
+$$ \mathbf{k}_e := \int{\Omega_e} \mathbf{B}^T \mathbf{L} \mathbf{B} \, d\Omega_e $$
+
+Similarly, for the linear form, we get the **element force vector** $f_e$:
+
+$$ \mathbf{f}_e := \int{\Omega_e} \mathbf{N}^T \mathbf{f} \, d\Omega_e + \int_{\Gamma_{t,e}} \mathbf{N}^T \bar{\mathbf{t}} \, d\Gamma_e $$
+
+The weak form for the element must hold for any arbitrary $c_e$, which can only be true if:
+
+$$ \mathbf{k}_e \mathbf{d}_e = \mathbf{f}_e $$
+
+## Numerical Integration
+
+The integrals for $k_e$ and $f_e$ involve the B and N matrices, which can be complex polynomials. These are almost always computed numerically using **Gaussian Quadrature**.
+
+The idea is to approximate an integral by a weighted sum of the integrand's value at specific sample points, known as Gauss points.
+
+First, we map the element $\Omega_e$ to a simple reference element. The integral transforms as:
+
+$$\int_{\Omega_e} g(\mathbf{x}) \, d\Omega_e = \int_{\hat{\Omega}} g(\mathbf{x}(\boldsymbol{\xi})) \, |\mathbf{J}(\boldsymbol{\xi})| \, d\hat{\Omega}$$
+
+where ∣J∣ is the determinant of the Jacobian of the coordinate mapping.
+
+The integral over the reference element is then approximated by the sum:
+
+$$\int_{\hat{\Omega}} \tilde{g}(\boldsymbol{\xi}) \, d\hat{\Omega} \approx \sum_{i=1}^{N_{gp}} w_i \tilde{g}(\boldsymbol{\xi}_i)$$
+
+where $w_i$ are the Gauss weights and $\boldsymbol{\xi}_i$ are the Gauss point coordinates.
+
+### Application to Element Stiffness
+
+Applying this to our stiffness matrix:
+
+$$\mathbf{k}_e = \int{\Omega_e} \mathbf{B}^T \mathbf{L} \mathbf{B} \, d\Omega \approx \sum_{i=1}^{N_{gp}} \left( \mathbf{B}(\boldsymbol{\xi}_i)^T \mathbf{L} \mathbf{B}(\boldsymbol{\xi}_i) \right) |\mathbf{J}(\boldsymbol{\xi}_i)| w_i$$
+
+The force vector $f_e$ is computed in the same way:
+
+$$\mathbf{f}_e = \int{\Omega_e} \mathbf{N}^T \mathbf{f} \, d\Omega_e + \int_{\Gamma_{t,e}} \mathbf{N}^T \mathbf{t}^* \, d\Gamma_e \approx \sum_{i=1}^{N_{gp}} \left( \mathbf{N}(\boldsymbol{\xi}_i)^T \mathbf{f}(\boldsymbol{\xi}_i) + \mathbf{N}(\boldsymbol{\xi}_i)^T \mathbf{t}^*(\boldsymbol{\xi}_i) \right) |\mathbf{J}(\boldsymbol{\xi}_i)| w_i$$
+
+## Algorithmic Overview
+
+### Step-by-step Procedure
+
+1. Initialize: Create empty global stiffness matrix K and force vector F.
+
+2. Loop over Elements: For each element e in the mesh...
+
+3. Initialize Element Matrices: Create empty local stiffness matrix $k_e$ and force vector $f_e$.
+
+4. Loop over Gauss Points: For each Gauss point i in the element...
+
+5. Calculate at Point: Evaluate the B matrix and the Jacobian determinant ∣J∣ at this point's coordinates.
+
+6. Accumulate Integral: Compute the integrand for $k_e$ and $f_e$. Multiply by the Gauss weight and ∣J∣ and add to the element matrices.
+
+7. Assemble: Once the loops over Gauss points are done, add the completed element matrices $k_e$ and $f_e$ into the global $K$ and $F$ based on the element's node numbering.
+
+8. Apply Boundary Conditions: Modify the global system $K d = F$ to enforce the prescribed Dirichlet displacements.
+
+9. Solve: Solve the final system of linear equations for the vector of all nodal displacements d.
+
+10. Post-Process: Use the computed displacements d to find element strains and stresses using the same matrices B and L as before at the Gauss points.
+
+## Full FEM Algorithm
+
+::: {.callout-note icon=false title="Algorithm: Finite Element Procedure for 3D Elasticity"}
+
+**Input:**
+Mesh (${\Omega_e}$), Material Properties ($\mathbf{L}$), Body Forces ($\mathbf{f}$), Boundary Conditions ($\bar{\mathbf{u}}, \bar{\mathbf{t}}$)
+
+**Output:** Nodal Displacements ($\mathbf{d}$), Element Stresses ($\boldsymbol{\sigma}$), Element Strains ($\boldsymbol{\varepsilon}$)
+
+**Steps:**
+
+Initialize Global Stiffness $\mathbf{K} \leftarrow \mathbf{0}$ and Force $\mathbf{F} \leftarrow \mathbf{0}$.
+
+For each element e in the mesh:
+
+a. Initialize Element Stiffness $\mathbf{k}_e \leftarrow \mathbf{0}$ and Force $\mathbf{f}_e \leftarrow \mathbf{0}$.
+
+b. For each Gauss point i in element e:
+
+   - Compute $\mathbf{B}(\boldsymbol{\xi}_i)$, Jacobian determinant $|\mathbf{J}(\boldsymbol{\xi}_i)|$, and weight $w_i$.
+
+   - Accumulate stiffness: $\mathbf{k}_e \mathrel{+}= \mathbf{B}^T \mathbf{L} \mathbf{B} \, |\mathbf{J}| w_i$
+
+   - Accumulate body forces: $\mathbf{f}_e \mathrel{+}= \mathbf{N}^T \mathbf{f} \, |\mathbf{J}| w_i$
+
+c. Assemble traction boundary forces into $\mathbf{f}_e$ if applicable.
+
+d. Assemble local into global: Assemble$(\mathbf{K}, \mathbf{F}, \mathbf{k}_e, \mathbf{f}_e)$.
+
+Apply Dirichlet boundary conditions to the global system $(\mathbf{K}, \mathbf{F})$.
+
+Solve the linear system $\mathbf{K}\mathbf{d} = \mathbf{F}$ for the displacement vector $\mathbf{d}$.
+
+For each element e in the mesh (Post-processing):
+
+a. Extract element displacements $d_e$ from global d.
+
+b. Compute strains $\boldsymbol{\varepsilon}_e = \mathbf{B} d_e$ and stresses $\boldsymbol{\sigma}_e = \mathbf{L} \boldsymbol{\varepsilon}_e$ at desired points.
+
+:::
+
+## Surface Integrals and Nanson's Formula
+
+To compute integrals over an element's surface in the real domain, such as for traction boundary conditions, we must map them back to the simple reference domain. This requires a transformation for the surface area element itself.
+
+Consider the surface integral over the traction boundary $\Gamma_t$ of an element:
+
+$$\int_{\Gamma_{t,e}} \bar{\mathbf{t}} \, d\Gamma_e$$
+
+The integration domain $\Gamma_{t,e}$ is a 2D surface of the 3D element $\Gamma_e$. The surface domain $\Gamma_{t,e}$ is potentially distorted in real space. Mapping it to the reference element will allow us to perform the surface integral over a planar well-defined surface (e.g. a triangle or quadrilateral).
+
+The mapping between the reference ($\boldsymbol{\xi}$) and real space ($\boldsymbol{x}$) is done using the coordinate mapping and its gradient (Jacobian):
+
+$$|\boldsymbol{F}| = |\frac{\partial \boldsymbol{x}}{\partial \boldsymbol{\xi}}| = \boldsymbol{J}$$
+
+The traction $\bar{\mathbf{t}}$ is defined by the stress and the vector normal to the surface $\mathbf{n}$:
+
+$$\bar{\mathbf{t}} = \boldsymbol{\sigma} \cdot \mathbf{n}$$
+
+### Nanson's Formula
+
+**Nanson's Formula** provides the transformation for surface integrals:
+
+$$\boldsymbol{n}d\Gamma_e = |\boldsymbol{J}|\boldsymbol{J}^{-T}\cdot \boldsymbol{N} d\hat{\Gamma}$$
+
+where $\boldsymbol{N}$ is the normal vector in the reference element, and $d\hat{\Gamma}=d\xi_i d\xi_j$ is the differential area in the reference element:
+
+$$\mathbf{n} d\Gamma = \det(\mathbf{J}) (\mathbf{J}^{-T}) \hat{\mathbf{n}}  d\hat{\Gamma}$$
+
+The surface Jacobian is defined as:
+
+$$J_s =  \det(\mathbf{J}) (\mathbf{J}^{-T}) \hat{\mathbf{n}}$$
+
+The surface integral becomes:
+
+$$\int_{\Gamma_e} g(\mathbf{x})  d\Gamma = \int_{\hat{\Gamma}} g(\mathbf{x}(\boldsymbol{\xi})) J_s(\boldsymbol{\xi})  d\hat{\Gamma}$$

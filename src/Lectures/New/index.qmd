@@ -1,0 +1,24 @@
+---
+title: "Preface"
+---
+
+These lecture notes accompany the course *Introduction to the Finite Element Method*. They cover the mathematical foundations, 1D and multi-dimensional finite element formulations, implementation details, and error analysis.
+
+The notes are designed so that students can follow along during lectures without needing to copy derivations — instead, focus on understanding the concepts and annotating where needed.
+
+## How to Use These Notes
+
+The chapters follow the lecture sequence. Each chapter contains:
+
+- Mathematical derivations presented step by step
+- Python code demonstrating the concepts computationally (click to expand code blocks)
+- Key definitions and results highlighted in callout boxes
+
+## Prerequisites
+
+Students should be familiar with:
+
+- Linear algebra (matrix operations, eigenvalues)
+- Calculus (integration by parts, partial derivatives)
+- Basic Python programming
+- Introductory continuum mechanics

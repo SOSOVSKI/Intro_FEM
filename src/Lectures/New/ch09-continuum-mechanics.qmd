@@ -1,0 +1,121 @@
+---
+title: "Continuum Mechanics Fundamentals"
+---
+
+## Displacement and Configuration
+
+In continuum mechanics, we deal with continuous media and their deformation under external forces.
+
+**Displacement** $\mathbf{u}$: The change in position of a point in the body, defined as $\mathbf{u} = \mathbf{x} - \mathbf{x}_0$, where $\mathbf{x}_0$ is the original position, often written using capital $\mathbf{X}$.
+
+**Configuration:**
+
+- $\mathbf{X}$: The original position of a point in the body before deformation, with $E_i$ being the coordinate system in the reference configuration: $\mathbf{X}=X_iE_i$
+
+- $\mathbf{x}$: The current position of the same point after deformation, with $e_i$ being the coordinate system in the current configuration: $\mathbf{x}=x_ie_i$
+
+## Deformation Gradient
+
+The **Deformation Gradient** $\mathbf{F}$ is a tensor that describes the local deformation of the material. It relates the current configuration to the reference configuration:
+
+$$\mathbf{F} = \frac{\partial \mathbf{x}}{\partial \mathbf{X}} = \begin{bmatrix} \frac{\partial x_1}{\partial X_1} & \frac{\partial x_1}{\partial X_2} & \ldots \\ \frac{\partial x_2}{\partial X_1} & \frac{\partial x_2}{\partial X_2} & \ldots \\ \vdots & \vdots & \ddots \end{bmatrix}$$
+
+## Strain
+
+**Strain** $\boldsymbol{\varepsilon}$ is a measure of deformation defined as the symmetric part of the deformation gradient:
+
+$$\boldsymbol{\varepsilon} = \frac{1}{2}(\mathbf{F}^T \mathbf{F} - \mathbf{I})$$
+
+where $\mathbf{I}$ is the identity tensor.
+
+Under the assumption of small deformations, the strain can be approximated as:
+
+$$\boldsymbol{\varepsilon} \approx \frac{1}{2}(\nabla \mathbf{u} + \nabla \mathbf{u}^T) = \nabla^s\mathbf{u}$$
+
+where $\nabla \mathbf{u}$ is the gradient of the displacement field and $\nabla^s\mathbf{u}$ is the symmetric gradient.
+
+## Stress and Constitutive Relation
+
+**Stress** $\boldsymbol{\sigma}$ is a measure of internal forces within the material, defined using a constitutive relation that relates stress to strain. For linear elasticity:
+
+$$\boldsymbol{\sigma} = \mathbf{C} : \boldsymbol{\varepsilon}$$
+
+where $\mathbf{C}$ is the elasticity tensor (material property matrix) and $\boldsymbol{\sigma}$ is the Cauchy stress tensor.
+
+## Tractions
+
+**Tractions** $\mathbf{t}$ represent the force per unit area acting on a surface, related to stress by:
+
+$$\mathbf{t} = \boldsymbol{\sigma} \cdot \mathbf{n}$$
+
+where $\mathbf{n}$ is the outward normal to the surface.
+
+## Mass Conservation
+
+The principle that mass is conserved in a closed system. In continuum mechanics, this is expressed as:
+
+$$\int_{\Omega} \rho \, dv = \text{constant}= \int_{\Omega} \rho_0 \, dV\Rightarrow \rho J = \rho_0$$
+
+where $\rho$ is the current density, $\rho_0$ is the reference density, and $J = \det(\mathbf{F})$ is the Jacobian determinant of the deformation gradient.
+
+## Balance of Linear Momentum
+
+The balance of linear momentum states:
+
+$$\int_{\Omega} \rho \frac{\partial^2 \mathbf{x}}{\partial t^2} \, dv = \int_{\Omega} \mathbf{f} \,dv +\int_{\partial \Omega} \mathbf{t} \, da$$
+
+This leads to the equation of motion:
+
+$$\text{div}(\boldsymbol{\sigma}) + \mathbf{f} = \rho \ddot{\mathbf{u}}$$
+
+## Balance of Angular Momentum
+
+The balance of angular momentum is expressed as:
+
+$$\frac{d}{dt}\int_{\Omega} \mathbf{x} \times (\rho v)\, dv = \int_{\Omega} \mathbf{x} \times \mathbf{f} \,dv +\int_{\partial \Omega} \mathbf{x} \times \mathbf{t} \, da$$
+
+## The Weak Form Derivation
+
+For quasi-static problems, we assume the acceleration terms are zero, so the balance of linear momentum becomes:
+
+$$\nabla \cdot \boldsymbol{\sigma} + \mathbf{f} = 0$$
+
+with
+
+$$\nabla \cdot \boldsymbol{\sigma} = \left(\frac{\partial \sigma_{ij}}{\partial x_j}\right)\mathbf{e}_i$$
+
+where $\sigma_{ij}$ are the components of the stress tensor.
+
+### Multiplication by Test Function and Integration
+
+We multiply by a test function $\mathbf{v}$ and integrate over the domain:
+
+$$\int_{\Omega} (\nabla \cdot \boldsymbol{\sigma} + \mathbf{f}) \cdot \mathbf{v} \, d\Omega = 0$$
+
+### Product Rule Application
+
+We use the product rule for the divergence of a tensor contracted with a vector:
+
+$$\nabla \cdot (\boldsymbol{\sigma}\cdot\mathbf{v}) = (\nabla \cdot \boldsymbol{\sigma})\cdot \mathbf{v} + \boldsymbol{\sigma}:\nabla(\mathbf{v})$$
+
+where:
+
+$$\boldsymbol{\sigma}:\nabla(\mathbf{v}) = \sigma_{ij}\frac{\partial v_j}{\partial x_i}$$
+
+Rearranging:
+
+$$(\nabla \cdot \boldsymbol{\sigma}) \cdot \mathbf{v} = \nabla \cdot (\boldsymbol{\sigma}\mathbf{v}) - \boldsymbol{\sigma} : \nabla\mathbf{v}$$
+
+### Divergence Theorem Application
+
+Applying the divergence theorem to the integrated equation:
+
+$$\int_{\Omega} \nabla \cdot (\boldsymbol{\sigma}\mathbf{v}) d\Omega - \int_{\Omega} \boldsymbol{\sigma} : \nabla\mathbf{v} d\Omega + \int_{\Omega} \mathbf{f} \cdot \mathbf{v} d\Omega = 0$$
+
+$$\implies \int_{\partial\Omega} (\boldsymbol{\sigma}\mathbf{v}) \cdot \mathbf{n} d\Gamma - \int_{\Omega} \boldsymbol{\sigma} : \nabla\mathbf{v} d\Omega + \int_{\Omega} \mathbf{f} \cdot \mathbf{v} d\Omega = 0$$
+
+The term ($\boldsymbol{\sigma}\boldsymbol{n}$) is the traction vector $\boldsymbol{t}$. The term $\nabla \boldsymbol{v}$ is the gradient of the test function, and its symmetric part is the strain tensor for the test function, $\boldsymbol{\varepsilon}(\boldsymbol{v})$.
+
+### Final Weak Form
+
+This derivation yields the weak form of the momentum equation, which forms the foundation for finite element elasticity analysis.

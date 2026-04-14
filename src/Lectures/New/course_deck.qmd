@@ -1,0 +1,1658 @@
+---
+title: "Introduction to the Finite Element Method"
+subtitle: "Full Course Deck"
+author: "Shmuel Osovski"
+date: "2025"
+format:
+  revealjs:
+    navigation-mode: grid
+    slide-number: true
+    hash: true
+    history: true
+    controls: true
+    controls-layout: bottom-right
+    controls-tutorial: true
+    overview: true
+    code-overflow: wrap
+    code-fold: true
+    css: [fem.css, custom.css]
+    theme: default
+    fig-format: svg
+    fig-dpi: 150
+    width: 1280
+    height: 720
+    margin: 0.05
+    scrollable: true
+    smaller: true
+execute:
+  echo: true
+  warning: false
+  freeze: auto
+jupyter: python3
+---
+
+## {visibility="hidden"}
+
+```{python}
+#| include: false
+%run _common.py
+import sys, os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname("__file__"), '..', '..')))
+from symbolic_fem_workbench import (
+    make_field_1d, make_field_2d,
+    weighted_residual, integrate_divergence_1d,
+    drop_dirichlet_boundary, apply_neumann_flux,
+    split_linear_weak_form, substitute_fe,
+    LinearElement1D, local_trial_expansion, local_test_expansion,
+    extract_coefficient_matrix, extract_coefficient_vector,
+    build_bar_1d_local_problem, build_bar_1d_mass_matrix,
+    build_poisson_triangle_p1_local_problem,
+    ReferenceTriangleP1, ReferenceQuadrilateralQ1, AffineTriangleMap2D,
+    integrate_reference_triangle_exact,
+    triangle_one_point_rule, triangle_three_point_rule,
+    assemble_dense_matrix, assemble_dense_vector,
+    apply_dirichlet_by_reduction, expand_reduced_solution,
+    grad_2d, pullback_gradient_2d,
+)
+from symbolic_fem_workbench.assembly import (
+    apply_dirichlet_by_row_substitution,
+    apply_dirichlet_by_lifting,
+)
+from symbolic_fem_workbench.elasticity import (
+    plane_stress_D, plane_strain_D, isotropic_3d_D,
+    B_matrix_triangle_2d, element_stiffness_BtDB,
+)
+import python.L1 as fem
+from python.L3 import create_fem_diagram, FEMShapeFunctions, create_latex_indexed_function
+phi = create_latex_indexed_function("phi", r"\phi")
+```
+
+# Week 1: Introduction & Essence of FEM
+
+## The Strong Form
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+fem.display_strong_form()
+```
+
+## Deriving the Weak Form
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+weak_eq = fem.derive_weak_form()
+```
+
+## Shape Functions for Discretization
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+N = 5
+phi, a, b, y_approx, v_approx = fem.define_shape_functions(N)
+```
+
+## Assembling the FEM System
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+K, F_vec = fem.assemble_fem_system(weak_eq, phi, a, b, y_approx, v_approx, N)
+```
+
+## Putting It All Together
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+fem.finite_element_method_1d_demo()
+```
+
+## Example: Convergence with Mesh Refinement
+
+The following plots show the FEM solution for increasing numbers of elements, demonstrating how the numerical solution converges to the exact solution as the mesh is refined.
+
+```{python}
+#| code-fold: true
+#| echo: true
+#| fig-cap: "FEM solution with varying mesh refinement"
+#| output: true
+import matplotlib.pyplot as plt
+
+fig, axes = plt.subplots(2, 2, figsize=(10, 8))
+for idx, n_elem in enumerate([2, 5, 10, 20]):
+    ax = axes[idx // 2, idx % 2]
+    plt.sca(ax)
+    fem.solve_specific_1d_problem_animated(n_elem)
+    ax.set_title(f'{n_elem} elements')
+plt.tight_layout()
+plt.show()
+```
+
+# Week 2: Weak Form Derivation
+
+## Review: The Weak Form
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+print_styled("Assuming constant A, B, C and Dirichlet BCs v(0)=v(L)=0:")
+weak_term1 = -Integral(A * diff(v, x) * diff(y, x), (x, 0, L))
+weak_term2 = Integral(v * B * diff(y, x), (x, 0, L))
+weak_term3 = Integral(v * C * y, (x, 0, L))
+rhs_term = Integral(v * F, (x, 0, L))
+weak_form_eq = Eq(weak_term1 + weak_term2 + weak_term3, rhs_term)
+print_styled("The weak form is:")
+Lprint(weak_form_eq)
+```
+
+## Discretization Using Shape Functions
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+print_styled("The weak form is:")
+Lprint(weak_form_eq)
+print_styled("Substitute Discretized Approximations")
+print_styled("Approximate solution $y(x)$ and test function $v(x)$ using shape functions $\phi_k(x)$:")
+
+y_approx = Sum(a[j] * phi(j,x), (j, 1, N))
+v_approx = Sum(b[i] * phi(i,x), (i, 1, N))
+
+print_styled("Approximate solution $y(x)$:")
+Lprint(Eq(y, y_approx, evaluate=False))
+
+print_styled("Test function $v(x)$:")
+Lprint(Eq(v, v_approx, evaluate=False))
+
+print_styled("Derivatives:")
+dy_dx_approx = Derivative(y_approx, x)
+dv_dx_approx = Derivative(v_approx, x)
+Lprint(Eq(Derivative(y,x), dy_dx_approx, evaluate=False))
+Lprint(Eq(Derivative(v,x), dv_dx_approx, evaluate=False))
+
+print_styled("Substitute sums into the weak form terms:")
+term1_subst_sym = weak_term1.subs({v: v_approx, y: y_approx})
+term2_subst_sym = weak_term2.subs({v: v_approx, y: y_approx})
+term3_subst_sym = weak_term3.subs({v: v_approx, y: y_approx})
+rhs_subst_sym = rhs_term.subs({v: v_approx})
+
+print_styled("Term 1 ($-\int A v' y' dx$):")
+Lprint(term1_subst_sym)
+print_styled("Term 2 ($\int B v y' dx$):")
+Lprint(term2_subst_sym)
+print_styled("Term 3 ($\int C v y dx$):")
+Lprint(term3_subst_sym)
+print_styled("RHS Term ($\int v F dx$):")
+Lprint(rhs_subst_sym)
+```
+
+## Workbench: Strong Form to Weak Form {.smaller}
+
+```{python}
+#| code-fold: true
+x, L = sp.symbols("x L", positive=True)
+E, A_ = sp.symbols("E A", positive=True)
+q, P = sp.symbols("q P", real=True)
+u_field = make_field_1d("u", x)
+v_field = make_field_1d("v", x)
+domain = (x, 0, L)
+flux = E * A_ * sp.diff(u_field, x)
+domain_term, (left_bc, right_bc) = integrate_divergence_1d(flux, v_field, x, domain)
+left_val = drop_dirichlet_boundary(left_bc, v_field)
+right_val = apply_neumann_flux(right_bc, flux_expr=flux, prescribed_flux=P)
+weak_expr = domain_term.as_integral() - sp.Integral(q * v_field, domain) + left_val + right_val
+wf = split_linear_weak_form(weak_expr, u_field, v_field)
+print("Bilinear form a(u,v):")
+Lprint(wf.bilinear)
+print("Linear form F(v):")
+Lprint(wf.linear)
+```
+
+# Week 3: Galerkin Method & Shape Functions
+
+## Rearranging the Summation and Integrals
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+print_styled("Assuming continuity, swap integration and summation, then factor out $b_i$.")
+print_styled(r"The weak form $\sum_{\text{term}} (\text{Term}) = \text{RHS}$ becomes:")
+Lprint(r"\sum_{i=1}^N b_i \left( [\text{Inner part for Term 1}]_i + [\text{Inner part for Term 2}]_i + [\text{Inner part for Term 3}]_i \right) = \sum_{i=1}^N b_i [\text{Inner part for RHS}]_i")
+
+print_styled(r"Where the inner parts (coefficients of $b_i$) are:")
+
+term1_inner = Sum( -A * Integral(diff(phi(i,x), x) * diff(phi(j,x), x), (x, 0, L)) * a[j], (j, 1, N))
+term2_inner = Sum(  B * Integral(phi(i,x) * diff(phi(j,x), x), (x, 0, L)) * a[j], (j, 1, N))
+term3_inner = Sum(  C * Integral(phi(i,x) * phi(j,x), (x, 0, L)) * a[j], (j, 1, N))
+rhs_inner = Integral(phi(i,x) * F, (x, 0, L))
+
+print_styled("Inner part for Term 1 (coefficient of $b_i$):")
+Lprint(term1_inner)
+print_styled("Inner part for Term 2 (coefficient of $b_i$):")
+Lprint(term2_inner)
+print_styled("Inner part for Term 3 (coefficient of $b_i$):")
+Lprint(term3_inner)
+print_styled("Inner part for RHS (coefficient of $b_i$):")
+Lprint(rhs_inner)
+```
+
+## Obtaining N Equations
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+print_styled("The rearranged form is:")
+print_styled("$\\sum_{i=1}^N b_i ( \\text{LHS}_i - \\text{RHS}_i ) = 0$.")
+print_styled("Since this must hold for arbitrary $b_i$, the term in parentheses must be zero for each $i$:")
+print_styled("  $\\text{LHS}_i - \\text{RHS}_i = 0$.")
+
+equation_for_i = Eq(term1_inner + term2_inner + term3_inner, rhs_inner)
+print_styled("This gives N equations (for $i = 1, ..., N$):")
+Lprint(equation_for_i)
+```
+
+## Assembling the Matrix System
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+print_styled("The $i$-th equation:")
+print_styled("$\\sum_{j=1}^N [ ... ]_{ij} a_j = F_i$")
+print_styled("leads to the matrix form:")
+print_styled("$K a = F$")
+
+K_ij = -A * Integral(diff(phi(i,x), x) * diff(phi(j,x), x), (x, 0, L)) + \
+        B * Integral(phi(i,x) * diff(phi(j,x), x), (x, 0, L)) + \
+        C * Integral(phi(i,x) * phi(j,x), (x, 0, L))
+F_i = Integral(phi(i,x) * F, (x, 0, L))
+
+print_styled("Where the matrix/vector components are:")
+Lprint(Eq(Symbol('K_{ij}'), K_ij))
+Lprint(Eq(Symbol('F_i'), F_i))
+
+K_sym = MatrixSymbol('K', N, N)
+a_sym = MatrixSymbol('a', N, 1)
+F_sym = MatrixSymbol('F', N, 1)
+matrix_eq = Eq(K_sym * a_sym, F_sym, evaluate=False)
+print_styled("The matrix system:")
+Lprint(matrix_eq)
+
+print_styled("Writing the full system for $i=1, ..., N$ gives the matrix form $Ka=F$:")
+
+latex_matrix_form = r"""
+\begin{bmatrix}
+K_{11} & K_{12} & \dots & K_{1N} \\
+K_{21} & K_{22} & \dots & K_{2N} \\
+\vdots & \vdots & \ddots & \vdots \\
+K_{N1} & K_{N2} & \dots & K_{NN}
+\end{bmatrix}
+\begin{bmatrix}
+a_{1} \\
+a_{2} \\
+\vdots \\
+a_{N}
+\end{bmatrix}
+=
+\begin{bmatrix}
+F_{1} \\
+F_{2} \\
+\vdots \\
+F_{N}
+\end{bmatrix}
+"""
+Lprint(latex_matrix_form)
+
+print_styled("This linear system $Ka = F$ can be solved for the unknown coefficients vector $a = [a_1, a_2, ..., a_N]^T$.")
+```
+
+## Note on Boundary Conditions
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+print_styled("We assumed $y(0)=0$ and $y(L)=0$. How are these applied to the matrix system?")
+print_styled("If using nodal basis functions where:")
+print_styled("$\phi_k(x_{node}) = \delta_{knode}$")
+print_styled("then:")
+print_styled("$y(x_1) = y(0) = \sum a_j \phi_j(x_1) = a_1$.")
+print_styled("Similarly")
+print_styled("$y(x_N) = y(L) = a_N$.")
+print_styled("So, for $y(0)=y(L)=0$, we know $a_1 = 0$ and $a_N = 0$.")
+print_styled("These known values must be incorporated when solving $Ka=F$. Common methods include:")
+print_styled("  - Modifying the K matrix and F vector (e.g., setting rows/columns to enforce the condition).")
+print_styled("  - Partitioning the system into known and unknown degrees of freedom.")
+print_styled("Handling boundary conditions precisely is a key part of FEM implementation and will be detailed later.")
+```
+
+## Weighted Residuals and Galerkin's Method
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+print_styled("Let's revisit the core idea from a different perspective.")
+print_styled("Our original differential equation is $A(y) = F$, where $A$ is the differential operator.")
+def differential_operator(y_var):
+    return A * diff(y_var, x, 2) + B * diff(y_var, x) + C * y_var
+eq = sp.Eq(differential_operator(y), F)
+Lprint(eq)
+print_styled("Next, we represent $y(x)$ as a linear combination of basis functions $\phi_j(x)$, resulting in an approximated function $y^N(x) \\approx y(x)$:")
+
+yn = Function('y^N')(x)
+Lprint(Eq(yn, y_approx, evaluate=False))
+
+print_styled("Now, we can define the residual $r^N(x)$ for the approximate solution $y^N(x)$ given by $A(y^N)-F=r^N$:")
+A_op = lambda func: A * diff(func, x, 2) + B * diff(func, x) + C * func
+r_N = Symbol('r^N')
+residual_def = Eq(r_N, A_op(y_approx) - F, evaluate=False)
+Lprint(residual_def)
+print_styled("The residual $r^N(x)$ is the error in the approximation. The goal of FEM is to make this residual 'small' in some sense.")
+n = sp.Symbol('n', integer=True, positive=True)
+PI = sp.Symbol('PI', positive=True)
+print_styled("Since $r^N$ is a function on $[0,L]$, we can measure its 'size' using:")
+Lprint(Eq(PI, Integral(r_N**2, (x, 0, L)), evaluate=False))
+print_styled("A possible approach is to minimize $\\Pi$ by taking the derivative with respect to the coefficients $a_j$ and setting it to zero.")
+```
+
+### The Galerkin Choice
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+print_styled("In the Galerkin approach, we define weighting functions $w_i(x)$.")
+w = Function('w')
+weighted_residual_eq = Eq(Integral(r_N * w(i, x), (x, 0, L)), 0)
+Lprint(weighted_residual_eq)
+print_styled("The **Method of Weighted Residuals** requires the residual to be orthogonal to the weighting functions $w_i(x)$.")
+print_styled("The **Galerkin Method** makes a specific choice: use the *same* functions for weighting as for the basis/shape functions.")
+print_styled("This means we set $w_i(x) = \\phi_i(x)$:")
+galerkin_eq_from_WR = weighted_residual_eq.subs({w(i,x): phi(i,x)})
+Lprint(galerkin_eq_from_WR)
+print_styled(r"This must hold for $i = 1, 2, ..., N$.")
+
+print_styled("Substituting the definition of $r^N$ into the Galerkin equation gives:")
+galerkin_expanded = galerkin_eq_from_WR.subs({r_N: A_op(y_approx) - F})
+Lprint(galerkin_expanded)
+
+print_styled("Applying integration by parts to the second derivative term and requiring that $\\phi_i$ satisfy the boundary conditions, we obtain:")
+print_styled(r"$\int_0^L \left( -A \frac{d\phi_i}{dx} \sum_{j=1}^N\frac{d\phi_j}{dx} + B \phi_i \sum_{j=1}^N\frac{d\phi_j}{dx} + C \phi_i \sum_{j=1}^N\phi_j - \phi_i F \right) dx = 0$")
+
+print_styled("This is the *exact same* $i$-th equation we derived earlier from the weak form.")
+print_styled("Therefore, the Galerkin method provides a powerful theoretical justification: it systematically minimizes the residual by making it orthogonal to the basis functions used for the approximation.")
+```
+
+## Workbench: Galerkin Discretization {.smaller}
+
+```{python}
+#| code-fold: true
+problem = build_bar_1d_local_problem()
+x_s, L_s = problem["x"], problem["L"]
+element = LinearElement1D(x=x_s, x0=0, x1=L_s)
+N = element.shape_functions
+print(f"N1 = {N[0]}, N2 = {N[1]}")
+print(f"Partition of unity: {sp.simplify(N[0] + N[1])}")
+print("Element stiffness Ke:")
+Lprint(problem["Ke"])
+print("Element load fe:")
+Lprint(problem["fe"])
+```
+
+# Week 4: 1D Finite Elements
+
+## From Last Week
+
+**Key insight**: The weak form from Lecture 1 and Galerkin's method from Lecture 2 are fundamentally the same.
+
+**Galerkin's approach** (review):
+
+1. Compute the residual $Ay_N - f = r_N(x)$
+2. Force the residual to be orthogonal to each approximation function: $\int_0^L r_N(x) \phi_i(x)\,dx = 0$, for $i = 1, 2, \ldots, N$
+3. Solve the resulting set of coupled equations
+
+However, the primary challenge remains: **no systematic way for choosing the approximation functions (yet)**. The Finite Element Method (FEM) is designed specifically to address this problem.
+
+## A 1D Model Problem
+
+Consider the 1D bar shown below, composed of two different elastic solids:
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+#| fig-cap: "1D bar composed of two different materials"
+create_fem_diagram(
+    width=8,
+    height=0.8,
+    num_elements=12,
+    use_gradient=False,
+    element_color='#c0c0c0',
+    show_element_labels=True,
+)
+```
+
+The bar is subjected to tractions $t^*$ on its left side ($\Gamma_t$), while the right side is fixed ($\Gamma_u$).
+
+## Strong Form
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+print_styled("The strong form of the PDE:")
+Strong_form = diff(sigma,x)+f
+Lprint(Eq(Strong_form,0))
+print_styled('This PDE is a balance of forces, with $f$ being the body force and $\\sigma$ the stress.')
+print_styled("The boundary conditions:")
+print_styled("$u|_{\\Gamma_u} = u^*$")
+print_styled("$t|_{\\Gamma_t} = t^*$")
+```
+
+## Getting the Weak Form
+
+To get the weak form we multiply by a test function $v$ and integrate over the domain $\Omega$:
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+residual = Integral(r*v, (x,0,L))
+weak_term = Integral((diff(sigma,x)+f)*v, (x,0,L))
+Lprint(Eq(weak_term,0))
+```
+
+Using integration by parts:
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+print_styled("Using integration by parts:")
+chain_rule = Derivative(sigma*v,x)
+Lprint(Eq(chain_rule,chain_rule.doit(),evaluate=False))
+print_styled("And thus:")
+Lprint(Eq(v*Derivative(sigma,x), Derivative(sigma*v,x)-sigma*Derivative(v,x)))
+```
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+print_styled("We can write the weak form as:")
+weak_form_before_bc = Integral(chain_rule,(x,0,L))-Integral(sigma*Derivative(v,x),(x,0,L))+Integral(f*v,(x,0,L))
+Lprint(Eq(weak_form_before_bc,0))
+```
+
+Requiring $v|_{\Gamma_u}=0$ and $\sigma|_{\Gamma_t}=t^*$:
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+print_styled("Starting from the boundary term:")
+weak_form_3 = Integral(chain_rule,(x,0,L))
+sv = sigma*v
+Lprint(Eq(weak_form_3,sv.subs({x:L})-sv.subs({x:0})))
+print_styled("Recalling that $v$ is 0 on $\\Gamma_u$:")
+Lprint(Eq(weak_form_3,t_star*v.subs({x:L})))
+print_styled("The weak form becomes:")
+weak_LHS = Integral(sigma*Derivative(v,x),(x,0,L))
+weak_RHS = Integral(f*v,(x,0,L))+t_star*v.subs({x:L})
+Lprint(Eq(weak_LHS,weak_RHS))
+```
+
+## The Weak Form
+
+To get the final weak form in terms of the displacement $u$, we introduce the constitutive and kinematic relations:
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+print_styled("Substituting the constitutive relation:")
+weak_LHS_sub = weak_LHS.subs({sigma:E*diff(u,x)})
+Lprint(Eq(weak_LHS_sub,weak_RHS))
+```
+
+The final equation is the **Weak Form** or **Variational Formulation**. We can write it as:
+
+$$\mathbb{B}(u,v) = \mathbb{F}(v)$$
+
+where:
+
+- $\mathbb{B}(u,v) = \int_0^L \frac{dv}{dx} E \frac{du}{dx} \, dx$ represents internal virtual work
+- $\mathbb{F}(v) = \int_0^L f v \, dx + t^* v|_{\Gamma_t}$ represents external virtual work
+
+## Function Spaces for the Weak Form
+
+For well-defined integrals, we need:
+
+$$\forall v, \quad \int_0^L \frac{dv}{dx} \sigma \, dx < \infty, \quad \int_0^L f v \, dx < \infty$$
+
+This leads to using Sobolev spaces.
+
+## Approximating the Solution
+
+We discretize the problem using:
+
+$$u_N \approx u(x) = \sum_{j=1}^{N} a_j \phi_j(x), \quad v = \phi_i(x)$$
+
+This gives us a linear system $[K]\{a\} = \{F\}$.
+
+## Basis Functions in FEM
+
+The key insight of FEM is a systematic way to construct basis functions:
+
+- Functions are built piecewise over subdomains ("elements")
+- Usually low-degree polynomials
+- Smooth enough to be in $H^1(\Omega)$
+- Form a nodal basis where $\phi_i(x_j) = \delta_{ij}$ (Kronecker delta)
+
+### Linear Elements
+
+For linear elements, we define shape functions with specific properties over each element.
+
+### Visualization of Basis Functions
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+#| fig-cap: "Lagrange shape functions of degree 1, 2, and 3"
+fem_viz = FEMShapeFunctions()
+fig1 = fem_viz.plot_multielement_shape_functions(
+    num_elements=3,
+    element_type='lagrange',
+    degrees=[1, 2, 3])
+```
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+#| fig-cap: "Derivatives of Lagrange shape functions"
+fem_viz = FEMShapeFunctions()
+fig2 = fem_viz.plot_multielement_shape_function_derivatives(
+    num_elements=3,
+    element_type='lagrange',
+    degrees=[1, 2]
+)
+```
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+#| fig-cap: "Partition of unity for linear elements"
+fem_viz = FEMShapeFunctions()
+fig3 = fem_viz.plot_multielement_partition_of_unity_per_element(
+    num_elements=3,
+    degree=1
+)
+```
+
+## Building the Stiffness Matrix
+
+For example, to compute $K_{11}$:
+
+$$K_{11} = \int_0^L \frac{d\phi_1}{dx} E \frac{d\phi_1}{dx} \, dx$$
+
+Similarly for $K_{12}$ and $K_{13}$. This pattern shows why FEM matrices have a **banded structure**.
+
+## Element-wise Assembly
+
+We recognize that:
+
+$$K_{ij}^g = \sum_{\text{elem}} K_{ij}^e, \quad F_i^g = \sum_{\text{elem}} F_i^e$$
+
+This element-wise assembly is key to FEM efficiency.
+
+# Week 5: Numerical Integration & Generic 1D FEM
+
+## Reference Element Transformation
+
+To make calculations systematic, we define a master (reference) element in a local coordinate system $\zeta \in [-1, 1]$.
+
+We need a mapping from reference to physical coordinates:
+
+$$x = \sum_{i=1}^2 \chi_i \hat{\phi}_i(\zeta) = M_x(\zeta)$$
+
+where $\chi_i$ are the physical coordinates of the nodes and $\hat{\phi}_i(\zeta)$ are the shape functions in reference coordinates.
+
+**Shape Functions in Reference Space:** For linear elements in 1D:
+
+$$\hat{\phi}_1 = \frac{1}{2}(1-\zeta) \quad \text{and} \quad \hat{\phi}_2 = \frac{1}{2}(1+\zeta)$$
+
+## Differential Relations
+
+We need the mapping between derivatives:
+
+$$\frac{d}{d\zeta} = \frac{dx}{d\zeta}\frac{d}{dx} = J \frac{d}{dx}$$
+
+And the inverse relation:
+
+$$\frac{d}{dx} = \frac{d\zeta}{dx}\frac{d}{d\zeta} = \frac{1}{J}\frac{d}{d\zeta}$$
+
+where $J = \frac{dx}{d\zeta}$ is the Jacobian of the transformation.
+
+## Numerical Integration: Gaussian Quadrature
+
+For numerical integration, we use Gaussian quadrature:
+
+$$\int_{x_i}^{x_{i+1}} F(x) \, dx = \int_{-1}^1 F(x(\zeta)) J(\zeta) \, d\zeta \approx \sum_{q=1}^G w_q F(x(\zeta_q)) J(\zeta_q)$$
+
+Gauss quadrature can integrate a polynomial of order $2G-1$ exactly with $G$ points.
+
+| Gauss rule | $\zeta_i$ | $w_i$ |
+|:----------:|:---------:|:------:|
+| 2 | $\pm 0.5773502692$ | 1.0 |
+| 3 | 0.0 | 0.8888888889 |
+|   | $\pm 0.7745966692$ | 0.5555555556 |
+
+## Computing Element Matrices with Quadrature
+
+The element stiffness matrix is computed as:
+
+$$K_{ij}^e = \sum_{q=1}^G w_q \left[\frac{d\hat{\phi}_i}{d\zeta}\frac{d\zeta}{dx}\right] E \left[\frac{d\hat{\phi}_j}{d\zeta}\frac{d\zeta}{dx}\right] J \bigg|_{\zeta=\zeta_q}$$
+
+Similarly for the force vector:
+
+$$F_i^e = \sum_{q=1}^G w_q \hat{\phi}_i(\zeta_q) f(x(\zeta_q)) J(\zeta_q)$$
+
+## Post-Processing
+
+After obtaining the nodal values $a_i$, we can compute:
+
+- **Displacements** at any point: $u(x) = \sum_{i=1}^N a_i \phi_i(x)$
+- **Strains** at any point: $\varepsilon(x) = \frac{du}{dx} = \sum_{i=1}^N a_i \frac{d\phi_i}{dx}$
+- **Stresses** at any point: $\sigma(x) = E(x) \sum_{i=1}^N a_i \frac{d\phi_i}{dx}$
+
+## Implementing Boundary Conditions
+
+Essential (Dirichlet) boundary conditions (e.g., $u(0) = u^*$) are enforced by modifying the matrix system.
+
+## Workbench: Exact vs. Gauss Integration {.smaller}
+
+```{python}
+#| code-fold: true
+xi_q, eta_q = sp.symbols("xi eta")
+f_test = 1 + 2*xi_q + 3*eta_q
+exact = integrate_reference_triangle_exact(f_test, xi_q, eta_q)
+one_pt = triangle_one_point_rule(f_test, xi_q, eta_q)
+three_pt = triangle_three_point_rule(f_test, xi_q, eta_q)
+print(f"Linear polynomial: {f_test}")
+print(f"Exact:   {exact}")
+print(f"1-point: {one_pt} (match: {sp.simplify(exact - one_pt) == 0})")
+print(f"3-point: {three_pt} (match: {sp.simplify(exact - three_pt) == 0})")
+```
+
+# Week 6: Boundary Conditions
+
+## Neumann Boundary Conditions {.smaller}
+
+Neumann conditions enter the weak form *naturally* through the boundary integral — they are simply added to the load vector.
+
+$$\int_{\Gamma_N} t^* \, v \, ds \implies f_i^{\text{boundary}} = t^* \frac{|e|}{2}$$
+
+## Dirichlet BC: Row Substitution {.smaller}
+
+For each constrained DOF $i$ with value $g_i$:
+
+1. Subtract $K_{:,i} g_i$ from $F$
+2. Zero row $i$ and column $i$ of $K$
+3. Set $K_{ii} = 1$, $F_i = g_i$
+
+## Dirichlet BC: Lifting Approach {.smaller}
+
+Decompose $u = u_0 + u_D$ where $u_D$ satisfies the Dirichlet BC:
+
+$$a(u_0, v) = F(v) - a(u_D, v)$$
+
+In matrix form: $K_{ff} u_0 = F_f - K_{fc} g_c$
+
+## Workbench: BC Comparison {.smaller}
+
+```{python}
+#| code-fold: true
+import numpy as np
+problem = build_bar_1d_local_problem()
+ke_fn = sp.lambdify((problem["L"], problem["E"], problem["A"]), problem["Ke"], "numpy")
+fe_fn = sp.lambdify((problem["L"], problem["q"], problem["P"]), problem["fe"], "numpy")
+n_e, h = 3, 1.0/3
+K = np.zeros((4, 4)); F = np.zeros(4)
+for e in range(n_e):
+    Ke = np.array(ke_fn(h, 1.0, 1.0), dtype=float)
+    fe = np.array(fe_fn(h, 1.0, 0.0), dtype=float).flatten()
+    assemble_dense_matrix(K, Ke, [e, e+1]); assemble_dense_vector(F, fe, [e, e+1])
+K1, F1 = apply_dirichlet_by_row_substitution(K.copy(), F.copy(), [0,3], [0.0,0.0])
+u_row = np.linalg.solve(K1, F1)
+Kff, Ff, free, ulift = apply_dirichlet_by_lifting(K.copy(), F.copy(), [0,3], [0.0,0.0])
+u0 = np.linalg.solve(Kff, Ff)
+u_full = expand_reduced_solution(u0, 4, free, [0,3])
+print(f"Row substitution: {np.round(u_row, 6)}")
+print(f"Lifting:          {np.round(u_full + ulift, 6)}")
+print(f"Match: {np.allclose(u_row, u_full + ulift)}")
+```
+
+# Week 7: Error Analysis & Solution Characteristics
+
+## Function Spaces: Motivation
+
+In FEM, we transform strong forms of PDEs into **weak forms** using integration by parts. Weak forms look like: Find $u$ such that
+
+$$\int_{\Omega}(k\nabla u \cdot \nabla v\,d\Omega) = \int_{\Omega}fv \,d\Omega$$
+
+for all suitable "test functions" $v$.
+
+This involves integrals of functions and their derivatives. **What kind of functions can we plug into these integrals?**
+
+## From Vectors to Functions
+
+You know **vector spaces** like $\mathbb{R}^3$. Functions can also form vector spaces! The challenge is defining a "dot product" and "size" (norm) for functions, and ensuring our space is "complete".
+
+## Hilbert Spaces: The General Framework
+
+A **Hilbert Space** is a vector space with an **inner product** $\langle f,g \rangle$. The inner product lets us define:
+
+- **Norm (Size):** $\|f\| = \sqrt{\langle f,f \rangle}$
+- **Orthogonality:** $f$ is orthogonal to $g$ if $\langle f,g \rangle = 0$
+
+Crucially, Hilbert spaces are **complete**: every Cauchy sequence converges within the space.
+
+## $L^2(\Omega)$: Square-Integrable Functions
+
+$L^2(\Omega)$ is the space of functions $f$ whose square has a finite integral:
+
+$$\int_{\Omega} |f(x)|^2 \,dx < \infty$$
+
+**Inner Product:**
+$$\langle f, g\rangle_{L^2} = \int_{\Omega} f(x) g(x) \,dx$$
+
+**Norm ($L^2$ Norm):**
+$$\|f\|_{L^2} = \sqrt{\int_{\Omega} |f(x)|^2 \,dx}$$
+
+### Examples
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+#| fig-cap: "Left: sin(x) is in L²[0, π]. Right: 1/x is NOT in L²[0, π]."
+#| output: true
+
+x1 = np.linspace(0.01, np.pi, 400)
+x2 = np.linspace(0, np.pi, 400)
+
+f1 = np.sin(x2)
+f2 = 1 / x1
+
+fig, axs = plt.subplots(1, 2, figsize=(10, 4))
+
+axs[0].plot(x2, f1, label='f(x) = sin(x)')
+axs[0].fill_between(x2, f1**2, alpha=0.3, label='f(x)²')
+axs[0].set_title('Function in L²[0, π]')
+axs[0].set_xlabel('x')
+axs[0].set_ylabel('f(x)')
+axs[0].legend()
+axs[0].grid(True)
+axs[0].set_ylim(bottom=0)
+
+axs[1].plot(x1, f2, label='g(x) = 1/x')
+axs[1].fill_between(x1, f2**2, alpha=0.3, label='g(x)²')
+axs[1].set_title('Function NOT in L²[0, π]')
+axs[1].set_xlabel('x')
+axs[1].set_ylabel('g(x)')
+axs[1].legend()
+axs[1].grid(True)
+axs[1].set_ylim(0, 50)
+
+plt.tight_layout()
+plt.show()
+```
+
+## Sobolev Space $H^1(\Omega)$
+
+$H^1(\Omega)$ is the simplest Sobolev space relevant to many FEM problems.
+
+$H^1(\Omega)$ is the space of functions $f$ such that both $f$ and its first weak derivatives are in $L^2(\Omega)$:
+
+$$H^1(\Omega) = \{ f \in L^2(\Omega) \mid \nabla f \in L^2(\Omega) \}$$
+
+### $H^1$ Inner Product and Norm
+
+**Inner Product:**
+
+$$\langle f, g\rangle_{H^1} = \int_{\Omega} f(x) g(x) \,dx + \int_{\Omega} \nabla f(x) \cdot \nabla g(x) \,dx$$
+
+**Norm ($H^1$ Norm):**
+
+$$\|f\|_{H^1}^2 = \|f\|_{L^2}^2 + \|\nabla f\|_{L^2}^2$$
+
+### $H^1$ vs $L^2$: Examples
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+#| fig-cap: "Left: x² is smooth, both function and derivative are in L². Right: Step function is in L², but its derivative is not in L²."
+#| output: true
+
+x = np.linspace(-1, 1, 400)
+
+f1 = x**2
+f1_deriv = 2*x
+f2 = np.sign(x)
+
+fig, axs = plt.subplots(1, 2, figsize=(10, 4))
+
+axs[0].plot(x, f1, label='f(x) = x²')
+axs[0].plot(x, f1_deriv, label="f'(x) = 2x", linestyle='--')
+axs[0].set_title('Function in H¹[-1, 1]')
+axs[0].set_xlabel('x')
+axs[0].set_ylabel('Value')
+axs[0].legend()
+axs[0].grid(True)
+
+axs[1].plot(x, f2, label='g(x) = sign(x) (Step)')
+axs[1].set_title('Function in L²[-1, 1], but NOT H¹[-1, 1]')
+axs[1].set_xlabel('x')
+axs[1].set_ylabel('Value')
+axs[1].legend()
+axs[1].grid(True)
+
+plt.tight_layout()
+plt.show()
+```
+
+## Summary: Function Spaces
+
+- **Weak Formulations**: FEM relies on integral (weak) forms of PDEs
+- **$L^2$ ($H^0$)**: Guarantees integrals of functions themselves make sense
+- **$H^1$**: Guarantees integrals involving first derivatives also make sense
+- Using these spaces provides a rigorous mathematical foundation for FEM
+
+# Week 8: Time-Dependent Problems & 2D Beginnings
+
+## Problem Introduction
+
+Consider the Balance of Linear momentum equation in 1D:
+
+$$\begin{aligned}
+\text{grad} \cdot \sigma+f(x,t)&=\rho_0\frac{\partial^2u}{\partial t^2} \\
+&=\rho_0\frac{\partial v}{\partial t} \\
+&=\rho_0 a(x,t)
+\end{aligned}$$
+
+where:
+
+- $\sigma(x,t)$ is the stress
+- $f(x,t)$ is the body force
+- $\rho_0$ is the density
+- $u$ is the displacement
+- $v$ is the velocity
+- $a$ is the acceleration
+
+## Single Point in Space
+
+For a specific point in space, we can write the equation as:
+
+$$m\dot{v} = F = ma \quad (\text{I})$$
+
+where all the forces acting on the point are lumped into a single force $F$ and the mass is $m=\rho_0\Delta x$.
+
+## Velocity Expansions
+
+For the velocities:
+
+$$\begin{aligned}
+v(t + \Delta t) &= v(t + \theta \Delta t) + \frac{dv}{dt}\bigg|_{t+\theta \Delta t} (1 - \theta) \Delta t + O(\Delta t)^2 \\
+v(t) &= v(t + \theta \Delta t) - \frac{dv}{dt}\bigg|_{t+\theta \Delta t} \theta \Delta t + O(\Delta t)^2
+\end{aligned}$$
+
+## Velocity Time Derivative
+
+Subtracting the equations above we obtain:
+
+$$\frac{dv}{dt}\bigg|_{t+\theta \Delta t} = \frac{v(t + \Delta t) - v(t)}{\Delta t} + \hat{O}(\Delta t)$$
+
+## FEM Formulation
+
+The continuum Equation we try to solve is:
+
+$$\rho_0\frac{\partial^2 u}{\partial t^2} = \rho_0\frac{\partial v}{\partial t} = \nabla \cdot \sigma + f(x,t) \quad (3.0)$$
+
+We will define $F=\nabla \cdot \sigma + f(x,t)$.
+
+Using the equations we derived above:
+
+$$\rho_0v(t+\Delta t) = \rho_0v(t) + \Delta t(\theta F(t+\Delta t) + (1-\theta) F(t)) \quad (3.1)$$
+
+## Weak Form Development
+
+Multiplying by the test function and integrating by parts we obtain:
+
+$$\int_\Omega v \cdot \rho_0 v(t + \Delta t) \, d\Omega = \int_\Omega v \cdot \rho_0 v(t) \, d\Omega + \Delta t \int_\Omega v \cdot (\theta \Psi(t + \Delta t) + (1 - \theta) \Psi(t)) \, d\Omega$$
+
+## Discretized System
+
+Plugging in our shape functions, and defining the standard matrices with $\{a\}$ being the coefficients vector:
+
+$$[M]\{a\}^{t+\Delta t} = [M]\{a\}^t + (\Delta t \theta) \left( -[K]\{a\}^{t+\Delta t} + \{R_f\}^{t+\Delta t} + \{R_t\}^{t+\Delta t} \right) + \Delta t (1 - \theta) \left( -[K]\{a\}^t + \{R_f\}^t + \{R_t\}^t \right)$$
+
+## Implicit Backward Euler Scheme
+
+For $\theta=1$ we get the implicit backward Euler scheme:
+
+$$\left( [M]\{\ddot{a}\}^{t+\Delta t} + \Delta t [K]\{a\}^{t+\Delta t} \right) = [M]\{\ddot{a}\}^t + \Delta t \left( \{R_t\}^{t+\Delta t} + \{R_f\}^{t+\Delta t} \right)$$
+
+## Explicit Forward Euler Scheme
+
+For $\theta=0$ we get the explicit forward Euler scheme:
+
+$$\{\dot{a}\}^{t+\Delta t} = \{\dot{a}\}^t + \Delta t [M]^{-1} \left( -[K]\{a\}^t + \{R_f\}^t + \{R_t\}^t \right)$$
+
+## Workbench: Mass Matrix for Time-Dependent FEM {.smaller}
+
+```{python}
+#| code-fold: true
+mass = build_bar_1d_mass_matrix()
+print("Consistent mass matrix Me:")
+Lprint(mass["Me"])
+print("This enters the time-dependent system: M·a_ddot + K·a = F")
+```
+
+## Mathematical Preliminaries
+
+Looking at the following equation:
+
+$$\text{div}(\mathbf{K}\cdot \text{grad}(T))$$
+
+if $\mathbf{K}$ is a constant multiplied by the identity matrix:
+
+$$\text{div}(\mathbf{K}\cdot \text{grad}(T))  = \mathbf{K} \left ( \frac{\partial^2 T}{\partial x^2}+\frac{\partial^2 T}{\partial y^2}+\frac{\partial^2 T}{\partial z^2} \right ) = \mathbf{K}\nabla^2T$$
+
+## The Product Rule for Divergence
+
+To answer the question "What happens when we multiply the heat conduction equation by a test function V?", we need to use the **product rule for divergence**:
+
+$$\text{div}(V \mathbf{K} \text{ grad}(T)) = \text{grad}(V) \cdot \mathbf{K} \cdot \text{grad}(T) + V \text{ div}(\mathbf{K} \cdot \text{grad}(T))$$
+
+## Weak Form Foundation
+
+When integrated over a domain $\Omega$:
+
+$$\int_\Omega V \text{ div}(\mathbf{K} \text{ grad}(T)) \, d\Omega = \int_\Omega \text{div}(V \mathbf{K} \text{ grad}(T)) \, d\Omega - \int_\Omega \text{grad}(V) \cdot \mathbf{K} \cdot \text{grad}(T) \, d\Omega$$
+
+Using the divergence theorem, the first integral becomes a boundary integral, leading to the standard weak form.
+
+# Week 9: 2D Formulation & Reference Elements
+
+## FEM in 2D/3D: Heat Equation
+
+### Problem Setup
+
+**Governing equation:** $\text{div}(\mathbf{q}) = 0$
+
+**Constitutive equation (Fourier's law):** $\mathbf{q} = -\mathbf{K} \cdot \text{grad}(T)$
+
+**Boundary conditions:**
+
+- $\Gamma_{T_0}: T = T_0$ (Essential BC)
+- $\Gamma_{T_1}: T = T_1$ (Essential BC)
+- $\Gamma_q: \mathbf{q} = \mathbf{q}^*_n$ (Natural BC)
+
+## Weak Form Derivation
+
+**Step 1:** Multiply by test function V and integrate over domain
+
+$$\int_\Omega \text{div}(\mathbf{K} \cdot \text{grad}(T)) V \, d\Omega = 0$$
+
+**Step 2:** Apply the product rule result
+
+**Step 3:** Apply divergence theorem to first integral
+
+**Final weak form:**
+
+$$\int_{\partial\Omega} V \mathbf{q} \cdot \mathbf{n} \, d\Gamma - \int_\Omega \text{grad}(V) \cdot \mathbf{K} \cdot \text{grad}(T) \, d\Omega = 0$$
+
+## 2D/3D Finite Elements: Geometry and Shape Functions
+
+### Transition from 1D to 2D/3D
+
+**Key differences:**
+
+- **1D:** Geometric description is simpler
+- **2D/3D:** Geometry plays a crucial role and complexity increases significantly
+
+**Most common finite element geometries:**
+
+- **2D:** Triangular elements and Rectangular elements
+- **3D:** Tetrahedron elements and Hexahedron elements
+
+## 2D Rectangular Elements: Linear Shape Functions
+
+For a linear rectangular element, we need **four shape functions** to describe $u^e$
+
+Consider a rectangular element with nodes numbered as follows:
+
+```
+4 ────── 3
+│        │  b
+│   ue   │
+│        │
+1 ────── 2
+    a
+```
+
+**Shape functions for specific rectangular element:**
+
+$$\phi_1^g = \frac{1}{ab}(a-x)(b-y), \quad \phi_2^g = \frac{1}{ab}x(b-y), \quad \phi_3^g = \frac{1}{ab}xy, \quad \phi_4^g = \frac{1}{ab}(a-x)y$$
+
+## Master Element Concept in 2D
+
+### Mapping to Master Element
+
+**Purpose:** Map general elements to a standardized **master element** for easier computation
+
+**Coordinate transformation:** $[x,y] \rightarrow [\zeta_1, \zeta_2] \in [-1,1] \times [-1,1]$
+
+**Master element shape functions:**
+
+$$\hat{\phi}_1 = \frac{1}{4}(1-\zeta_1)(1-\zeta_2), \quad \hat{\phi}_2 = \frac{1}{4}(1+\zeta_1)(1-\zeta_2), \quad \hat{\phi}_3 = \frac{1}{4}(1+\zeta_1)(1+\zeta_2), \quad \hat{\phi}_4 = \frac{1}{4}(1-\zeta_1)(1+\zeta_2)$$
+
+## Jacobian and Coordinate Transformation
+
+### Jacobian Matrix
+
+**Definition:**
+
+$$\mathbf{F} = \begin{bmatrix} \frac{\partial x}{\partial \zeta_1} & \frac{\partial x}{\partial \zeta_2} \\ \frac{\partial y}{\partial \zeta_1} & \frac{\partial y}{\partial \zeta_2} \end{bmatrix}, \quad J = \text{Det}(\mathbf{F}) = \frac{\partial x}{\partial \zeta_1}\frac{\partial y}{\partial \zeta_2} - \frac{\partial x}{\partial \zeta_2}\frac{\partial y}{\partial \zeta_1}$$
+
+**Critical requirement:** $J > 0$ throughout the element for a "good" mapping
+
+## Isoparametric Mapping
+
+We will use **isoparametric** mapping, where the same shape functions are used for both geometry and field variables.
+
+**Coordinate transformation:**
+
+$$x (\chi_1,\chi_2)= \sum_{i=1}^4 \chi_{1i} \hat{\phi}_i, \quad y(\chi_1, \chi_2) = \sum_{i=1}^4 \chi_{2i} \hat{\phi}_i$$
+
+Where $\chi_{1i}$ are global x-coordinates and $\chi_{2i}$ are global y-coordinates of element nodes.
+
+## Element Quality: Good vs Bad Elements
+
+### Acceptable Elements
+
+**Case 1 - Rectangular element:** $0 < J(\zeta_1, \zeta_2) < \infty$ throughout element
+
+**Case 3 - Distorted but convex:** $0 < J(\zeta_1, \zeta_2) < \infty$ throughout element
+
+### Unacceptable Elements
+
+**Case 2 - Incorrect node numbering:** $J(\zeta_1, \zeta_2) < 0$ throughout element
+
+**Case 4 - Partially negative Jacobian:** $J(\zeta_1, \zeta_2) < 0$ in some regions
+
+## Bookkeeping in 2D Finite Elements
+
+### Difference from 1D
+
+**1D:** Node numbering is intuitive and element connectivity is straightforward
+
+**2D:** More complex connectivity patterns require systematic bookkeeping
+
+### Element Connectivity Tables
+
+**Element-to-node connectivity:**
+
+| Element | Node 1 | Node 2 | Node 3 | Node 4 |
+|---------|--------|--------|--------|--------|
+| 1       | 20     | 21     | 2      | 1      |
+| 2       | 21     | 22     | 3      | 2      |
+
+## Shape Functions: Differential Properties
+
+### Coordinate Transformation Relations
+
+**Forward transformation (ζ → x):**
+
+$$\frac{\partial}{\partial \zeta_1} = \frac{\partial}{\partial x}\frac{\partial x}{\partial \zeta_1} + \frac{\partial}{\partial y}\frac{\partial y}{\partial \zeta_1}$$
+
+$$\frac{\partial}{\partial \zeta_2} = \frac{\partial}{\partial x}\frac{\partial x}{\partial \zeta_2} + \frac{\partial}{\partial y}\frac{\partial y}{\partial \zeta_2}$$
+
+**Inverse transformation (x → ζ):**
+
+$$\frac{\partial}{\partial x} = \frac{\partial}{\partial \zeta_1}\frac{\partial \zeta_1}{\partial x} + \frac{\partial}{\partial \zeta_2}\frac{\partial \zeta_2}{\partial x}$$
+
+$$\frac{\partial}{\partial y} = \frac{\partial}{\partial \zeta_1}\frac{\partial \zeta_1}{\partial y} + \frac{\partial}{\partial \zeta_2}\frac{\partial \zeta_2}{\partial y}$$
+
+### Gradient Calculation in Master Element
+
+**For test function V:**
+
+$$\text{grad}(V) = \begin{bmatrix} \frac{\partial V}{\partial x} \\ \frac{\partial V}{\partial y} \end{bmatrix} = \mathbf{F}^{-T} \begin{bmatrix} \frac{\partial V}{\partial \zeta_1} \\ \frac{\partial V}{\partial \zeta_2} \end{bmatrix}$$
+
+## Workbench: Reference Elements & Gradient Pullback {.smaller}
+
+```{python}
+#| code-fold: true
+xi_r, eta_r = sp.symbols("xi eta")
+tri = ReferenceTriangleP1(xi_r, eta_r)
+quad = ReferenceQuadrilateralQ1(xi_r, eta_r)
+print("P1 Triangle shape functions:")
+for i, N in enumerate(tri.shape_functions):
+    Lprint(sp.Eq(sp.Symbol(f'N_{i+1}'), N))
+x1s, y1s, x2s, y2s, x3s, y3s = sp.symbols("x1 y1 x2 y2 x3 y3", real=True)
+geom = AffineTriangleMap2D(xi=xi_r, eta=eta_r, x1=x1s, y1=y1s, x2=x2s, y2=y2s, x3=x3s, y3=y3s)
+print("Jacobian:")
+Lprint(geom.jacobian)
+print("J^{-T} for gradient pullback:")
+Lprint(geom.inverse_transpose_jacobian)
+```
+
+# Week 10: 2D FEM, Meshing & Assembly
+
+## The Strong Form
+
+The governing equation for 2D heat transfer is:
+
+$$\text{div}(\mathbf{K} \cdot \text{grad}(T)) + Q = 0$$
+
+with boundary conditions:
+
+$$T=T_A \text{ on } \partial\Omega_A, \quad q=q^* \text{ on } \partial\Omega_B$$
+
+## The Weak Form
+
+To develop the weak form, we multiply the strong form by a test function $V$ and integrate over the domain:
+
+$$\int_{\Omega} \text{grad}(V) \cdot \mathbf{K} \cdot \text{grad}(T) \, d\Omega = \int_{\Omega} Q V \, d\Omega - \int_{\partial\Omega_B}Vq^* \, da$$
+
+## Element Stiffness Matrix
+
+The element stiffness matrix for heat conduction is:
+
+$$[\mathbf{k}^e] = k \int_{\Omega^e} \mathbf{B}^T \mathbf{B} \, d\Omega$$
+
+where $\mathbf{B}$ is the B matrix containing the derivatives of the shape functions.
+
+## Isoparametric Mapping and Jacobian
+
+Using isoparametric mapping, we can express the shape functions in terms of master element coordinates $(\zeta_1, \zeta_2)$:
+
+$$\mathbf{x}(\zeta_1, \zeta_2) = \sum_{I=1}^{n_{\text{nodes}}} x_I\hat{\phi}_I(\zeta_1, \zeta_2)$$
+
+The derivatives transform according to the Jacobian matrix.
+
+## 2D Finite Element Assembly Algorithm
+
+**Input:** Number of elements $N_e$, Gauss points $n_g$
+
+**Output:** Global stiffness matrix $\mathbf{K}$ and force vector $\mathbf{F}$
+
+**Steps:**
+
+For each element e:
+- Set $\mathbf{K}^e = \mathbf{0}$, $\mathbf{f}^e = \mathbf{0}$
+- For each Gauss point i:
+  - Evaluate $\mathbf{x}(\boldsymbol{\zeta})$, Jacobian determinant
+  - Accumulate stiffness and forces
+- Assemble into global system
+
+## Workbench: 2D P1 Triangle Stiffness & Assembly {.smaller}
+
+```{python}
+#| code-fold: true
+data = build_poisson_triangle_p1_local_problem()
+print("Ke for unit right triangle:")
+Lprint(data["Ke_unit_right_triangle"])
+print("fe for constant source f:")
+Lprint(data["fe_unit_right_triangle"])
+```
+
+# Week 11: Continuum Mechanics & Elasticity
+
+## Displacement and Configuration
+
+In continuum mechanics, we deal with continuous media and their deformation.
+
+**Displacement** $\mathbf{u}$: The change in position, $\mathbf{u} = \mathbf{x} - \mathbf{x}_0$
+
+**Configuration:**
+
+- $\mathbf{X}$: Original position
+- $\mathbf{x}$: Current position after deformation
+
+## Deformation Gradient
+
+The **Deformation Gradient** $\mathbf{F}$ describes the local deformation:
+
+$$\mathbf{F} = \frac{\partial \mathbf{x}}{\partial \mathbf{X}}$$
+
+## Strain
+
+**Strain** $\boldsymbol{\varepsilon}$ is a measure of deformation:
+
+$$\boldsymbol{\varepsilon} = \frac{1}{2}(\mathbf{F}^T \mathbf{F} - \mathbf{I})$$
+
+Under small deformations:
+
+$$\boldsymbol{\varepsilon} \approx \frac{1}{2}(\nabla \mathbf{u} + \nabla \mathbf{u}^T)$$
+
+## Stress and Constitutive Relation
+
+**Stress** $\boldsymbol{\sigma}$ is related to strain by:
+
+$$\boldsymbol{\sigma} = \mathbf{C} : \boldsymbol{\varepsilon}$$
+
+where $\mathbf{C}$ is the elasticity tensor.
+
+## Tractions
+
+**Tractions** $\mathbf{t}$ represent force per unit area:
+
+$$\mathbf{t} = \boldsymbol{\sigma} \cdot \mathbf{n}$$
+
+where $\mathbf{n}$ is the outward normal.
+
+## Balance of Linear Momentum
+
+The balance of linear momentum states:
+
+$$\int_{\Omega} \rho \frac{\partial^2 \mathbf{x}}{\partial t^2} \, dv = \int_{\Omega} \mathbf{f} \,dv +\int_{\partial \Omega} \mathbf{t} \, da$$
+
+This leads to the equation of motion:
+
+$$\text{div}(\boldsymbol{\sigma}) + \mathbf{f} = \rho \ddot{\mathbf{u}}$$
+
+## The Weak Form Derivation
+
+For quasi-static problems, the balance becomes:
+
+$$\nabla \cdot \boldsymbol{\sigma} + \mathbf{f} = 0$$
+
+Multiplying by a test function $\mathbf{v}$ and integrating:
+
+$$\int_{\Omega} (\nabla \cdot \boldsymbol{\sigma} + \mathbf{f}) \cdot \mathbf{v} \, d\Omega = 0$$
+
+Using the product rule and divergence theorem yields the weak form.
+
+## Strong Form and Method of Weighted Residuals
+
+Starting from the quasi-static equation:
+
+$$\nabla \cdot \boldsymbol{\sigma} + \mathbf{f} =  0$$
+
+We multiply by a test function $\mathbf{v}$ and integrate (method of weighted residuals).
+
+## Product Rule and Integration by Parts
+
+The product rule for divergence:
+
+$$\nabla \cdot (\boldsymbol{\sigma}\mathbf{v}) = (\nabla \cdot \boldsymbol{\sigma}) \cdot \mathbf{v} + \boldsymbol{\sigma} : \nabla\mathbf{v}$$
+
+Rearranging and applying divergence theorem gives the weak form.
+
+## Boundary Conditions
+
+The boundary $\partial \Omega$ has two parts:
+
+- $\Gamma_u$ (where displacements are prescribed)
+- $\Gamma_t$ (where tractions are prescribed)
+
+On $\Gamma_u$ we enforce Dirichlet BCs, on $\Gamma_t$ we enforce Neumann BCs.
+
+## Final Weak Form
+
+Find the displacement field $\boldsymbol{u} \in H^1(\Omega)$ such that $\boldsymbol{u} = \boldsymbol{u}^*$ on $\Gamma_u$ for all test functions $\boldsymbol{v}\in H^1$ with $\boldsymbol{v}|_{\Gamma_u}=0$:
+
+$$\int_{\Omega} \boldsymbol{\sigma}(\mathbf{u}) : \boldsymbol{\varepsilon}(\mathbf{v}) d\Omega = \int_{\Omega} \mathbf{f} \cdot \mathbf{v} d\Omega + \int_{\Gamma_t} \mathbf{t}^* \cdot \mathbf{v} d\Gamma$$
+
+## Constitutive Law and Elasticity Tensor
+
+For linear elasticity: $\boldsymbol{\sigma}=\boldsymbol{L}:\boldsymbol{\varepsilon}$, where $\boldsymbol{L}$ is the elasticity tensor. For an isotropic material in Voigt notation:
+
+$$\mathbf{L} = \frac{E}{(1+\nu)(1-2\nu)}\begin{pmatrix}
+1-\nu & \nu & \nu & 0 & 0 & 0 \\
+\nu & 1-\nu & \nu & 0 & 0 & 0 \\
+\nu & \nu & 1-\nu & 0 & 0 & 0 \\
+0 & 0 & 0 & \frac{1-2\nu}{2} & 0 & 0 \\
+0 & 0 & 0 & 0 & \frac{1-2\nu}{2} & 0 \\
+0 & 0 & 0 & 0 & 0 & \frac{1-2\nu}{2}
+\end{pmatrix}$$
+
+## Voigt Notation for Strain and Stress
+
+In Voigt notation, the strain tensor is represented as a vector:
+
+$$\boldsymbol{\varepsilon} = \begin{bmatrix}
+\varepsilon_{11} \\ \varepsilon_{22} \\ \varepsilon_{33} \\ 2\varepsilon_{23} \\ 2\varepsilon_{31} \\ 2\varepsilon_{12} \end{bmatrix}$$
+
+and the stress tensor as:
+
+$$\boldsymbol{\sigma} = \begin{bmatrix}
+\sigma_{11} \\ \sigma_{22} \\ \sigma_{33} \\ \sigma_{23} \\ \sigma_{31} \\ \sigma_{12} \end{bmatrix}$$
+
+## Bilinear and Linear Forms
+
+Define a **bilinear form** $B(u,v)$ from the left-hand side:
+
+$$B(\mathbf{u}, \mathbf{v}) := \int_{\Omega} \boldsymbol{\varepsilon}(\mathbf{v}) \cdot \boldsymbol{L} \cdot \boldsymbol{\varepsilon}(\mathbf{u}) \, d\Omega$$
+
+And a **linear form** $F(v)$ from the right-hand side:
+
+$$F(\mathbf{v}) := \int_{\Omega} \mathbf{f} \cdot \mathbf{v} \, d\Omega + \int_{\Gamma_t} \mathbf{t}^* \cdot \mathbf{v} \, d\Gamma$$
+
+The problem is: Find $\boldsymbol{u}$ (satisfying Dirichlet BCs) such that for all valid test functions $\boldsymbol{v}$:
+
+$$B(\mathbf{u}, \mathbf{v}) = F(\mathbf{v})$$
+
+## Function Spaces for Test and Trial Functions
+
+To ensure the weak form is well-posed, solution and test functions must belong to $H^1(\Omega)$:
+
+$$H^1(\Omega) = \left( \mathbf{u} \in L^2(\Omega) \; \middle| \; \nabla\mathbf{u} \in L^2(\Omega) \right)$$
+
+## Handling Dirichlet Conditions
+
+The test functions $\boldsymbol{v}$ must respect homogeneous Dirichlet BCs:
+
+$$H^1_0(\Omega) = \left[ \mathbf{v} \in H^1(\Omega) \; \middle| \; \mathbf{v} = \mathbf{0} \text{ on } \Gamma_u \right]$$
+
+## The Lifting Technique for Non-Zero Displacements
+
+Split the solution:
+
+$$\mathbf{u} = \mathbf{u}_0 + \mathbf{u}_D$$
+
+where $\boldsymbol{u}_D$ satisfies the Dirichlet BC and $\boldsymbol{u}_0$ is the unknown part.
+
+## Modified Weak Form
+
+$$B(\mathbf{u}_0, \mathbf{v}) = F(\mathbf{v}) - B(\mathbf{u}_D, \mathbf{v})$$
+
+## Principle of Minimum Potential Energy
+
+An alternative derivation uses the total potential energy:
+
+$$\Pi(\mathbf{u}) = \frac{1}{2} \int_{\Omega} \boldsymbol{\sigma}(\mathbf{u}) : \boldsymbol{\varepsilon}(\mathbf{u}) \, d\Omega - \left( \int_{\Omega} \mathbf{f} \cdot \mathbf{u} \, d\Omega + \int_{\Gamma_t} \bar{\mathbf{t}} \cdot \mathbf{u} \, d\Gamma \right)$$
+
+The solution minimizes this functional.
+
+## FEM Approximation and Error Estimates
+
+The FEM finds an approximate solution $u_h$. The error is measured using the energy norm:
+
+$$|| \mathbf{e} ||^2_E = B(\mathbf{u} - \mathbf{u}_h, \mathbf{u} - \mathbf{u}_h)$$
+
+For well-posed problems:
+
+$$|| \mathbf{u} - \mathbf{u}_h ||^2_E \le C^2(u,p) h^{2\gamma}$$
+
+where $\gamma=\text{min}(r-1,p)$.
+
+## Workbench: 2D Elasticity Constitutive Matrices {.smaller}
+
+```{python}
+#| code-fold: true
+E_sym, nu_sym = sp.symbols("E nu", positive=True)
+print("Plane stress D:")
+Lprint(plane_stress_D(E_sym, nu_sym))
+print("Plane strain D:")
+Lprint(plane_strain_D(E_sym, nu_sym))
+```
+
+# Week 12: 3D Elasticity & Implementation
+
+## Discretize the Domain
+
+The first step in any Finite Element analysis is to move from the continuous domain Ω to a discrete one.
+
+Our weak form:
+
+$$\int_{\Omega} \boldsymbol{\varepsilon}(\mathbf{v})^T \mathbf{L} \boldsymbol{\varepsilon}(\mathbf{u}) \, d\Omega = \int_{\Omega} \mathbf{v}^T \mathbf{f} \, d\Omega + \int_{\Gamma_t} \mathbf{v}^T \bar{\mathbf{t}} \, d\Gamma$$
+
+becomes a sum of integrals over each element:
+
+$$B(\mathbf{u},\mathbf{v}) = \sum_{e=1}^{N_{el}} \int_{\Omega_e} \boldsymbol{\varepsilon}(\mathbf{v})^T \mathbf{L} \boldsymbol{\varepsilon}(\mathbf{u}) \, d\Omega_e$$
+
+## Approximate Fields with Shape Functions
+
+Within each element, we approximate the displacement field:
+
+$$\mathbf{u}(\mathbf{x}) \approx \mathbf{u}_h(\mathbf{x}) = \mathbf{N}(\mathbf{x}) \mathbf{d}_e$$
+
+where $\mathbf{N}(\mathbf{x})$ is the shape function matrix and $\mathbf{d}_e$ are the nodal displacements.
+
+## Compute Strains with the B-Matrix
+
+The strain vector is found by applying a differential operator to the displacement:
+
+$$\boldsymbol{\varepsilon} = \partial \mathbf{u}$$
+
+For the approximated field:
+
+$$\boldsymbol{\varepsilon}_h = \partial (\mathbf{N}\mathbf{d}_e) = (\partial\mathbf{N}) \mathbf{d}_e = \mathbf{B} \mathbf{d}_e$$
+
+We define the strain-displacement matrix $\mathbf{B} := \partial\mathbf{N}$.
+
+## The B-Matrix from the Symmetric Gradient
+
+The B-matrix arises from the fundamental definition:
+
+$$\boldsymbol{\varepsilon} = \frac{1}{2} (\nabla\mathbf{u} + (\nabla\mathbf{u})^T)$$
+
+In Voigt notation with engineering shear strains:
+
+$$\boldsymbol{\varepsilon}_{\text{Voigt}} = \begin{pmatrix} \partial u / \partial x \\ \partial v / \partial y \\ \partial w / \partial z \\ (\partial v / \partial z) + (\partial w / \partial y) \\ (\partial u / \partial z) + (\partial w / \partial x) \\ (\partial u / \partial y) + (\partial v / \partial x) \end{pmatrix}$$
+
+## The Algebraic System: $k_e d_e = f_e$
+
+Substituting approximations into the element integral:
+
+$$\int_{\Omega_e} (\mathbf{B}\mathbf{c}_e)^T \mathbf{L} (\mathbf{B}\mathbf{d}_e) \, d\Omega_e = \mathbf{c}_e^T \left( \int_{\Omega_e} \mathbf{B}^T \mathbf{L} \mathbf{B} \, d\Omega_e \right) \mathbf{d}_e$$
+
+Define the **element stiffness matrix**:
+
+$$\mathbf{k}_e := \int_{\Omega_e} \mathbf{B}^T \mathbf{L} \mathbf{B} \, d\Omega_e$$
+
+And the **element force vector**:
+
+$$\mathbf{f}_e := \int_{\Omega_e} \mathbf{N}^T \mathbf{f} \, d\Omega_e + \int_{\Gamma_{t,e}} \mathbf{N}^T \bar{\mathbf{t}} \, d\Gamma_e$$
+
+The element equation:
+
+$$\mathbf{k}_e \mathbf{d}_e = \mathbf{f}_e$$
+
+## Numerical Integration
+
+Integrals are computed numerically using **Gaussian Quadrature**. Transform to reference element:
+
+$$\int_{\Omega_e} g(\mathbf{x}) \, d\Omega_e = \int_{\hat{\Omega}} g(\mathbf{x}(\boldsymbol{\xi})) \, |\mathbf{J}(\boldsymbol{\xi})| \, d\hat{\Omega}$$
+
+Approximate by weighted sum:
+
+$$\int_{\hat{\Omega}} \tilde{g}(\boldsymbol{\xi}) \, d\hat{\Omega} \approx \sum_{i=1}^{N_{gp}} w_i \tilde{g}(\boldsymbol{\xi}_i)$$
+
+## Application to Element Stiffness
+
+$$\mathbf{k}_e = \int_{\Omega_e} \mathbf{B}^T \mathbf{L} \mathbf{B} \, d\Omega \approx \sum_{i=1}^{N_{gp}} \left( \mathbf{B}(\boldsymbol{\xi}_i)^T \mathbf{L} \mathbf{B}(\boldsymbol{\xi}_i) \right) |\mathbf{J}(\boldsymbol{\xi}_i)| w_i$$
+
+## Algorithmic Overview
+
+### Step-by-step Procedure
+
+1. **Initialize:** Create empty global stiffness matrix K and force vector F
+2. **Loop over Elements:** For each element e
+3. **Initialize Element Matrices:** Create empty $k_e$ and $f_e$
+4. **Loop over Gauss Points:** For each Gauss point i
+5. **Calculate at Point:** Evaluate B matrix and Jacobian determinant
+6. **Accumulate Integral:** Compute integrand for $k_e$ and $f_e$
+7. **Assemble:** Add element matrices into global system
+8. **Apply Boundary Conditions:** Modify global system
+9. **Solve:** Solve $\mathbf{K}\mathbf{d} = \mathbf{F}$ for displacements
+10. **Post-Process:** Compute strains and stresses
+
+## Full FEM Algorithm
+
+**Input:** Mesh, Material Properties, Body Forces, Boundary Conditions
+
+**Output:** Nodal Displacements, Element Stresses, Element Strains
+
+**Steps:**
+
+Initialize Global Stiffness $\mathbf{K}$ and Force $\mathbf{F}$
+
+For each element e:
+- Initialize Element Stiffness and Force
+- For each Gauss point i:
+  - Compute $\mathbf{B}(\boldsymbol{\xi}_i)$, Jacobian determinant, weight
+  - Accumulate stiffness and body forces
+- Assemble traction boundary forces
+- Assemble local into global
+
+Apply Dirichlet boundary conditions
+
+Solve $\mathbf{K}\mathbf{d} = \mathbf{F}$ for displacements
+
+Post-process: Compute strains and stresses at desired points
+
+## Surface Integrals and Nanson's Formula
+
+For traction boundary conditions, surface integrals are computed over element surfaces:
+
+$$\int_{\Gamma_{t,e}} \bar{\mathbf{t}} \, d\Gamma_e$$
+
+The integration domain $\Gamma_{t,e}$ is a 2D surface of the 3D element.
+
+### Nanson's Formula
+
+**Nanson's Formula** provides the transformation for surface integrals:
+
+$$\boldsymbol{n}d\Gamma_e = |\boldsymbol{J}|\boldsymbol{J}^{-T}\cdot \boldsymbol{N} d\hat{\Gamma}$$
+
+where $\boldsymbol{N}$ is the normal vector in the reference element.
+
+# Week 13: Error Estimation & Adaptivity
+
+## Simple Error Estimates for Vector Problems
+
+After computing a solution $\mathbf{u}_h$, we need to assess its quality.
+
+**A posteriori error estimators** use the solution to estimate local error in each element.
+
+For elasticity, the exact stress tensor is continuous across element boundaries. The FE stress field $\boldsymbol{\sigma}_h$ is usually discontinuous.
+
+For a face $\gamma$ between elements, the jump is:
+
+$$\mathbf{j}_{\gamma} = \boldsymbol{\sigma}_h^+ \mathbf{n} - \boldsymbol{\sigma}_h^- \mathbf{n}$$
+
+The local error indicator for element $K$:
+
+$$\eta_K^2 = \frac{1}{2} \sum_{\gamma \subset \partial K} \int_{\gamma} ||\mathbf{j}_{\gamma}||^2 \, d\Gamma$$
+
+## Local Mesh Refinement (h-Adaptivity)
+
+**The Adaptive Algorithm:**
+
+**1. Solve:** Compute the FE solution $\mathbf{u}_h$ on the current mesh
+
+**2. Estimate:** For every element $K$, compute error indicator $\eta_K$
+
+**3. Mark:** Identify elements for refinement:
+
+$$\text{Mark element } K \text{ if } \eta_K > \theta \cdot \eta_{\max}$$
+
+**4. Refine:** Subdivide marked elements (**h-refinement**)
+
+**5. Repeat:** Loop back and solve on the new mesh
+
+## A Posteriori Recovery Methods: The Core Idea
+
+Recovery methods work on a principle: The raw FE stress field is "noisy" but we can recover a better, smoother stress field $\boldsymbol{\sigma}^*$ from it.
+
+The error is estimated as the difference between recovered and raw stress:
+
+$$\eta_K^2 = \int_{K} (\boldsymbol{\sigma}^* - \boldsymbol{\sigma}_h)^T \mathbf{L}^{-1} (\boldsymbol{\sigma}^* - \boldsymbol{\sigma}_h) \, dK$$
+
+## The Zienkiewicz-Zhu (ZZ) Estimator
+
+The **Zienkiewicz-Zhu (ZZ) estimator** is a classic recovery technique.
+
+### Superconvergent Points
+
+For many elements, there are specific locations—**superconvergent points**—where the calculated stresses are much more accurate. For common elements, the **Gauss points** are superconvergent.
+
+### The ZZ Method
+
+1. Approximate the recovered field using the *same shape functions* as displacement:
+
+$$\boldsymbol{\sigma}^*(\mathbf{x}) = \mathbf{N}(\mathbf{x}) \boldsymbol{\sigma}_{\text{nodal}}^*$$
+
+2. Find nodal stresses by global **least-squares fit** to the superconvergent point data
+
+## Superconvergent Patch Recovery (SPR)
+
+SPR works locally on patches of elements around each node.
+
+### 5-Step SPR Algorithm
+
+1. **Define Patch:** Identify all elements connected to node p
+
+2. **Assume Polynomial:** Assume a simple polynomial for recovered stress over the patch
+
+3. **Sample Points:** Collect raw FE stress values from superconvergent points
+
+4. **Local Fit:** Solve small least-squares problem for polynomial coefficients
+
+5. **Evaluate at Node:** Calculate recovered stress directly at the node location
+
+## Comparing Error Estimators
+
+### Stress Jump (Residual) Estimator
+
+**Core Philosophy:** "How much does my solution violate the physical laws?"
+
+**What it Measures:** Violation of equilibrium at element interfaces
+
+**Physical Intuition:** Unbalanced forces at element boundaries
+
+**Mathematical Basis:** Rigorous. Provides a proven upper bound on the error
+
+### Zienkiewicz-Zhu (Recovery) Estimator
+
+**Core Philosophy:** "Can I construct a better solution from the one I have?"
+
+**What it Measures:** The difference between raw and cleaner stress field
+
+**Physical Intuition:** Filtering a noisy signal to get a smooth one
+
+**Mathematical Basis:** Heuristic, relies on superconvergence
+
+## A Posteriori Residual Methods
+
+Residual-based methods measure how poorly the FE solution satisfies the original governing differential equation.
+
+The residual is:
+
+$$\mathbf{r} = \nabla \cdot \boldsymbol{\sigma}_h + \mathbf{f} \neq \mathbf{0}$$
+
+These methods produce a proven **upper bound** on solution error.
+
+## Breaking Down the Residual Error Estimate
+
+The squared error is bounded by:
+
+$$\| \mathbf{u} - \mathbf{u}_h \|_E^2 \le C_1 \sum_{K} h_K^2 \| \mathbf{r}_K \|^2_{L^2(K)} + C_2 \sum_{\gamma} h_{\gamma} \| \mathbf{j}_{\gamma} \|^2_{L^2(\gamma)} +C_3 \sum_{\gamma_t} h_{\gamma} \| \mathbf{t}_{\gamma_t} \|^2_{L^2(\gamma_t)}$$
+
+### Three Components of the Residual
+
+**1. Interior Residual ($\mathbf{r}_K$):** Measures equilibrium satisfaction *inside* element $K$:
+
+$$\mathbf{r}_K = \nabla \cdot \boldsymbol{\sigma}_h + \mathbf{f}$$
+
+**2. Interface Residual ($\mathbf{j}_{\gamma}$):** Stress jump across element faces:
+
+$$\mathbf{j}_{\gamma} = \boldsymbol{\sigma}_h^+ \mathbf{n} - \boldsymbol{\sigma}_h^- \mathbf{n}$$
+
+**3. Boundary Residual ($\mathbf{t}_{\gamma_t}$):** How well prescribed traction is satisfied:
+
+$$\mathbf{t}_{\gamma_t} = \bar{\mathbf{t}} - \boldsymbol{\sigma}_h \mathbf{n}$$
+
+### Local Error Bound
+
+The local error at an element:
+
+$$C_1  h_K^2 \| \mathbf{r}_K \|^2_{L^2(K)} + C_2 h_{\gamma} \| \mathbf{j}_{\gamma} \|^2_{L^2(\gamma)} +C_3 h_{\gamma} \| \mathbf{t}_{\gamma_t} \|^2_{L^2(\gamma_t)}$$
+
+This guides adaptive refinement strategies.

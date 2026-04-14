@@ -1,0 +1,45 @@
+---
+title: "Introduction to the Finite Element Method"
+subtitle: "Lecture 1: Introduction + 1D Setup"
+format: 
+    revealjs:
+        slide-number: true
+        incremental: true
+        center: true
+        transition: slide
+        margin: 0.1
+        css: fem.css
+execute:
+  echo: true # Show code by default (we'll override for folding)
+  warning: false
+jupyter: python3
+---
+
+## Setup
+
+```{python}
+#| include: false # Usually hide the setup chunk itself
+
+import matplotlib.pyplot as plt
+import numpy as np
+import sympy as sp
+from IPython.display import Math, display
+
+# Import functions FROM your saved .py file
+import L1 as fem 
+```
+
+## s
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+fem.display_strong_form()
+```
+
+## Strong Form {.scrollable}
+```{python}
+#| code-fold: true
+#| echo: fenced
+fem.derive_weak_form()
+```

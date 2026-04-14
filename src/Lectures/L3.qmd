@@ -1,0 +1,562 @@
+---
+title: "Introduction to the Finite Element Method"
+subtitle: "Lecture 3: Galerkin's Method and 1D FEM"
+format: 
+    revealjs:
+        slide-number: true
+        incremental: true
+        multiplex: true
+        controls: true
+        preview-links: auto
+        # incremental: true
+        # center: true
+        # transition: slide
+        margin: 0.1
+        css: fem.css
+    html:
+        embed-resources: true
+        toc: true
+execute:
+  echo: true # Show code by default (we'll override for folding)
+  warning: false
+jupyter: python3
+---
+
+## From Last week {.scrollable auto-animate="true"}
+
+::: {.incremental}
+- **Key insight**: The weak form we saw in lecture #1 and Galerkin's method from lecture #2 are fundamentally the 
+
+- **Galerkin's approach** (review):
+  1. Compute the residual $A y_N - f = r_N(x)$
+  2. Force the residual to be orthogonal to each approximation function:
+     $\int_0^L r_N(x) \phi_i(x) dx = 0, \quad i = 1, 2, 3, \ldots N$
+  3. Solve the resulting set of coupled equations
+:::
+
+::: {.fragment}
+**However...**
+
+::: {.incremental}
+- The primary challenge: **no systematic way for choosing the approximation functions (yet)**
+- Finite Element Method (FEM) is designed specifically to address this problem:
+  - Based on Galerkin's method
+  - Provides a computationally systematic and efficient approach
+  - Removes restrictions on differentiability
+  - Creates a framework for handling complex geometries
+:::
+:::
+---
+
+## A 1D model problem { .scrollable auto-animate="true"}
+
+Today we will start solving our first PDE using the finite element method (FEM).
+
+::: {.fragment}
+As is often the case in real life problems, materials are not necessarily homogeneous.
+:::
+
+::: {.fragment}
+Moreover, the physical solution we are looking for is not necessarily smooth.
+
+:::
+
+::: {.fragment}
+
+Consider the 1D bar beshown below, composed of two different elastic solids.
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+from L3 import *
+phi = create_latex_indexed_function("phi", r"\phi")
+create_fem_diagram(
+    width=8,
+    height=0.8,
+    num_elements=12,
+    use_gradient=False,
+    element_color='#c0c0c0',
+    show_element_labels=True,
+    # save_path='fem_diagram_solid_v3.png' # Example of saving with new name
+)
+```
+:::
+
+::: {.fragment}
+
+* The bar is subjected to tractions $t^*$ on it's left side, denoted by $\Gamma_t$, while the right side is fixed, denoted by $\Gamma_u$.
+
+* As you can see, the bar is composed of two diffeerent materials, with different Young's moduli $E_1$ and $E_2$.
+:::
+
+---
+
+## A 1D model problem - Strong Form { .scrollable auto-animate="true"}
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+
+print_styled("The strong form of the PDE:")
+
+Strong_form = diff(sigma,x)+f
+Lprint(Eq(Strong_form,0))
+
+print_styled('This PDE is simply a balance of forces, with $f$ being the body force and $\sigma$ the stress.')
+
+print_styled("The boundary conditions:")
+print_styled("$u|_{\Gamma_u} =u^*$ ")
+print_styled("$t|_{\Gamma_t} =t^*$ ")
+```
+
+::: {.fragment}
+```{python}
+#| code-fold: true
+#| echo: fenced
+
+print_styled("Since we assume the body to be linearly elastic, the  stress $\sigma$ is given by:")
+
+Elastic_1d = E*epsilon
+Lprint(Eq(sigma,Elastic_1d))
+print_styled('where $E$ is the Young\'s modulus and $\epsilon$ is the strain.')
+```
+
+:::
+::: {.fragment}
+```{python}
+#| code-fold: true
+#| echo: fenced
+print_styled("Recalling that for 1D and small displacements the strain is given by:")
+
+Strain_1d = diff(u,x)
+Lprint(Eq(epsilon,Strain_1d))
+print_styled('where $u$ is the displacement.')
+
+print_styled("We can now write the stress $\sigma$ as:")
+
+Lprint(Eq(sigma,E*diff(u,x)))
+
+```
+:::
+
+---
+
+## Getting the weak form { .scrollable auto-animate="true"}
+
+As you recall to get the weak form we multiply by a test function $v$ and integrate over the domain $\Omega$.
+
+::: {.fragment}
+```{python}
+#| code-fold: true
+#| echo: fenced
+residual = Integral(r*v, (x,0,L))
+weak_term = Integral((diff(sigma,x)+f)*v, (x,0,L))
+Lprint(Eq(weak_term,0))
+```
+:::
+
+::: {.fragment}
+```{python}
+#| code-fold: true
+#| echo: fenced
+print_styled("Using integration by parts:")
+chain_rule = Derivative(sigma*v,x)
+Lprint(Eq(chain_rule,chain_rule.doit(),evaluate=False))
+print_styled("And thus:")
+
+Lprint(Eq(v*Derivative(sigma,x), Derivative(sigma*v,x)-sigma*Derivative(v,x)))
+```
+:::
+
+::: {.fragment}
+```{python}
+#| code-fold: true
+#| echo: fenced
+print_styled("We can write the weak form as:")
+weak_form_before_bc = Integral(chain_rule,(x,0,L))-Integral(sigma*Derivative(v,x),(x,0,L))+Integral(f*v,(x,0,L))
+Lprint(Eq(weak_form_before_bc,0))
+```
+:::
+
+
+::: {.fragment}
+```{python}
+#| code-fold: true
+#| echo: fenced
+print_styled("Requiring the $|_{\Gamma_u}=0$ and $\sigma|_{\Gamma_t}=t^*$:")
+print_styled("starting from the third term")
+weak_form_3 = Integral(chain_rule,(x,0,L))
+
+sv = sigma*v
+Lprint(Eq(weak_form_3,sv.subs({x:L})-sv.subs({x:0})))
+print_styled("and recalling that $v$ is 0 on the left boundary ($\Gamma_u$):")
+Lprint(Eq(weak_form_3,t_star*v.subs({x:L})))
+print_styled("We can write the weak form as:")
+weak_LHS = Integral(sigma*Derivative(v,x),(x,0,L))
+weak_RHS =Integral(f*v,(x,0,L))+t_star*v.subs({x:L})
+Lprint(Eq(weak_LHS,weak_RHS))
+```
+:::
+---
+
+## The Weak Form { .scrollable auto-animate="true"}
+
+::: {.fragment}
+```{python}
+#| code-fold: true
+#| echo: fenced
+print_styled("To get the final weak form in terms of the primary unknown ( the displacement $u$), we introduce the constitutive and kinematic relations")
+
+weak_LHS_sub = weak_LHS.subs({sigma:E*diff(u,x)})
+Lprint(Eq(weak_LHS_sub,weak_RHS))
+```
+:::
+
+::: {.fragment}
+
+
+The final equation is the **Weak Form** or **Variational Formulation**:
+:::
+
+::: {.fragment}
+Alternatively, we can write it as: 
+
+$$\mathbb{B}(u,v) = \mathbb{F}(v)$$
+
+:::
+
+::: {.fragment}
+such that:
+
+$\mathbb{B}(u,v) = \int_0^L \frac{dv}{dx} E \frac{du}{dx} \, dx$  -  representing internal virtual work
+
+$\mathbb{F}(v) = \int_0^L f v \, dx + t^* v|_{\Gamma_t}$ representing external virtual work.
+:::
+
+::: {.fragment}
+
+This form requires less smoothness on the solution $u$ compared to the original differential equation (strong form) and is the starting point for the Finite Element Method.
+
+:::
+
+---
+
+## Function Spaces for Weak Form { .scrollable auto-animate="true"}
+
+::: {.fragment}
+
+For well-defined integrals, we need:
+
+$$\forall v, \int_0^L \frac{dv}{dx} \sigma \, dx < \infty, \int_0^L f v \, dx < \infty$$
+
+:::
+
+::: {.fragment}
+
+This leads to using Sobolev spaces (recall from previous lecture):
+
+$$u \in H^1(\Omega) \iff \int_\Omega \frac{du}{dx}\frac{du}{dx} \, dx + \int_\Omega u u \, dx < \infty$$
+
+:::
+
+::: {.fragment}
+
+And our problem becomes:
+
+Find $u \in H^1(\Omega)$, $u|_{\Gamma_u} = u^*$, such that $\forall v \in H^1(\Omega)$, $v|_{\Gamma_u} = 0$:
+
+$$\int_0^L \frac{dv}{dx} E \frac{du}{dx} \, dx = \int_0^L f v \, dx + t^* v|_{\Gamma_t}$$
+
+:::
+
+---
+
+## Approximating the Solution { .scrollable auto-animate="true"}
+
+We discretize the problem using:
+
+$$u_N \approx u(x) = \sum_{j=1}^{N} a_j \phi_j(x), \quad v = \phi_i(x)$$
+
+This gives us a linear system:
+
+$$[K]\{a\} = \{F\}$$
+
+Where:
+
+- $K_{ij} = \int_0^L \frac{d\phi_i}{dx} E \frac{d\phi_j}{dx} \, dx$
+
+- $F_i = \int_0^L f \phi_i \, dx + t^* \phi_i|_{\Gamma_t}$
+
+---
+
+## Basis Functions in FEM { .scrollable auto-animate="true"}
+
+The key insight of FEM is a systematic way to construct basis functions:
+
+::: {.incremental}
+- Functions are built piecewise over subdomains ("elements")
+- Usually low-degree polynomials
+- Smooth enough to be in $H^1(\Omega)$
+- Form a nodal basis where $\phi_i(x_j) = \delta_{ij}$ (Kronecker delta)
+- The sum over the basis functions is given by: $\sum_{j\in \text{element}} \phi_j(x) = 1$ (partition of unity)
+- Each basis function is non-zero only on elements sharing node $i$
+:::
+
+---
+## Basis Functions: Linear Elements { .scrollable auto-animate="true"}
+
+For linear elements, we define:
+
+$$\phi_i(x) = 
+\begin{cases}
+\frac{x-x_{i-1}}{h_i}, & x_{i-1} \leq x \leq x_i \\
+1 - \frac{x-x_i}{h_{i+1}}, & x_i \leq x \leq x_{i+1} \\
+0, & \text{otherwise}
+\end{cases}$$
+
+where $h_i = x_i - x_{i-1}$
+
+The derivatives are:
+
+$$\frac{d\phi_i}{dx} = 
+\begin{cases}
+\frac{1}{h_i}, & x_{i-1} \leq x \leq x_i \\
+-\frac{1}{h_{i+1}}, & x_i \leq x \leq x_{i+1} \\
+0, & \text{otherwise}
+\end{cases}$$
+
+## Visualization of Basis Functions { .scrollable auto-animate="true"}
+
+::: {.fragment}
+```{python}
+#| code-fold: true
+#| echo: fenced
+fem_viz = FEMShapeFunctions()
+print_styled(" Lagrange Shape Functions")
+fig1 = fem_viz.plot_multielement_shape_functions(
+        num_elements=3, 
+        element_type='lagrange', 
+        degrees=[1, 2, 3])
+```
+:::
+
+::: {.fragment}
+```{python}
+#| code-fold: true
+#| echo: fenced
+fem_viz = FEMShapeFunctions()
+print_styled(" Derivatives of shape functions")
+fig2 = fem_viz.plot_multielement_shape_function_derivatives(
+        num_elements=3,
+        element_type='lagrange',
+        degrees=[1, 2]
+    )
+```
+:::
+
+::: {.fragment}
+```{python}
+#| code-fold: true
+#| echo: fenced
+fem_viz = FEMShapeFunctions()
+print_styled(" partition of unity degree 1")
+fig3 = fem_viz.plot_multielement_partition_of_unity_per_element(
+        num_elements=3,
+        degree=1
+    )
+```
+:::
+
+## Symbolic Workbench: 1D Element Derivation { .scrollable auto-animate="true"}
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+import sys, os; sys.path.insert(0, os.path.abspath(".."))
+from symbolic_fem_workbench import (
+    build_bar_1d_local_problem, build_bar_1d_mass_matrix,
+    LinearElement1D,
+)
+from IPython.display import Math
+
+problem = build_bar_1d_local_problem()
+x_s, L_s = problem["x"], problem["L"]
+E_s, A_s = problem["E"], problem["A"]
+
+print_styled("**Symbolic derivation of element stiffness using the workbench:**")
+element = LinearElement1D(x=x_s, x0=0, x1=L_s)
+N = element.shape_functions
+Lprint(sp.Eq(sp.Symbol(r'N_1'), N[0]))
+Lprint(sp.Eq(sp.Symbol(r'N_2'), N[1]))
+
+print_styled("**Element stiffness matrix** $K_e$ (derived symbolically):")
+display(Math(r"K_e = " + sp.latex(problem["Ke"])))
+
+print_styled("**Element load vector** $f_e$:")
+display(Math(r"f_e = " + sp.latex(problem["fe"])))
+
+# Mass matrix for time-dependent problems
+mass = build_bar_1d_mass_matrix()
+print_styled("**Consistent mass matrix** $M_e$ (for time-dependent problems):")
+display(Math(r"M_e = " + sp.latex(mass["Me"])))
+```
+
+## Building the Stiffness Matrix { .scrollable auto-animate="true"}
+
+For example, to compute $K_{11}$:
+
+$$
+K_{11} = \int_0^L \frac{d\phi_1}{dx} E \frac{d\phi_1}{dx} \, dx = \int_0^{x_1} \frac{d\phi_1}{dx} E \frac{d\phi_1}{dx} \, dx \\ = \int_0^{x_1} E \frac{1}{h_1^2} \, dx = \frac{1}{h_1^2} \int_0^{x_1} E(x) \, dx
+$$
+
+Similarly for $K_{12}$:
+
+$$K_{12} = \int_0^L \frac{d\phi_1}{dx} E \frac{d\phi_2}{dx} \, dx = \int_0^{x_1} \left(-\frac{1}{h_1}\right) E \frac{1}{h_1} \, dx = -\frac{1}{h_1^2} \int_0^{x_1} E(x) \, dx$$
+
+## Pattern of Element Contributions { .scrollable auto-animate="true"}
+
+:::{.fragment}
+Computing stiffness terms like $K_{13}$:
+:::
+
+:::{.fragment}
+$$K_{13} = \int_0^L \frac{d\phi_1}{dx} E \frac{d\phi_3}{dx} \, dx = 0$$
+
+Since $\phi_1$ and $\phi_3$ have no overlapping support.
+:::
+
+:::{.fragment}
+This pattern shows why the FEM matrices have a banded structure - there are only local interactions between adjacent elements.
+:::
+
+---
+
+## Element-wise Assembly { .scrollable auto-animate="true"}
+
+We recognize that:
+
+$$K_{ij}^g = \sum_{\text{elem}} K_{ij}^e, \quad \text{where } K_{ij}^e = \int_{\Omega_e} \frac{d\phi_i}{dx} E \frac{d\phi_j}{dx} \, dx$$
+
+$$F_i^g = \sum_{\text{elem}} F_i^e, \quad F_i^e = \int_{\Omega_e} \phi_i f \, dx + t^* \phi_i|_{\Gamma_t \cap \Omega_e}$$
+
+This element-wise assembly is key to FEM efficiency.
+
+## Reference Element Transformation { .scrollable auto-animate="true"}
+
+To make calculations systematic, we define a master (reference) element in a local coordinate system $\zeta \in [-1, 1]$.
+
+:::{.fragment}
+We need a mapping from reference to physical coordinates:
+:::
+
+:::{.fragment}
+$$x = \sum_{i=1}^2 \chi_i \hat{\phi}_i(\zeta) = M_x(\zeta)$$
+:::
+
+:::{.fragment}
+where:
+
+- $\chi_i$ are the physical coordinates of the nodes
+
+- $\hat{\phi}_i(\zeta)$ are the shape functions in reference coordinates
+:::
+
+:::{.fragment}
+**Shape Functions in Reference Space**
+
+For linear elements in 1D:
+
+$$\hat{\phi}_1 = \frac{1}{2}(1-\zeta) \quad \text{and} \quad \hat{\phi}_2 = \frac{1}{2}(1+\zeta)$$
+:::
+
+
+## Differential Relations { .scrollable auto-animate="true"}
+
+:::{.fragment}
+We need the mapping between derivatives:
+
+$$\frac{d}{d\zeta} = \frac{dx}{d\zeta}\frac{d}{dx} = J \frac{d}{dx}$$
+:::
+
+:::{.fragment}
+And the inverse relation:
+
+$$\frac{d}{dx} = \frac{d\zeta}{dx}\frac{d}{d\zeta} = \frac{1}{J}\frac{d}{d\zeta}$$
+
+Where $J = \frac{dx}{d\zeta}$ is the Jacobian of the transformation.
+:::
+
+## Numerical Integration: Gaussian Quadrature
+
+For numerical integration, we use Gaussian quadrature:
+
+$$\int_{x_i}^{x_{i+1}} F(x) \, dx = \int_{-1}^1 F(x(\zeta)) J(\zeta) \, d\zeta \approx \sum_{q=1}^G w_q F(x(\zeta_q)) J(\zeta_q)$$
+
+Gauss quadrature can integrate a polynomial of order $2G-1$ exactly with $G$ points.
+
+## Gaussian Quadrature Points
+
+|Gauss rule |$\zeta_i$ | $w_i$ |
+|------------|-----------|--------|
+|2 | 0.5773502691896 |1.0000000000000 |
+| | -0.5773502691896 |1.0000000000000 |
+|3 | 0.0000000000000 | 0.8888888888889 |
+| | 0.7745966692241 | 0.5555555555556 |
+|  | -0.7745966692241 |0.5555555555556 |
+
+Two points are sufficient for linear elements since the integrands in $K_{ij}$ have at most cubic terms.
+
+## Computing Element Matrices with Quadrature
+
+The element stiffness matrix is computed as:
+
+$$K_{ij}^e = \int_{\Omega_e} \frac{d\phi_i}{dx} E \frac{d\phi_j}{dx} \, dx = \sum_{q=1}^G w_q \left[\frac{d}{d\zeta}\hat{\phi}_i(M(\zeta))\frac{d\zeta}{dx}\right] E \left[\frac{d}{d\zeta}\hat{\phi}_j(M(\zeta))\frac{d\zeta}{dx}\right] J$$
+
+Evaluated at $\zeta=\zeta_q$
+
+Similarly for the force vector:
+
+$$F_i^e = \int_{\Omega_e} \phi_i f \, dx = \sum_{q=1}^G w_q \hat{\phi}_i(M(\zeta)) f(M(\zeta)) J$$
+
+Evaluated at $\zeta=\zeta_q$, plus any boundary terms.
+
+## Post-Processing
+
+After obtaining the nodal values $a_i$, we can compute:
+
+- **Displacements** at any point:
+  $u(x) = \sum_{i=1}^N a_i \phi_i(x)$
+  
+- **Strains** at any point:
+  $\varepsilon(x) = \frac{du}{dx} = \sum_{i=1}^N a_i \frac{d\phi_i}{dx}$
+  
+- **Stresses** at any point:
+  $\sigma(x) = E(x) \frac{du}{dx} = E(x) \sum_{i=1}^N a_i \frac{d\phi_i}{dx}$
+
+## Implementing Boundary Conditions
+
+Essential (Dirichlet) boundary conditions (e.g., $u(0) = u^*$):
+
+$$\begin{bmatrix}
+1 & 0 & \ldots & \ldots & 0 \\
+K_{21} & K_{22} & \ldots & \ldots & K_{2N} \\
+\vdots & \vdots & \ddots & \vdots & \vdots \\
+\vdots & \vdots & \vdots & \ddots & \vdots \\
+K_{N1} & K_{N2} & \ldots & \ldots & K_{NN} \\
+\end{bmatrix}
+\begin{bmatrix}
+a_1 \\
+a_2 \\
+\vdots \\
+\vdots \\
+a_N
+\end{bmatrix}
+=
+\begin{bmatrix}
+u^* \\
+F_2 \\
+\vdots \\
+\vdots \\
+F_N+\ldots
+\end{bmatrix}$$
+

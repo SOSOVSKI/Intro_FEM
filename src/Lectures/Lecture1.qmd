@@ -1,0 +1,144 @@
+---
+title: "Introduction to the Finite Element Method"
+subtitle: "Lecture 1: Introduction + 1D Setup"
+format: 
+    revealjs:
+        slide-number: true
+        multiplex: true
+        controls: true
+        # incremental: true
+        # center: true
+        # transition: slide
+        margin: 0.1
+        css: fem.css
+execute:
+  echo: true # Show code by default (we'll override for folding)
+  warning: false
+jupyter: python3
+---
+
+## Setup
+
+```{python}
+#| include: false # Usually hide the setup chunk itself
+
+import matplotlib.pyplot as plt
+import numpy as np
+import sympy as sp
+from IPython.display import Math, display
+
+import L1 as fem
+
+# symbolic_fem_workbench imports for live derivations
+import sys, os; sys.path.insert(0, os.path.abspath(".."))
+from symbolic_fem_workbench import (
+    make_field_1d, weighted_residual, integrate_divergence_1d,
+    drop_dirichlet_boundary, apply_neumann_flux, split_linear_weak_form,
+    build_bar_1d_local_problem,
+)
+```
+
+## The strong form {auto-animate="true" .smaller .scrollable}
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+fem.display_strong_form()
+```
+
+## Derive the weak form of the equation {auto-animate="true" .smaller .scrollable}
+```{python}
+#| code-fold: true
+#| echo: fenced
+weak_eq = fem.derive_weak_form()
+```
+
+## Define shape functions for discretization with N elements {auto-animate="true" .smaller .scrollable}
+```{python}
+#| code-fold: true
+#| echo: fenced
+N=5
+phi, a, b, y_approx, v_approx = fem.define_shape_functions(N)
+```
+
+## Assemble the FEM system using the weak form and shape functions {auto-animate="true" .smaller .scrollable}
+```{python}
+#| code-fold: true
+#| echo: fenced
+K, F_vec = fem.assemble_fem_system(weak_eq, phi, a, b, y_approx, v_approx, N)
+```
+
+## All together now! {auto-animate="true" .smaller .scrollable}
+```{python}
+#| code-fold: true
+#| echo: fenced
+fem.finite_element_method_1d_demo()
+```
+
+## Symbolic Workbench: Weak Form Derivation {auto-animate="true" .smaller .scrollable}
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+from IPython.display import Math
+import sympy as sp
+from symbolic_fem_workbench import (
+    make_field_1d, weighted_residual, integrate_divergence_1d,
+    drop_dirichlet_boundary, apply_neumann_flux, split_linear_weak_form,
+)
+
+x, L = sp.symbols("x L", positive=True)
+E, A_ = sp.symbols("E A", positive=True)
+q, P = sp.symbols("q P", real=True)
+u = make_field_1d("u", x)
+v = make_field_1d("v", x)
+domain = (x, 0, L)
+
+flux = E * A_ * sp.diff(u, x)
+domain_term, (left_bc, right_bc) = integrate_divergence_1d(flux, v, x, domain)
+
+print("After integration by parts:")
+display(Math(r"\text{Domain: }" + sp.latex(domain_term.as_integral())))
+display(Math(r"\text{Left BC: }" + sp.latex(left_bc.evaluate())))
+display(Math(r"\text{Right BC: }" + sp.latex(right_bc.evaluate())))
+
+left_val = drop_dirichlet_boundary(left_bc, v)
+right_val = apply_neumann_flux(right_bc, flux_expr=flux, prescribed_flux=P)
+
+weak_expr = domain_term.as_integral() - sp.Integral(q * v, domain) + left_val + right_val
+wf = split_linear_weak_form(weak_expr, u, v)
+
+print("\nBilinear form a(u,v):")
+display(Math(sp.latex(wf.bilinear)))
+print("Linear form F(v):")
+display(Math(sp.latex(wf.linear)))
+```
+
+## Symbolic Workbench: Element Stiffness {auto-animate="true" .smaller .scrollable}
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+from symbolic_fem_workbench import build_bar_1d_local_problem
+
+problem = build_bar_1d_local_problem()
+print("Element stiffness matrix Ke:")
+display(Math(r"K_e = " + sp.latex(problem["Ke"])))
+print("Element load vector fe:")
+display(Math(r"f_e = " + sp.latex(problem["fe"])))
+```
+
+## Example problem: {auto-animate="true" .smaller .scrollable}
+```{python}
+#| code-fold: true
+#| echo: true
+from ipywidgets import interact, IntSlider
+@interact(n_elements=IntSlider(min=1, max=50, step=1, value=2, description='# Elements:'))
+def interactive_solver_plot(n_elements):
+    # This function is called whenever the slider changes
+    # It calls your original solver/plotter function
+    fig = fem.solve_specific_1d_problem_animated(n_elements)
+    # ipywidgets automatically displays the returned figure
+    return fig
+
+```

@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script><script src="Lecture2_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Lecture2_files/libs/quarto-html/tabby.min.js"></script>
+<script src="Lecture2_files/libs/quarto-html/popper.min.js"></script>
+<script src="Lecture2_files/libs/quarto-html/tippy.umd.min.js"></script>
+<link href="Lecture2_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Lecture2_files/libs/quarto-html/light-border.css" rel="stylesheet">
+<link href="Lecture2_files/libs/quarto-html/quarto-syntax-highlighting-2f5df379a58b258e96c21c0638c20c03.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
+  <meta name="generator" content="quarto-1.6.42">
+
+  <title>Introduction to the Finite Element Method</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="Lecture2_files/libs/revealjs/dist/reset.css">
+  <link rel="stylesheet" href="Lecture2_files/libs/revealjs/dist/reveal.css">
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      { color: #003b4f; background-color: #f1f3f5; }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span { color: #003b4f; } /* Normal */
+    code span.al { color: #ad0000; } /* Alert */
+    code span.an { color: #5e5e5e; } /* Annotation */
+    code span.at { color: #657422; } /* Attribute */
+    code span.bn { color: #ad0000; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #003b4f; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #20794d; } /* Char */
+    code span.cn { color: #8f5902; } /* Constant */
+    code span.co { color: #5e5e5e; } /* Comment */
+    code span.cv { color: #5e5e5e; font-style: italic; } /* CommentVar */
+    code span.do { color: #5e5e5e; font-style: italic; } /* Documentation */
+    code span.dt { color: #ad0000; } /* DataType */
+    code span.dv { color: #ad0000; } /* DecVal */
+    code span.er { color: #ad0000; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #ad0000; } /* Float */
+    code span.fu { color: #4758ab; } /* Function */
+    code span.im { color: #00769e; } /* Import */
+    code span.in { color: #5e5e5e; } /* Information */
+    code span.kw { color: #003b4f; font-weight: bold; } /* Keyword */
+    code span.op { color: #5e5e5e; } /* Operator */
+    code span.ot { color: #003b4f; } /* Other */
+    code span.pp { color: #ad0000; } /* Preprocessor */
+    code span.sc { color: #5e5e5e; } /* SpecialChar */
+    code span.ss { color: #20794d; } /* SpecialString */
+    code span.st { color: #20794d; } /* String */
+    code span.va { color: #111111; } /* Variable */
+    code span.vs { color: #20794d; } /* VerbatimString */
+    code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="Lecture2_files/libs/revealjs/dist/theme/quarto-2f366650f320edcfcf53d73c80250a32.css">
+  <link rel="stylesheet" href="fem.css">
+  <link href="Lecture2_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
+  <link href="Lecture2_files/libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
+  <link href="Lecture2_files/libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
+  <link href="Lecture2_files/libs/revealjs/plugin/quarto-support/footer.css" rel="stylesheet">
+  <style type="text/css">
+    .reveal div.sourceCode {
+      margin: 0;
+      overflow: auto;
+    }
+    .reveal div.hanging-indent {
+      margin-left: 1em;
+      text-indent: -1em;
+    }
+    .reveal .slide:not(.center) {
+      height: 100%;
+    }
+    .reveal .slide.scrollable {
+      overflow-y: auto;
+    }
+    .reveal .footnotes {
+      height: 100%;
+      overflow-y: auto;
+    }
+    .reveal .slide .absolute {
+      position: absolute;
+      display: block;
+    }
+    .reveal .footnotes ol {
+      counter-reset: ol;
+      list-style-type: none; 
+      margin-left: 0;
+    }
+    .reveal .footnotes ol li:before {
+      counter-increment: ol;
+      content: counter(ol) ". "; 
+    }
+    .reveal .footnotes ol li > p:first-child {
+      display: inline-block;
+    }
+    .reveal .slide ul,
+    .reveal .slide ol {
+      margin-bottom: 0.5em;
+    }
+    .reveal .slide ul li,
+    .reveal .slide ol li {
+      margin-top: 0.4em;
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide ul[role="tablist"] li {
+      margin-bottom: 0;
+    }
+    .reveal .slide ul li > *:first-child,
+    .reveal .slide ol li > *:first-child {
+      margin-block-start: 0;
+    }
+    .reveal .slide ul li > *:last-child,
+    .reveal .slide ol li > *:last-child {
+      margin-block-end: 0;
+    }
+    .reveal .slide .columns:nth-child(3) {
+      margin-block-start: 0.8em;
+    }
+    .reveal blockquote {
+      box-shadow: none;
+    }
+    .reveal .tippy-content>* {
+      margin-top: 0.2em;
+      margin-bottom: 0.7em;
+    }
+    .reveal .tippy-content>*:last-child {
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide > img.stretch.quarto-figure-center,
+    .reveal .slide > img.r-stretch.quarto-figure-center {
+      display: block;
+      margin-left: auto;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-left,
+    .reveal .slide > img.r-stretch.quarto-figure-left  {
+      display: block;
+      margin-left: 0;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-right,
+    .reveal .slide > img.r-stretch.quarto-figure-right  {
+      display: block;
+      margin-left: auto;
+      margin-right: 0; 
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous"></script>
+  
+  <script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+</head>
+<body class="quarto-light">
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide" class="quarto-title-block center">
+  <h1 class="title">Introduction to the Finite Element Method</h1>
+  <p class="subtitle">Lecture 2: Deriving the Algebraic System &amp; Galerkin’s Method</p>
+
+<div class="quarto-title-authors">
+</div>
+
+</section>
+<section id="setup-symbolic-definitions" class="slide level2">
+<h2>Setup &amp; Symbolic Definitions</h2>
+<div id="70224017" class="cell" data-execution_count="1">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource markdown number-lines code-with-copy"><code class="sourceCode markdown"><span id="cb1-1"><a href=""></a><span class="in">```{python}</span></span>
+<span id="cb1-2"><a href=""></a><span class="in">#| code-fold: true</span></span>
+<span id="cb1-3"><a href=""></a></span>
+<span id="cb1-4"><a href=""></a><span class="in">import sympy as sp</span></span>
+<span id="cb1-5"><a href=""></a><span class="in">from sympy import symbols, Function, Derivative, Integral, diff, integrate, Matrix, Symbol, Idx, IndexedBase, Sum, Eq, Q, Wild, MatrixSymbol</span></span>
+<span id="cb1-6"><a href=""></a><span class="in">from sympy.printing import pprint, latex</span></span>
+<span id="cb1-7"><a href=""></a><span class="in">from IPython.display import Math, display, HTML, Markdown</span></span>
+<span id="cb1-8"><a href=""></a><span class="in">import inspect </span></span>
+<span id="cb1-9"><a href=""></a></span>
+<span id="cb1-10"><a href=""></a><span class="in"># Use HTML for styled print</span></span>
+<span id="cb1-11"><a href=""></a><span class="in">def print_styled(text, size="1.1em",htm=False):</span></span>
+<span id="cb1-12"><a href=""></a><span class="in">    if htm:</span></span>
+<span id="cb1-13"><a href=""></a><span class="in">        display(HTML(f"&lt;div style='margin: 5px 0; font-size: {size};'&gt;{text}&lt;/div&gt;"))</span></span>
+<span id="cb1-14"><a href=""></a><span class="in">    else:</span></span>
+<span id="cb1-15"><a href=""></a><span class="in">        # display(Markdown(f"&lt;div style='margin: 5px 0; font-size: {size};'&gt;{text}&lt;/div&gt;"))</span></span>
+<span id="cb1-16"><a href=""></a><span class="in">        display(Markdown(text))</span></span>
+<span id="cb1-17"><a href=""></a></span>
+<span id="cb1-18"><a href=""></a><span class="in">def Lprint(expr):</span></span>
+<span id="cb1-19"><a href=""></a><span class="in">    """</span></span>
+<span id="cb1-20"><a href=""></a><span class="in">    Displays SymPy expressions or raw LaTeX strings using MathJax.</span></span>
+<span id="cb1-21"><a href=""></a><span class="in">    """</span></span>
+<span id="cb1-22"><a href=""></a><span class="in">    if not isinstance(expr, str) or hasattr(expr, '_repr_latex_'):</span></span>
+<span id="cb1-23"><a href=""></a><span class="in">        latex_str = sp.latex(expr, mode='plain')</span></span>
+<span id="cb1-24"><a href=""></a><span class="in">    else:</span></span>
+<span id="cb1-25"><a href=""></a><span class="in">        latex_str = expr</span></span>
+<span id="cb1-26"><a href=""></a><span class="in">    if not latex_str.startswith('$') and not latex_str.startswith('\\('):</span></span>
+<span id="cb1-27"><a href=""></a><span class="in">         latex_str = f"${latex_str}$"</span></span>
+<span id="cb1-28"><a href=""></a><span class="in">    display(Math(latex_str))</span></span>
+<span id="cb1-29"><a href=""></a></span>
+<span id="cb1-30"><a href=""></a><span class="in"># ---- FACTORY FUNCTION FOR CUSTOM INDEXED FUNCTIONS ----</span></span>
+<span id="cb1-31"><a href=""></a><span class="in">def create_latex_indexed_function(symbolic_name: str, latex_symbol: str):</span></span>
+<span id="cb1-32"><a href=""></a><span class="in">    """</span></span>
+<span id="cb1-33"><a href=""></a><span class="in">    Factory to create a SymPy Function subclass that renders as symbol_{index}(var).</span></span>
+<span id="cb1-34"><a href=""></a></span>
+<span id="cb1-35"><a href=""></a><span class="in">    """</span></span>
+<span id="cb1-36"><a href=""></a><span class="in">    class LatexIndexedFunc(Function):</span></span>
+<span id="cb1-37"><a href=""></a><span class="in">        </span></span>
+<span id="cb1-38"><a href=""></a><span class="in">        _latex_symbol_str = latex_symbol</span></span>
+<span id="cb1-39"><a href=""></a><span class="in">        is_commutative = False # Functions are generally not commutative</span></span>
+<span id="cb1-40"><a href=""></a></span>
+<span id="cb1-41"><a href=""></a><span class="in">        def _latex(self, printer):</span></span>
+<span id="cb1-42"><a href=""></a></span>
+<span id="cb1-43"><a href=""></a><span class="in">            if len(self.args) == 2:</span></span>
+<span id="cb1-44"><a href=""></a></span>
+<span id="cb1-45"><a href=""></a><span class="in">                func_name = self._latex_symbol_str</span></span>
+<span id="cb1-46"><a href=""></a><span class="in">                index_latex = printer._print(self.args[0])</span></span>
+<span id="cb1-47"><a href=""></a><span class="in">                var_latex = printer._print(self.args[1])</span></span>
+<span id="cb1-48"><a href=""></a><span class="in">                return rf"{func_name}_{{{index_latex}}}({var_latex})"</span></span>
+<span id="cb1-49"><a href=""></a><span class="in">            else:</span></span>
+<span id="cb1-50"><a href=""></a><span class="in">                cls_name = self.__class__.__name__</span></span>
+<span id="cb1-51"><a href=""></a><span class="in">                args_latex = ", ".join(printer._print(arg) for arg in self.args)</span></span>
+<span id="cb1-52"><a href=""></a><span class="in">                return rf"{cls_name}({args_latex})"</span></span>
+<span id="cb1-53"><a href=""></a></span>
+<span id="cb1-54"><a href=""></a><span class="in">    LatexIndexedFunc.__name__ = symbolic_name</span></span>
+<span id="cb1-55"><a href=""></a><span class="in">    return LatexIndexedFunc</span></span>
+<span id="cb1-56"><a href=""></a></span>
+<span id="cb1-57"><a href=""></a><span class="in">x, L = symbols('x L', real=True, positive=True)</span></span>
+<span id="cb1-58"><a href=""></a><span class="in">i = Symbol('i', integer=True, positive=True)</span></span>
+<span id="cb1-59"><a href=""></a><span class="in">j = Symbol('j', integer=True, positive=True)</span></span>
+<span id="cb1-60"><a href=""></a><span class="in">N = Symbol('N', integer=True, positive=True)</span></span>
+<span id="cb1-61"><a href=""></a><span class="in">y = Function('y')(x)</span></span>
+<span id="cb1-62"><a href=""></a><span class="in">v = Function('v')(x)</span></span>
+<span id="cb1-63"><a href=""></a><span class="in">A, B, C = symbols('A B C', real=True)</span></span>
+<span id="cb1-64"><a href=""></a><span class="in">F = Function('F')(x) </span></span>
+<span id="cb1-65"><a href=""></a><span class="in">phi = create_latex_indexed_function("phi", r"\phi")</span></span>
+<span id="cb1-66"><a href=""></a><span class="in">a = IndexedBase('a')</span></span>
+<span id="cb1-67"><a href=""></a><span class="in">b = IndexedBase('b')</span></span>
+<span id="cb1-68"><a href=""></a><span class="in">```</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+</section>
+<section id="last-weak" class="slide level2 smaller scrollable" data-auto-animate="true">
+<h2 data-id="quarto-animate-title">Last Weak…</h2>
+<div id="1f7316b9" class="cell" data-execution_count="2">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource markdown number-lines code-with-copy" data-id="quarto-animate-code"><code class="sourceCode markdown hljs"><span id="cb2-1" class="hljs-ln-code"><a href=""></a><span class="in">```{python}</span></span>
+<span id="cb2-2" class="hljs-ln-code"><a href=""></a><span class="in">#| code-fold: true</span></span>
+<span id="cb2-3" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("Assuming constant A, B, C and Dirichlet BCs v(0)=v(L)=0:")</span></span>
+<span id="cb2-4" class="hljs-ln-code"><a href=""></a><span class="in">weak_term1 = -Integral(A * diff(v, x) * diff(y, x), (x, 0, L))</span></span>
+<span id="cb2-5" class="hljs-ln-code"><a href=""></a><span class="in">weak_term2 = Integral(v * B * diff(y, x), (x, 0, L))</span></span>
+<span id="cb2-6" class="hljs-ln-code"><a href=""></a><span class="in">weak_term3 = Integral(v * C * y, (x, 0, L))</span></span>
+<span id="cb2-7" class="hljs-ln-code"><a href=""></a><span class="in">rhs_term = Integral(v * F, (x, 0, L))</span></span>
+<span id="cb2-8" class="hljs-ln-code"><a href=""></a><span class="in">weak_form_eq = Eq(weak_term1 + weak_term2 + weak_term3, rhs_term)</span></span>
+<span id="cb2-9" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("The weak form is:")</span></span>
+<span id="cb2-10" class="hljs-ln-code"><a href=""></a><span class="in">Lprint(weak_form_eq)</span></span>
+<span id="cb2-11" class="hljs-ln-code"><a href=""></a><span class="in">```</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Assuming constant A, B, C and Dirichlet BCs v(0)=v(L)=0:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>The weak form is:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle - \int\limits_{0}^{L} A \frac{d}{d x} v{\left(x \right)} \frac{d}{d x} y{\left(x \right)}\, dx + \int\limits_{0}^{L} B v{\left(x \right)} \frac{d}{d x} y{\left(x \right)}\, dx + \int\limits_{0}^{L} C v{\left(x \right)} y{\left(x \right)}\, dx = \int\limits_{0}^{L} F{\left(x \right)} v{\left(x \right)}\, dx\)</span></p>
+</div>
+</div>
+</section>
+<section id="discretization-using-shape-functions" class="slide level2 smaller scrollable" data-auto-animate="true">
+<h2 data-id="quarto-animate-title">2. Discretization using Shape Functions</h2>
+<div id="29834d72" class="cell" data-execution_count="3">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource markdown number-lines code-with-copy" data-id="quarto-animate-code"><code class="sourceCode markdown hljs"><span id="cb3-1" class="hljs-ln-code"><a href=""></a><span class="in">```{python}</span></span>
+<span id="cb3-2" class="hljs-ln-code"><a href=""></a><span class="in">#| code-fold: true</span></span>
+<span id="cb3-3" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("Assuming constant A, B, C and Dirichlet BCs v(0)=v(L)=0:")</span></span>
+<span id="cb3-4" class="hljs-ln-code"><a href=""></a><span class="in">weak_term1 = -Integral(A * diff(v, x) * diff(y, x), (x, 0, L))</span></span>
+<span id="cb3-5" class="hljs-ln-code"><a href=""></a><span class="in">weak_term2 = Integral(v * B * diff(y, x), (x, 0, L))</span></span>
+<span id="cb3-6" class="hljs-ln-code"><a href=""></a><span class="in">weak_term3 = Integral(v * C * y, (x, 0, L))</span></span>
+<span id="cb3-7" class="hljs-ln-code"><a href=""></a><span class="in">rhs_term = Integral(v * F, (x, 0, L))</span></span>
+<span id="cb3-8" class="hljs-ln-code"><a href=""></a><span class="in">weak_form_eq = Eq(weak_term1 + weak_term2 + weak_term3, rhs_term)</span></span>
+<span id="cb3-9" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("The weak form is:")</span></span>
+<span id="cb3-10" class="hljs-ln-code"><a href=""></a><span class="in">Lprint(weak_form_eq)</span></span>
+<span id="cb3-11" class="hljs-ln-code"><a href=""></a><span class="in">```</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Assuming constant A, B, C and Dirichlet BCs v(0)=v(L)=0:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>The weak form is:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle - \int\limits_{0}^{L} A \frac{d}{d x} v{\left(x \right)} \frac{d}{d x} y{\left(x \right)}\, dx + \int\limits_{0}^{L} B v{\left(x \right)} \frac{d}{d x} y{\left(x \right)}\, dx + \int\limits_{0}^{L} C v{\left(x \right)} y{\left(x \right)}\, dx = \int\limits_{0}^{L} F{\left(x \right)} v{\left(x \right)}\, dx\)</span></p>
+</div>
+</div>
+</section>
+<section id="discretization-using-shape-functions-1" class="slide level2 smaller scrollable" data-auto-animate="true">
+<h2 data-id="quarto-animate-title">Discretization using Shape Functions</h2>
+<div id="8a123f8e" class="cell" data-execution_count="4">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource markdown number-lines code-with-copy" data-id="quarto-animate-code"><code class="sourceCode markdown hljs"><span id="cb4-1" class="hljs-ln-code"><a href=""></a><span class="in">```{python}</span></span>
+<span id="cb4-2" class="hljs-ln-code"><a href=""></a><span class="in">#| code-fold: true</span></span>
+<span id="cb4-3" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("The weak form is:")</span></span>
+<span id="cb4-4" class="hljs-ln-code"><a href=""></a><span class="in">Lprint(weak_form_eq)</span></span>
+<span id="cb4-5" class="hljs-ln-code"><a href=""></a><span class="in">print_styled(" Substitute Discretized Approximations",htm=True,size='1.5em')</span></span>
+<span id="cb4-6" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("Approximate solution $y(x)$ and test function $v(x)$ using shape functions $\phi_k(x)$:")</span></span>
+<span id="cb4-7" class="hljs-ln-code"><a href=""></a></span>
+<span id="cb4-8" class="hljs-ln-code"><a href=""></a><span class="in">y_approx = Sum(a[j] * phi(j,x), (j, 1, N))</span></span>
+<span id="cb4-9" class="hljs-ln-code"><a href=""></a><span class="in">v_approx = Sum(b[i] * phi(i,x), (i, 1, N))</span></span>
+<span id="cb4-10" class="hljs-ln-code"><a href=""></a></span>
+<span id="cb4-11" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("Approximate solution $y(x)$:")</span></span>
+<span id="cb4-12" class="hljs-ln-code"><a href=""></a></span>
+<span id="cb4-13" class="hljs-ln-code"><a href=""></a><span class="in">Lprint(Eq(y, y_approx, evaluate=False))</span></span>
+<span id="cb4-14" class="hljs-ln-code"><a href=""></a></span>
+<span id="cb4-15" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("Test function $v(x)$:")</span></span>
+<span id="cb4-16" class="hljs-ln-code"><a href=""></a></span>
+<span id="cb4-17" class="hljs-ln-code"><a href=""></a><span class="in">Lprint(Eq(v, v_approx, evaluate=False))</span></span>
+<span id="cb4-18" class="hljs-ln-code"><a href=""></a></span>
+<span id="cb4-19" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("Derivatives:")</span></span>
+<span id="cb4-20" class="hljs-ln-code"><a href=""></a></span>
+<span id="cb4-21" class="hljs-ln-code"><a href=""></a><span class="in">dy_dx_approx = Derivative(y_approx, x)</span></span>
+<span id="cb4-22" class="hljs-ln-code"><a href=""></a><span class="in">dv_dx_approx = Derivative(v_approx, x)</span></span>
+<span id="cb4-23" class="hljs-ln-code"><a href=""></a></span>
+<span id="cb4-24" class="hljs-ln-code"><a href=""></a><span class="in">Lprint(Eq(Derivative(y,x), dy_dx_approx, evaluate=False))</span></span>
+<span id="cb4-25" class="hljs-ln-code"><a href=""></a></span>
+<span id="cb4-26" class="hljs-ln-code"><a href=""></a><span class="in">Lprint(Eq(Derivative(v,x), dv_dx_approx, evaluate=False))</span></span>
+<span id="cb4-27" class="hljs-ln-code"><a href=""></a></span>
+<span id="cb4-28" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("Substitute sums into the weak form terms:")</span></span>
+<span id="cb4-29" class="hljs-ln-code"><a href=""></a><span class="in">term1_subst_sym = weak_term1.subs({v: v_approx, y: y_approx})</span></span>
+<span id="cb4-30" class="hljs-ln-code"><a href=""></a><span class="in">term2_subst_sym = weak_term2.subs({v: v_approx, y: y_approx})</span></span>
+<span id="cb4-31" class="hljs-ln-code"><a href=""></a><span class="in">term3_subst_sym = weak_term3.subs({v: v_approx, y: y_approx})</span></span>
+<span id="cb4-32" class="hljs-ln-code"><a href=""></a><span class="in">rhs_subst_sym = rhs_term.subs({v: v_approx})</span></span>
+<span id="cb4-33" class="hljs-ln-code"><a href=""></a></span>
+<span id="cb4-34" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("Term 1 ($-\int A v' y' dx$):")</span></span>
+<span id="cb4-35" class="hljs-ln-code"><a href=""></a><span class="in">Lprint(term1_subst_sym)</span></span>
+<span id="cb4-36" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("Term 2 ($\int B v y' dx$):")</span></span>
+<span id="cb4-37" class="hljs-ln-code"><a href=""></a><span class="in">Lprint(term2_subst_sym)</span></span>
+<span id="cb4-38" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("Term 3 ($\int C v y dx$):")</span></span>
+<span id="cb4-39" class="hljs-ln-code"><a href=""></a><span class="in">Lprint(term3_subst_sym)</span></span>
+<span id="cb4-40" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("RHS Term ($\int v F dx$):")</span></span>
+<span id="cb4-41" class="hljs-ln-code"><a href=""></a><span class="in">Lprint(rhs_subst_sym)</span></span>
+<span id="cb4-42" class="hljs-ln-code"><a href=""></a><span class="in">```</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>The weak form is:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle - \int\limits_{0}^{L} A \frac{d}{d x} v{\left(x \right)} \frac{d}{d x} y{\left(x \right)}\, dx + \int\limits_{0}^{L} B v{\left(x \right)} \frac{d}{d x} y{\left(x \right)}\, dx + \int\limits_{0}^{L} C v{\left(x \right)} y{\left(x \right)}\, dx = \int\limits_{0}^{L} F{\left(x \right)} v{\left(x \right)}\, dx\)</span></p>
+</div>
+<div class="cell-output cell-output-display">
+<div style="margin: 5px 0; font-size: 1.5em;"> Substitute Discretized Approximations</div>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Approximate solution <span class="math inline">\(y(x)\)</span> and test function <span class="math inline">\(v(x)\)</span> using shape functions <span class="math inline">\(\phi_k(x)\)</span>:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Approximate solution <span class="math inline">\(y(x)\)</span>:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle y{\left(x \right)} = \sum_{j=1}^{N} {a}_{j} \phi_{j}(x)\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Test function <span class="math inline">\(v(x)\)</span>:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle v{\left(x \right)} = \sum_{i=1}^{N} {b}_{i} \phi_{i}(x)\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Derivatives:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \frac{d}{d x} y{\left(x \right)} = \frac{\partial}{\partial x} \sum_{j=1}^{N} {a}_{j} \phi_{j}(x)\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \frac{d}{d x} v{\left(x \right)} = \frac{\partial}{\partial x} \sum_{i=1}^{N} {b}_{i} \phi_{i}(x)\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Substitute sums into the weak form terms:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Term 1 (<span class="math inline">\(-\int A v' y' dx\)</span>):</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle - \int\limits_{0}^{L} A \left(\frac{\partial}{\partial x} \sum_{j=1}^{N} {a}_{j} \phi_{j}(x)\right) \frac{\partial}{\partial x} \sum_{i=1}^{N} {b}_{i} \phi_{i}(x)\, dx\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Term 2 (<span class="math inline">\(\int B v y' dx\)</span>):</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \int\limits_{0}^{L} B \left(\frac{\partial}{\partial x} \sum_{j=1}^{N} {a}_{j} \phi_{j}(x)\right) \sum_{i=1}^{N} {b}_{i} \phi_{i}(x)\, dx\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Term 3 (<span class="math inline">\(\int C v y dx\)</span>):</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \int\limits_{0}^{L} C \left(\sum_{j=1}^{N} {a}_{j} \phi_{j}(x)\right) \sum_{i=1}^{N} {b}_{i} \phi_{i}(x)\, dx\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>RHS Term (<span class="math inline">\(\int v F dx\)</span>):</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \int\limits_{0}^{L} F{\left(x \right)} \sum_{i=1}^{N} {b}_{i} \phi_{i}(x)\, dx\)</span></p>
+</div>
+</div>
+</section>
+<section id="rearranging-the-summation-and-integrals" class="slide level2 smaller scrollable" data-auto-animate="true">
+<h2 data-id="quarto-animate-title">3. Rearranging the Summation and Integrals</h2>
+<div id="9124140a" class="cell" data-execution_count="5">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource markdown number-lines code-with-copy" data-id="quarto-animate-code"><code class="sourceCode markdown hljs"><span id="cb5-1" class="hljs-ln-code"><a href=""></a><span class="in">```{python}</span></span>
+<span id="cb5-2" class="hljs-ln-code"><a href=""></a><span class="in">#| code-fold: true</span></span>
+<span id="cb5-3" class="hljs-ln-code"><a href=""></a><span class="in"># print_styled("&lt;h2&gt;3. Rearrange Sums and Integrals&lt;/h2&gt;")</span></span>
+<span id="cb5-4" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("Assuming continuity, swap integration and summation, then factor out $b_i$.",htm=True,size='1.5em')</span></span>
+<span id="cb5-5" class="hljs-ln-code"><a href=""></a><span class="in">print_styled(r"The weak form $\sum_{\text{term}} (\text{Term}) = \text{RHS}$ becomes:") </span></span>
+<span id="cb5-6" class="hljs-ln-code"><a href=""></a><span class="in">Lprint(r"\sum_{i=1}^N b_i \left( [\text{Inner part for Term 1}]_i + [\text{Inner part for Term 2}]_i + [\text{Inner part for Term 3}]_i \right) = \sum_{i=1}^N b_i [\text{Inner part for RHS}]_i")</span></span>
+<span id="cb5-7" class="hljs-ln-code"><a href=""></a></span>
+<span id="cb5-8" class="hljs-ln-code"><a href=""></a><span class="in">print_styled(r"Where the inner parts (coefficients of $b_i$) are:")</span></span>
+<span id="cb5-9" class="hljs-ln-code"><a href=""></a></span>
+<span id="cb5-10" class="hljs-ln-code"><a href=""></a><span class="in"># Define inner terms (these were already correctly defined using SymPy)</span></span>
+<span id="cb5-11" class="hljs-ln-code"><a href=""></a><span class="in">term1_inner = Sum( -A * Integral(diff(phi(i,x), x) * diff(phi(j,x), x), (x, 0, L)) * a[j], (j, 1, N))</span></span>
+<span id="cb5-12" class="hljs-ln-code"><a href=""></a><span class="in">term2_inner = Sum(  B * Integral(phi(i,x) * diff(phi(j,x), x), (x, 0, L)) * a[j], (j, 1, N))</span></span>
+<span id="cb5-13" class="hljs-ln-code"><a href=""></a><span class="in">term3_inner = Sum(  C * Integral(phi(i,x) * phi(j,x), (x, 0, L)) * a[j], (j, 1, N))</span></span>
+<span id="cb5-14" class="hljs-ln-code"><a href=""></a><span class="in">rhs_inner = Integral(phi(i,x) * F, (x, 0, L))</span></span>
+<span id="cb5-15" class="hljs-ln-code"><a href=""></a></span>
+<span id="cb5-16" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("Inner part for Term 1 (coefficient of $b_i$):")</span></span>
+<span id="cb5-17" class="hljs-ln-code"><a href=""></a><span class="in">Lprint(term1_inner)</span></span>
+<span id="cb5-18" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("Inner part for Term 2 (coefficient of $b_i$):")</span></span>
+<span id="cb5-19" class="hljs-ln-code"><a href=""></a><span class="in">Lprint(term2_inner)</span></span>
+<span id="cb5-20" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("Inner part for Term 3 (coefficient of $b_i$):")</span></span>
+<span id="cb5-21" class="hljs-ln-code"><a href=""></a><span class="in">Lprint(term3_inner)</span></span>
+<span id="cb5-22" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("Inner part for RHS (coefficient of $b_i$):")</span></span>
+<span id="cb5-23" class="hljs-ln-code"><a href=""></a><span class="in">Lprint(rhs_inner)</span></span>
+<span id="cb5-24" class="hljs-ln-code"><a href=""></a><span class="in">```</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div style="margin: 5px 0; font-size: 1.5em;">Assuming continuity, swap integration and summation, then factor out $b_i$.</div>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>The weak form <span class="math inline">\(\sum_{\text{term}} (\text{Term}) = \text{RHS}\)</span> becomes:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \sum_{i=1}^N b_i \left( [\text{Inner part for Term 1}]_i + [\text{Inner part for Term 2}]_i + [\text{Inner part for Term 3}]_i \right) = \sum_{i=1}^N b_i [\text{Inner part for RHS}]_i\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Where the inner parts (coefficients of <span class="math inline">\(b_i\)</span>) are:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Inner part for Term 1 (coefficient of <span class="math inline">\(b_i\)</span>):</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \sum_{j=1}^{N} - A {a}_{j} \int\limits_{0}^{L} \frac{d}{d x} \phi_{i}(x) \frac{d}{d x} \phi_{j}(x)\, dx\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Inner part for Term 2 (coefficient of <span class="math inline">\(b_i\)</span>):</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \sum_{j=1}^{N} B {a}_{j} \int\limits_{0}^{L} \phi_{i}(x) \frac{d}{d x} \phi_{j}(x)\, dx\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Inner part for Term 3 (coefficient of <span class="math inline">\(b_i\)</span>):</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \sum_{j=1}^{N} C {a}_{j} \int\limits_{0}^{L} \phi_{i}(x) \phi_{j}(x)\, dx\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Inner part for RHS (coefficient of <span class="math inline">\(b_i\)</span>):</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \int\limits_{0}^{L} F{\left(x \right)} \phi_{i}(x)\, dx\)</span></p>
+</div>
+</div>
+</section>
+<section id="obtaining-n-equations" class="slide level2 smaller scrollable" data-auto-animate="true">
+<h2 data-id="quarto-animate-title">4. Obtaining N Equations</h2>
+<div id="139724f1" class="cell" data-execution_count="6">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource markdown number-lines code-with-copy" data-id="quarto-animate-code"><code class="sourceCode markdown hljs"><span id="cb6-1" class="hljs-ln-code"><a href=""></a><span class="in">```{python}</span></span>
+<span id="cb6-2" class="hljs-ln-code"><a href=""></a><span class="in">#| code-fold: true</span></span>
+<span id="cb6-3" class="hljs-ln-code"><a href=""></a></span>
+<span id="cb6-4" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("The rearranged form is:",htm=True,size='1.5em')</span></span>
+<span id="cb6-5" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("$\\sum_{i=1}^N b_i ( \\text{LHS}_i - \\text{RHS}_i ) = 0$.")</span></span>
+<span id="cb6-6" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("Since this must hold for arbitrary $b_i$, the term in parentheses must be zero for each $i$:")</span></span>
+<span id="cb6-7" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("  $\\text{LHS}_i - \\text{RHS}_i = 0$.")</span></span>
+<span id="cb6-8" class="hljs-ln-code"><a href=""></a></span>
+<span id="cb6-9" class="hljs-ln-code"><a href=""></a><span class="in">equation_for_i = Eq(term1_inner + term2_inner + term3_inner, rhs_inner)</span></span>
+<span id="cb6-10" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("This gives N equations (for $i = 1, ..., N$):")</span></span>
+<span id="cb6-11" class="hljs-ln-code"><a href=""></a><span class="in">Lprint(equation_for_i)</span></span>
+<span id="cb6-12" class="hljs-ln-code"><a href=""></a><span class="in">```</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div style="margin: 5px 0; font-size: 1.5em;">The rearranged form is:</div>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\sum_{i=1}^N b_i ( \text{LHS}_i - \text{RHS}_i ) = 0\)</span>.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Since this must hold for arbitrary <span class="math inline">\(b_i\)</span>, the term in parentheses must be zero for each <span class="math inline">\(i\)</span>:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\text{LHS}_i - \text{RHS}_i = 0\)</span>.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This gives N equations (for <span class="math inline">\(i = 1, ..., N\)</span>):</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \sum_{j=1}^{N} - A {a}_{j} \int\limits_{0}^{L} \frac{d}{d x} \phi_{i}(x) \frac{d}{d x} \phi_{j}(x)\, dx + \sum_{j=1}^{N} B {a}_{j} \int\limits_{0}^{L} \phi_{i}(x) \frac{d}{d x} \phi_{j}(x)\, dx + \sum_{j=1}^{N} C {a}_{j} \int\limits_{0}^{L} \phi_{i}(x) \phi_{j}(x)\, dx = \int\limits_{0}^{L} F{\left(x \right)} \phi_{i}(x)\, dx\)</span></p>
+</div>
+</div>
+</section>
+<section id="assemble-the-matrix-system-of-linear-equations" class="slide level2 smaller scrollable" data-auto-animate="true">
+<h2 data-id="quarto-animate-title">5. Assemble the Matrix System of Linear Equations</h2>
+<div id="e1d251a6" class="cell" data-execution_count="7">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource markdown number-lines code-with-copy" data-id="quarto-animate-code"><code class="sourceCode markdown hljs"><span id="cb7-1" class="hljs-ln-code"><a href=""></a><span class="in">```{python}</span></span>
+<span id="cb7-2" class="hljs-ln-code"><a href=""></a><span class="in">#| code-fold: true</span></span>
+<span id="cb7-3" class="hljs-ln-code"><a href=""></a><span class="in"># print_styled(" Assemble the Matrix System K a = F")</span></span>
+<span id="cb7-4" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("The $i$-th equation:")</span></span>
+<span id="cb7-5" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("$\\sum_{j=1}^N [ ... ]_{ij} a_j = F_i$")</span></span>
+<span id="cb7-6" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("leads to the matrix form:")</span></span>
+<span id="cb7-7" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("$K a = F$")</span></span>
+<span id="cb7-8" class="hljs-ln-code"><a href=""></a></span>
+<span id="cb7-9" class="hljs-ln-code"><a href=""></a><span class="in"># Define K_ij and F_i symbolically </span></span>
+<span id="cb7-10" class="hljs-ln-code"><a href=""></a><span class="in">K_ij = -A * Integral(diff(phi(i,x), x) * diff(phi(j,x), x), (x, 0, L)) + \</span></span>
+<span id="cb7-11" class="hljs-ln-code"><a href=""></a><span class="in">        B * Integral(phi(i,x) * diff(phi(j,x), x), (x, 0, L)) + \</span></span>
+<span id="cb7-12" class="hljs-ln-code"><a href=""></a><span class="in">        C * Integral(phi(i,x) * phi(j,x), (x, 0, L))</span></span>
+<span id="cb7-13" class="hljs-ln-code"><a href=""></a><span class="in">F_i = Integral(phi(i,x) * F, (x, 0, L))</span></span>
+<span id="cb7-14" class="hljs-ln-code"><a href=""></a></span>
+<span id="cb7-15" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("Where the matrix/vector components are:")</span></span>
+<span id="cb7-16" class="hljs-ln-code"><a href=""></a><span class="in">Lprint(Eq(Symbol('K_{ij}'), K_ij))</span></span>
+<span id="cb7-17" class="hljs-ln-code"><a href=""></a><span class="in">Lprint(Eq(Symbol('F_i'), F_i))</span></span>
+<span id="cb7-18" class="hljs-ln-code"><a href=""></a></span>
+<span id="cb7-19" class="hljs-ln-code"><a href=""></a><span class="in"># Define and display symbolic matrix equation </span></span>
+<span id="cb7-20" class="hljs-ln-code"><a href=""></a><span class="in">K_sym = MatrixSymbol('K', N, N)</span></span>
+<span id="cb7-21" class="hljs-ln-code"><a href=""></a><span class="in">a_sym = MatrixSymbol('a', N, 1)</span></span>
+<span id="cb7-22" class="hljs-ln-code"><a href=""></a><span class="in">F_sym = MatrixSymbol('F', N, 1)</span></span>
+<span id="cb7-23" class="hljs-ln-code"><a href=""></a><span class="in">matrix_eq = Eq(K_sym * a_sym, F_sym, evaluate=False)</span></span>
+<span id="cb7-24" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("The matrix system:")</span></span>
+<span id="cb7-25" class="hljs-ln-code"><a href=""></a><span class="in">Lprint(matrix_eq)</span></span>
+<span id="cb7-26" class="hljs-ln-code"><a href=""></a></span>
+<span id="cb7-27" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("Summing over $j$ gives the $i$-th equation:") </span></span>
+<span id="cb7-28" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("$\\sum_{j=1}^N K_{ij} a_j = F_i$") </span></span>
+<span id="cb7-29" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("Writing the full system for $i=1, ..., N$ gives the matrix form $Ka=F$:")</span></span>
+<span id="cb7-30" class="hljs-ln-code"><a href=""></a></span>
+<span id="cb7-31" class="hljs-ln-code"><a href=""></a><span class="in">latex_matrix_form = r"""</span></span>
+<span id="cb7-32" class="hljs-ln-code"><a href=""></a><span class="in">\begin{bmatrix}</span></span>
+<span id="cb7-33" class="hljs-ln-code"><a href=""></a><span class="in">K_{11} &amp; K_{12} &amp; \dots &amp; K_{1N} \\</span></span>
+<span id="cb7-34" class="hljs-ln-code"><a href=""></a><span class="in">K_{21} &amp; K_{22} &amp; \dots &amp; K_{2N} \\</span></span>
+<span id="cb7-35" class="hljs-ln-code"><a href=""></a><span class="in">\vdots &amp; \vdots &amp; \ddots &amp; \vdots \\</span></span>
+<span id="cb7-36" class="hljs-ln-code"><a href=""></a><span class="in">K_{N1} &amp; K_{N2} &amp; \dots &amp; K_{NN}</span></span>
+<span id="cb7-37" class="hljs-ln-code"><a href=""></a><span class="in">\end{bmatrix}</span></span>
+<span id="cb7-38" class="hljs-ln-code"><a href=""></a><span class="in">\begin{bmatrix}</span></span>
+<span id="cb7-39" class="hljs-ln-code"><a href=""></a><span class="in">a_{1} \\</span></span>
+<span id="cb7-40" class="hljs-ln-code"><a href=""></a><span class="in">a_{2} \\</span></span>
+<span id="cb7-41" class="hljs-ln-code"><a href=""></a><span class="in">\vdots \\</span></span>
+<span id="cb7-42" class="hljs-ln-code"><a href=""></a><span class="in">a_{N}</span></span>
+<span id="cb7-43" class="hljs-ln-code"><a href=""></a><span class="in">\end{bmatrix}</span></span>
+<span id="cb7-44" class="hljs-ln-code"><a href=""></a><span class="in">=</span></span>
+<span id="cb7-45" class="hljs-ln-code"><a href=""></a><span class="in">\begin{bmatrix}</span></span>
+<span id="cb7-46" class="hljs-ln-code"><a href=""></a><span class="in">F_{1} \\</span></span>
+<span id="cb7-47" class="hljs-ln-code"><a href=""></a><span class="in">F_{2} \\</span></span>
+<span id="cb7-48" class="hljs-ln-code"><a href=""></a><span class="in">\vdots \\</span></span>
+<span id="cb7-49" class="hljs-ln-code"><a href=""></a><span class="in">F_{N}</span></span>
+<span id="cb7-50" class="hljs-ln-code"><a href=""></a><span class="in">\end{bmatrix}</span></span>
+<span id="cb7-51" class="hljs-ln-code"><a href=""></a><span class="in">"""</span></span>
+<span id="cb7-52" class="hljs-ln-code"><a href=""></a><span class="in">Lprint(latex_matrix_form)</span></span>
+<span id="cb7-53" class="hljs-ln-code"><a href=""></a></span>
+<span id="cb7-54" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("Where the matrix and vector components are defined by the integrals:")</span></span>
+<span id="cb7-55" class="hljs-ln-code"><a href=""></a></span>
+<span id="cb7-56" class="hljs-ln-code"><a href=""></a><span class="in">Lprint(Eq(Symbol('K_{ij}'), K_ij))</span></span>
+<span id="cb7-57" class="hljs-ln-code"><a href=""></a><span class="in">Lprint(Eq(Symbol('F_i'), F_i))</span></span>
+<span id="cb7-58" class="hljs-ln-code"><a href=""></a></span>
+<span id="cb7-59" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("This linear system $Ka = F$ can be solved for the unknown coefficients vector $a = [a_1, a_2, ..., a_N]^T$.")</span></span>
+<span id="cb7-60" class="hljs-ln-code"><a href=""></a></span>
+<span id="cb7-61" class="hljs-ln-code"><a href=""></a><span class="in">```</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>The <span class="math inline">\(i\)</span>-th equation:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\sum_{j=1}^N [ ... ]_{ij} a_j = F_i\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>leads to the matrix form:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(K a = F\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Where the matrix/vector components are:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle K_{ij} = - A \int\limits_{0}^{L} \frac{d}{d x} \phi_{i}(x) \frac{d}{d x} \phi_{j}(x)\, dx + B \int\limits_{0}^{L} \phi_{i}(x) \frac{d}{d x} \phi_{j}(x)\, dx + C \int\limits_{0}^{L} \phi_{i}(x) \phi_{j}(x)\, dx\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle F_{i} = \int\limits_{0}^{L} F{\left(x \right)} \phi_{i}(x)\, dx\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>The matrix system:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle K a = F\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Summing over <span class="math inline">\(j\)</span> gives the <span class="math inline">\(i\)</span>-th equation:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\sum_{j=1}^N K_{ij} a_j = F_i\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Writing the full system for <span class="math inline">\(i=1, ..., N\)</span> gives the matrix form <span class="math inline">\(Ka=F\)</span>:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle
+\begin{bmatrix}
+K_{11} &amp; K_{12} &amp; \dots &amp; K_{1N} \\
+K_{21} &amp; K_{22} &amp; \dots &amp; K_{2N} \\
+\vdots &amp; \vdots &amp; \ddots &amp; \vdots \\
+K_{N1} &amp; K_{N2} &amp; \dots &amp; K_{NN}
+\end{bmatrix}
+\begin{bmatrix}
+a_{1} \\
+a_{2} \\
+\vdots \\
+a_{N}
+\end{bmatrix}
+=
+\begin{bmatrix}
+F_{1} \\
+F_{2} \\
+\vdots \\
+F_{N}
+\end{bmatrix}\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Where the matrix and vector components are defined by the integrals:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle K_{ij} = - A \int\limits_{0}^{L} \frac{d}{d x} \phi_{i}(x) \frac{d}{d x} \phi_{j}(x)\, dx + B \int\limits_{0}^{L} \phi_{i}(x) \frac{d}{d x} \phi_{j}(x)\, dx + C \int\limits_{0}^{L} \phi_{i}(x) \phi_{j}(x)\, dx\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle F_{i} = \int\limits_{0}^{L} F{\left(x \right)} \phi_{i}(x)\, dx\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This linear system <span class="math inline">\(Ka = F\)</span> can be solved for the unknown coefficients vector <span class="math inline">\(a = [a_1, a_2, ..., a_N]^T\)</span>.</p>
+</div>
+</div>
+</section>
+<section id="note-on-boundary-conditions" class="slide level2 smaller scrollable" data-auto-animate="true">
+<h2 data-id="quarto-animate-title">6. Note on Boundary Conditions</h2>
+<div id="0777a6c8" class="cell" data-execution_count="8">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource markdown number-lines code-with-copy" data-id="quarto-animate-code"><code class="sourceCode markdown hljs"><span id="cb8-1" class="hljs-ln-code"><a href=""></a><span class="in">```{python}</span></span>
+<span id="cb8-2" class="hljs-ln-code"><a href=""></a><span class="in">#| code-fold: true</span></span>
+<span id="cb8-3" class="hljs-ln-code"><a href=""></a><span class="in"># print_styled("&lt;h2&gt;6. Note on Boundary Conditions&lt;/h2&gt;")</span></span>
+<span id="cb8-4" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("We assumed $y(0)=0$ and $y(L)=0$. How are these applied to the matrix system?")</span></span>
+<span id="cb8-5" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("If using nodal basis functions where:")</span></span>
+<span id="cb8-6" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("$\phi_k(x_{node}) = \delta_{knode}$")</span></span>
+<span id="cb8-7" class="hljs-ln-code"><a href=""></a><span class="in">print_styled(" then:")</span></span>
+<span id="cb8-8" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("$y(x_1) = y(0) = \sum a_j \phi_j(x_1) = a_1$.")</span></span>
+<span id="cb8-9" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("Similarly")</span></span>
+<span id="cb8-10" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("$y(x_N) = y(L) = a_N$.")</span></span>
+<span id="cb8-11" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("So, for $y(0)=y(L)=0$, we know $a_1 = 0$ and $a_N = 0$.")</span></span>
+<span id="cb8-12" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("These known values must be incorporated when solving $Ka=F$. Common methods include:")</span></span>
+<span id="cb8-13" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("  - Modifying the K matrix and F vector (e.g., setting rows/columns to enforce the condition).")</span></span>
+<span id="cb8-14" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("  - Partitioning the system into known and unknown degrees of freedom.")</span></span>
+<span id="cb8-15" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("Handling boundary conditions precisely is a key part of FEM implementation and will be detailed later.")</span></span>
+<span id="cb8-16" class="hljs-ln-code"><a href=""></a><span class="in">```</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>We assumed <span class="math inline">\(y(0)=0\)</span> and <span class="math inline">\(y(L)=0\)</span>. How are these applied to the matrix system?</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>If using nodal basis functions where:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\phi_k(x_{node}) = \delta_{knode}\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>then:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(y(x_1) = y(0) = \sum a_j \phi_j(x_1) = a_1\)</span>.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Similarly</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(y(x_N) = y(L) = a_N\)</span>.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>So, for <span class="math inline">\(y(0)=y(L)=0\)</span>, we know <span class="math inline">\(a_1 = 0\)</span> and <span class="math inline">\(a_N = 0\)</span>.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>These known values must be incorporated when solving <span class="math inline">\(Ka=F\)</span>. Common methods include:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<ul>
+<li>Modifying the K matrix and F vector (e.g., setting rows/columns to enforce the condition).</li>
+</ul>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<ul>
+<li>Partitioning the system into known and unknown degrees of freedom.</li>
+</ul>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Handling boundary conditions precisely is a key part of FEM implementation and will be detailed later.</p>
+</div>
+</div>
+</section>
+<section id="introduction-to-weighted-residuals-and-galerkins-method" class="slide level2 smaller scrollable" data-auto-animate="true">
+<h2 data-id="quarto-animate-title">7.1 Introduction to Weighted Residuals and Galerkin’s Method</h2>
+<div id="4bed457c" class="cell" data-execution_count="9">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource markdown number-lines code-with-copy" data-id="quarto-animate-code"><code class="sourceCode markdown hljs"><span id="cb9-1" class="hljs-ln-code"><a href=""></a><span class="in">```{python}</span></span>
+<span id="cb9-2" class="hljs-ln-code"><a href=""></a><span class="in">#| code-fold: true</span></span>
+<span id="cb9-3" class="hljs-ln-code"><a href=""></a><span class="in"># print_styled("&lt;h2&gt;7. Weighted Residual Method and Galerkin's Method&lt;/h2&gt;")</span></span>
+<span id="cb9-4" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("Let's revisit the core idea from a different perspective.",htm=True,size='1.5em')</span></span>
+<span id="cb9-5" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("Our original differential equation is $A(y) = F$, where $A$ is the differential operator.")</span></span>
+<span id="cb9-6" class="hljs-ln-code"><a href=""></a><span class="in">def differential_operator(y):</span></span>
+<span id="cb9-7" class="hljs-ln-code"><a href=""></a><span class="in">    """Define the strong form of the 1D differential equation"""</span></span>
+<span id="cb9-8" class="hljs-ln-code"><a href=""></a><span class="in">    return A * diff(y, x, 2) + B * diff(y, x) + C * y</span></span>
+<span id="cb9-9" class="hljs-ln-code"><a href=""></a><span class="in">eq = sp.Eq(differential_operator(y), F)</span></span>
+<span id="cb9-10" class="hljs-ln-code"><a href=""></a><span class="in">Lprint(eq)</span></span>
+<span id="cb9-11" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("next, we will represent the $y(x)$ as a linear combination of basis functions $\phi_j(x)$, resulting in an approximated function $y^N(x) ≈ y(x)$:")</span></span>
+<span id="cb9-12" class="hljs-ln-code"><a href=""></a></span>
+<span id="cb9-13" class="hljs-ln-code"><a href=""></a><span class="in">yn = Function('y^N')(x)</span></span>
+<span id="cb9-14" class="hljs-ln-code"><a href=""></a><span class="in">Lprint(Eq(yn, y_approx, evaluate=False))</span></span>
+<span id="cb9-15" class="hljs-ln-code"><a href=""></a></span>
+<span id="cb9-16" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("Now, we can define the residual $r^N(x)$ for the approximate solution $y^N(x) given by $A(y^N)-F=r^N$:")</span></span>
+<span id="cb9-17" class="hljs-ln-code"><a href=""></a><span class="in">A_op = lambda func: A * diff(func, x, 2) + B * diff(func, x) + C * func</span></span>
+<span id="cb9-18" class="hljs-ln-code"><a href=""></a><span class="in">r_N = Symbol('r^N')</span></span>
+<span id="cb9-19" class="hljs-ln-code"><a href=""></a><span class="in"># Use y_approx definition from Section 2</span></span>
+<span id="cb9-20" class="hljs-ln-code"><a href=""></a><span class="in">residual_def = Eq(r_N, A_op(y_approx) - F, evaluate=False)</span></span>
+<span id="cb9-21" class="hljs-ln-code"><a href=""></a><span class="in">Lprint(residual_def)</span></span>
+<span id="cb9-22" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("The residual $r^N(x)$ is the difference between the left and right sides of the equation. In other words, it is the error in the approximation of the solution we seek.")</span></span>
+<span id="cb9-23" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("The goal of FEM is to make this residual 'small' in some sense.")</span></span>
+<span id="cb9-24" class="hljs-ln-code"><a href=""></a><span class="in">n = sp.Symbol('n', integer=True, positive=True)</span></span>
+<span id="cb9-25" class="hljs-ln-code"><a href=""></a><span class="in">x_sym = sp.MatrixSymbol('x', n, 1) # n x 1 column vector</span></span>
+<span id="cb9-26" class="hljs-ln-code"><a href=""></a><span class="in">PI = sp.Symbol('PI', positive=True) </span></span>
+<span id="cb9-27" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("Since $r^N$ is a function defined on the domain $[0,L]$, we can measure its 'size' using the integral:")</span></span>
+<span id="cb9-28" class="hljs-ln-code"><a href=""></a><span class="in">Lprint(Eq(PI,Integral(r_N**2, (x, 0, L)),evaluate=False))</span></span>
+<span id="cb9-29" class="hljs-ln-code"><a href=""></a><span class="in">print_styled(" A possible approach of minimizing $\Pi$ is by taking the drivative of $\Pi$ with respect to the coefficients $a_j$ and setting it to zero.")</span></span>
+<span id="cb9-30" class="hljs-ln-code"><a href=""></a><span class="in">```</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div style="margin: 5px 0; font-size: 1.5em;">Let's revisit the core idea from a different perspective.</div>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Our original differential equation is <span class="math inline">\(A(y) = F\)</span>, where <span class="math inline">\(A\)</span> is the differential operator.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle A \frac{d^{2}}{d x^{2}} y{\left(x \right)} + B \frac{d}{d x} y{\left(x \right)} + C y{\left(x \right)} = F{\left(x \right)}\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>next, we will represent the <span class="math inline">\(y(x)\)</span> as a linear combination of basis functions <span class="math inline">\(\phi_j(x)\)</span>, resulting in an approximated function <span class="math inline">\(y^N(x) ≈ y(x)\)</span>:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle y^{N}{\left(x \right)} = \sum_{j=1}^{N} {a}_{j} \phi_{j}(x)\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Now, we can define the residual <span class="math inline">\(r^N(x)\)</span> for the approximate solution $y^N(x) given by <span class="math inline">\(A(y^N)-F=r^N\)</span>:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle r^{N} = A \sum_{j=1}^{N} {a}_{j} \frac{d^{2}}{d x^{2}} \phi_{j}(x) + B \sum_{j=1}^{N} {a}_{j} \frac{d}{d x} \phi_{j}(x) + C \sum_{j=1}^{N} {a}_{j} \phi_{j}(x) - F{\left(x \right)}\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>The residual <span class="math inline">\(r^N(x)\)</span> is the difference between the left and right sides of the equation. In other words, it is the error in the approximation of the solution we seek.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>The goal of FEM is to make this residual ‘small’ in some sense.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Since <span class="math inline">\(r^N\)</span> is a function defined on the domain <span class="math inline">\([0,L]\)</span>, we can measure its ‘size’ using the integral:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \pi = \int\limits_{0}^{L} \left(r^{N}\right)^{2}\, dx\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>A possible approach of minimizing <span class="math inline">\(\Pi\)</span> is by taking the drivative of <span class="math inline">\(\Pi\)</span> with respect to the coefficients <span class="math inline">\(a_j\)</span> and setting it to zero.</p>
+</div>
+</div>
+</section>
+<section id="introduction-to-weighted-residuals-and-galerkins-method-1" class="slide level2 smaller scrollable" data-auto-animate="true">
+<h2 data-id="quarto-animate-title">7.2 Introduction to Weighted Residuals and Galerkin’s Method</h2>
+<div id="2e4f055b" class="cell" data-execution_count="10">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource markdown number-lines code-with-copy" data-id="quarto-animate-code"><code class="sourceCode markdown hljs"><span id="cb10-1" class="hljs-ln-code"><a href=""></a><span class="in">```{python}</span></span>
+<span id="cb10-2" class="hljs-ln-code"><a href=""></a><span class="in">#| code-fold: true</span></span>
+<span id="cb10-3" class="hljs-ln-code"><a href=""></a><span class="in"># print_styled("&lt;h2&gt;7. Weighted Residual Method and Galerkin's Method&lt;/h2&gt;")</span></span>
+<span id="cb10-4" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("In the Galerkin approach, we start by defining weighting functions $w_i(x)$.")</span></span>
+<span id="cb10-5" class="hljs-ln-code"><a href=""></a><span class="in">w = Function('w')</span></span>
+<span id="cb10-6" class="hljs-ln-code"><a href=""></a><span class="in">weighted_residual_eq = Eq(Integral(r_N * w(i, x), (x, 0, L)), 0)</span></span>
+<span id="cb10-7" class="hljs-ln-code"><a href=""></a><span class="in">Lprint(weighted_residual_eq) </span></span>
+<span id="cb10-8" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("The **Method of Weighted Residuals** requires the residual to be orthogonal to the *weighting functions*, $w_i(x)$")</span></span>
+<span id="cb10-9" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("The **Galerkin Method** makes a specific choice: use the *same* functions for weighting as for the basis/shape functions.")</span></span>
+<span id="cb10-10" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("This means we set $w_i(x) = \phi_i(x)$ in the weighted residual equation:")</span></span>
+<span id="cb10-11" class="hljs-ln-code"><a href=""></a><span class="in">galerkin_eq_from_WR = weighted_residual_eq.subs({w(i,x): phi(i,x)})</span></span>
+<span id="cb10-12" class="hljs-ln-code"><a href=""></a><span class="in">Lprint(galerkin_eq_from_WR)</span></span>
+<span id="cb10-13" class="hljs-ln-code"><a href=""></a><span class="in">print_styled(r"This must hold for $i = 1, 2, ..., N$.")</span></span>
+<span id="cb10-14" class="hljs-ln-code"><a href=""></a></span>
+<span id="cb10-15" class="hljs-ln-code"><a href=""></a></span>
+<span id="cb10-16" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("Substituting the definition of $r^N$ into the Galerkin equation gives:")</span></span>
+<span id="cb10-17" class="hljs-ln-code"><a href=""></a><span class="in">galerkin_expanded = galerkin_eq_from_WR.subs({r_N: A_op(y_approx) - F})</span></span>
+<span id="cb10-18" class="hljs-ln-code"><a href=""></a><span class="in">Lprint(galerkin_expanded) # Display SymPy generated expanded Galerkin eq</span></span>
+<span id="cb10-19" class="hljs-ln-code"><a href=""></a></span>
+<span id="cb10-20" class="hljs-ln-code"><a href=""></a></span>
+<span id="cb10-21" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("Applying integration by parts to the second derivative term (and assuming boundary terms like we did in the pevious lecture and requiring that $\phi_i$ satisfy the boundary conditions (as we did with $v(x)$) we obtain:")</span></span>
+<span id="cb10-22" class="hljs-ln-code"><a href=""></a><span class="in"># Display the result conceptually using print_styled (Markdown version) with LaTeX</span></span>
+<span id="cb10-23" class="hljs-ln-code"><a href=""></a><span class="in">print_styled(r"$\int_0^L \left( -A \frac{d\phi_i}{dx} \sum_{j=1}^N\frac{d\phi_j}{dx} + B \phi_i \sum_{j=1}^N\frac{d\phi_j}{dx} + C \phi_i \sum_{j=1}^N\phi_j - \phi_i F \right) dx = 0$",htm=False)</span></span>
+<span id="cb10-24" class="hljs-ln-code"><a href=""></a></span>
+<span id="cb10-25" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("Notice that this equation is the *exact same* $i$-th equation we derived earlier from the weak form.")</span></span>
+<span id="cb10-26" class="hljs-ln-code"><a href=""></a><span class="in">print_styled("Therefore, the Galerkin method provides a powerful theoretical justification for the weak form procedure: it systematically minimizes the residual by making it orthogonal to the basis functions used for the approximation.")</span></span>
+<span id="cb10-27" class="hljs-ln-code"><a href=""></a><span class="in">```</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>In the Galerkin approach, we start by defining weighting functions <span class="math inline">\(w_i(x)\)</span>.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \int\limits_{0}^{L} r^{N} w{\left(i,x \right)}\, dx = 0\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>The <strong>Method of Weighted Residuals</strong> requires the residual to be orthogonal to the <em>weighting functions</em>, <span class="math inline">\(w_i(x)\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>The <strong>Galerkin Method</strong> makes a specific choice: use the <em>same</em> functions for weighting as for the basis/shape functions.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This means we set <span class="math inline">\(w_i(x) = \phi_i(x)\)</span> in the weighted residual equation:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \int\limits_{0}^{L} r^{N} \phi_{i}(x)\, dx = 0\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>This must hold for <span class="math inline">\(i = 1, 2, ..., N\)</span>.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Substituting the definition of <span class="math inline">\(r^N\)</span> into the Galerkin equation gives:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \int\limits_{0}^{L} \left(A \sum_{j=1}^{N} {a}_{j} \frac{d^{2}}{d x^{2}} \phi_{j}(x) + B \sum_{j=1}^{N} {a}_{j} \frac{d}{d x} \phi_{j}(x) + C \sum_{j=1}^{N} {a}_{j} \phi_{j}(x) - F{\left(x \right)}\right) \phi_{i}(x)\, dx = 0\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Applying integration by parts to the second derivative term (and assuming boundary terms like we did in the pevious lecture and requiring that <span class="math inline">\(\phi_i\)</span> satisfy the boundary conditions (as we did with <span class="math inline">\(v(x)\)</span>) we obtain:</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\int_0^L \left( -A \frac{d\phi_i}{dx} \sum_{j=1}^N\frac{d\phi_j}{dx} + B \phi_i \sum_{j=1}^N\frac{d\phi_j}{dx} + C \phi_i \sum_{j=1}^N\phi_j - \phi_i F \right) dx = 0\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Notice that this equation is the <em>exact same</em> <span class="math inline">\(i\)</span>-th equation we derived earlier from the weak form.</p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p>Therefore, the Galerkin method provides a powerful theoretical justification for the weak form procedure: it systematically minimizes the residual by making it orthogonal to the basis functions used for the approximation.</p>
+</div>
+</div>
+</section>
+<section class="slide level2">
+
+
+</section>
+    </div>
+  <div class="quarto-auto-generated-content" style="display: none;">
+<div class="footer footer-default">
+
+</div>
+</div></div>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script>
+  <script src="Lecture2_files/libs/revealjs/dist/reveal.js"></script>
+  <!-- reveal.js plugins -->
+  <script src="Lecture2_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.js"></script>
+  <script src="Lecture2_files/libs/revealjs/plugin/pdf-export/pdfexport.js"></script>
+  <script src="Lecture2_files/libs/revealjs/plugin/reveal-menu/menu.js"></script>
+  <script src="Lecture2_files/libs/revealjs/plugin/reveal-menu/quarto-menu.js"></script>
+  <script src="Lecture2_files/libs/revealjs/plugin/multiplex/socket.io.js"></script>
+  <script src="Lecture2_files/libs/revealjs/plugin/multiplex/multiplex.js"></script>
+  <script src="Lecture2_files/libs/revealjs/plugin/quarto-support/support.js"></script>
+  
+
+  <script src="Lecture2_files/libs/revealjs/plugin/notes/notes.js"></script>
+  <script src="Lecture2_files/libs/revealjs/plugin/search/search.js"></script>
+  <script src="Lecture2_files/libs/revealjs/plugin/zoom/zoom.js"></script>
+  <script src="Lecture2_files/libs/revealjs/plugin/math/math.js"></script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+'controlsAuto': false,
+'previewLinksAuto': false,
+'pdfSeparateFragments': false,
+'autoAnimateEasing': "ease",
+'autoAnimateDuration': 1,
+'autoAnimateUnmatched': true,
+'jumpToSlide': true,
+'menu': {"side":"left","useTextContentForMissingTitles":true,"markers":false,"loadIcons":false,"custom":[{"title":"Tools","icon":"<i class=\"fas fa-gear\"></i>","content":"<ul class=\"slide-menu-items\">\n<li class=\"slide-tool-item active\" data-item=\"0\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.fullscreen(event)\"><kbd>f</kbd> Fullscreen</a></li>\n<li class=\"slide-tool-item\" data-item=\"1\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.speakerMode(event)\"><kbd>s</kbd> Speaker View</a></li>\n<li class=\"slide-tool-item\" data-item=\"2\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.overview(event)\"><kbd>o</kbd> Slide Overview</a></li>\n<li class=\"slide-tool-item\" data-item=\"3\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.togglePdfExport(event)\"><kbd>e</kbd> PDF Export Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"4\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleScrollView(event)\"><kbd>r</kbd> Scroll View Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"5\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.keyboardHelp(event)\"><kbd>?</kbd> Keyboard Help</a></li>\n</ul>"}],"openButton":true},
+'multiplex': {"secret":"17440998825207351516","id":"fa90d44088ec38a3","url":"https://reveal-multiplex.glitch.me/"},
+'smaller': false,
+ 
+        // Display controls in the bottom right corner
+        controls: true,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: false,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'edges',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: 'c/t',
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: true,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: true,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: false,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'linear',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: false,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'none',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'none',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // The "normal" size of the presentation, aspect ratio will be preserved
+        // when the presentation is scaled to fit different resolutions. Can be
+        // specified using percentage units.
+        width: 1050,
+
+        height: 700,
+
+        // Factor of the display size that should remain empty around the content
+        margin: 0.1,
+
+        math: {
+          mathjax: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/MathJax.js',
+          config: 'TeX-AMS_HTML-full',
+          tex2jax: {
+            inlineMath: [['\\(','\\)']],
+            displayMath: [['\\[','\\]']],
+            balanceBraces: true,
+            processEscapes: false,
+            processRefs: true,
+            processEnvironments: true,
+            preview: 'TeX',
+            skipTags: ['script','noscript','style','textarea','pre','code'],
+            ignoreClass: 'tex2jax_ignore',
+            processClass: 'tex2jax_process'
+          },
+        },
+
+        // reveal.js plugins
+        plugins: [QuartoLineHighlight, PdfExport, RevealMenu, QuartoSupport,
+
+          RevealMath,
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    <script id="quarto-html-after-body" type="application/javascript">
+    window.document.addEventListener("DOMContentLoaded", function (event) {
+      const toggleBodyColorMode = (bsSheetEl) => {
+        const mode = bsSheetEl.getAttribute("data-mode");
+        const bodyEl = window.document.querySelector("body");
+        if (mode === "dark") {
+          bodyEl.classList.add("quarto-dark");
+          bodyEl.classList.remove("quarto-light");
+        } else {
+          bodyEl.classList.add("quarto-light");
+          bodyEl.classList.remove("quarto-dark");
+        }
+      }
+      const toggleBodyColorPrimary = () => {
+        const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+        if (bsSheetEl) {
+          toggleBodyColorMode(bsSheetEl);
+        }
+      }
+      toggleBodyColorPrimary();  
+      const tabsets =  window.document.querySelectorAll(".panel-tabset-tabby")
+      tabsets.forEach(function(tabset) {
+        const tabby = new Tabby('#' + tabset.id);
+      });
+      const isCodeAnnotation = (el) => {
+        for (const clz of el.classList) {
+          if (clz.startsWith('code-annotation-')) {                     
+            return true;
+          }
+        }
+        return false;
+      }
+      const onCopySuccess = function(e) {
+        // button target
+        const button = e.trigger;
+        // don't keep focus
+        button.blur();
+        // flash "checked"
+        button.classList.add('code-copy-button-checked');
+        var currentTitle = button.getAttribute("title");
+        button.setAttribute("title", "Copied!");
+        let tooltip;
+        if (window.bootstrap) {
+          button.setAttribute("data-bs-toggle", "tooltip");
+          button.setAttribute("data-bs-placement", "left");
+          button.setAttribute("data-bs-title", "Copied!");
+          tooltip = new bootstrap.Tooltip(button, 
+            { trigger: "manual", 
+              customClass: "code-copy-button-tooltip",
+              offset: [0, -8]});
+          tooltip.show();    
+        }
+        setTimeout(function() {
+          if (tooltip) {
+            tooltip.hide();
+            button.removeAttribute("data-bs-title");
+            button.removeAttribute("data-bs-toggle");
+            button.removeAttribute("data-bs-placement");
+          }
+          button.setAttribute("title", currentTitle);
+          button.classList.remove('code-copy-button-checked');
+        }, 1000);
+        // clear code selection
+        e.clearSelection();
+      }
+      const getTextToCopy = function(trigger) {
+          const codeEl = trigger.previousElementSibling.cloneNode(true);
+          for (const childEl of codeEl.children) {
+            if (isCodeAnnotation(childEl)) {
+              childEl.remove();
+            }
+          }
+          return codeEl.innerText;
+      }
+      const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+        text: getTextToCopy
+      });
+      clipboard.on('success', onCopySuccess);
+      if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+        const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+          text: getTextToCopy,
+          container: window.document.getElementById('quarto-embedded-source-code-modal')
+        });
+        clipboardModal.on('success', onCopySuccess);
+      }
+        var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+        var mailtoRegex = new RegExp(/^mailto:/);
+          var filterRegex = new RegExp('/' + window.location.host + '/');
+        var isInternal = (href) => {
+            return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+        }
+        // Inspect non-navigation links and adorn them if external
+     	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+        for (var i=0; i<links.length; i++) {
+          const link = links[i];
+          if (!isInternal(link.href)) {
+            // undo the damage that might have been done by quarto-nav.js in the case of
+            // links that we want to consider external
+            if (link.dataset.originalHref !== undefined) {
+              link.href = link.dataset.originalHref;
+            }
+          }
+        }
+      function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+        const config = {
+          allowHTML: true,
+          maxWidth: 500,
+          delay: 100,
+          arrow: false,
+          appendTo: function(el) {
+              return el.closest('section.slide') || el.parentElement;
+          },
+          interactive: true,
+          interactiveBorder: 10,
+          theme: 'light-border',
+          placement: 'bottom-start',
+        };
+        if (contentFn) {
+          config.content = contentFn;
+        }
+        if (onTriggerFn) {
+          config.onTrigger = onTriggerFn;
+        }
+        if (onUntriggerFn) {
+          config.onUntrigger = onUntriggerFn;
+        }
+          config['offset'] = [0,0];
+          config['maxWidth'] = 700;
+        window.tippy(el, config); 
+      }
+      const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+      for (var i=0; i<noterefs.length; i++) {
+        const ref = noterefs[i];
+        tippyHover(ref, function() {
+          // use id or data attribute instead here
+          let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+          try { href = new URL(href).hash; } catch {}
+          const id = href.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note) {
+            return note.innerHTML;
+          } else {
+            return "";
+          }
+        });
+      }
+      const findCites = (el) => {
+        const parentEl = el.parentElement;
+        if (parentEl) {
+          const cites = parentEl.dataset.cites;
+          if (cites) {
+            return {
+              el,
+              cites: cites.split(' ')
+            };
+          } else {
+            return findCites(el.parentElement)
+          }
+        } else {
+          return undefined;
+        }
+      };
+      var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+      for (var i=0; i<bibliorefs.length; i++) {
+        const ref = bibliorefs[i];
+        const citeInfo = findCites(ref);
+        if (citeInfo) {
+          tippyHover(citeInfo.el, function() {
+            var popup = window.document.createElement('div');
+            citeInfo.cites.forEach(function(cite) {
+              var citeDiv = window.document.createElement('div');
+              citeDiv.classList.add('hanging-indent');
+              citeDiv.classList.add('csl-entry');
+              var biblioDiv = window.document.getElementById('ref-' + cite);
+              if (biblioDiv) {
+                citeDiv.innerHTML = biblioDiv.innerHTML;
+              }
+              popup.appendChild(citeDiv);
+            });
+            return popup.innerHTML;
+          });
+        }
+      }
+    });
+    </script>
+    
+
+</body></html>

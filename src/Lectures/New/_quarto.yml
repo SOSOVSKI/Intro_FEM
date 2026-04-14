@@ -1,0 +1,86 @@
+project:
+  type: book
+  output-dir: _output
+
+book:
+  title: "Introduction to the Finite Element Method"
+  author: "Shmuel Osovski"
+  date: "2025"
+  chapters:
+    - index.qmd
+    - part: "Part I: Foundations"
+      chapters:
+        - ch01-introduction.qmd
+        - ch02-algebraic-system.qmd
+        - ch03-function-spaces.qmd
+    - part: "Part II: 1D Finite Elements"
+      chapters:
+        - ch04-1d-fem.qmd
+        - ch05-time-dependent.qmd
+    - part: "Part III: Multi-Dimensional FEM"
+      chapters:
+        - ch06-math-prelim-2d3d.qmd
+        - ch07-b-matrix.qmd
+        - ch08-heat-transfer-2d.qmd
+    - part: "Part IV: Elasticity"
+      chapters:
+        - ch09-continuum-mechanics.qmd
+        - ch10-elasticity-3d.qmd
+    - part: "Part V: Implementation & Error Analysis"
+      chapters:
+        - ch11-fem-implementation.qmd
+        - ch12-error-estimates.qmd
+
+# ---------- Format-specific configuration ----------
+
+format:
+  html:
+    theme: cosmo
+    css: custom.css
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-fold: true
+    code-tools: true
+    embed-resources: false
+    fig-format: svg
+    fig-dpi: 150
+
+  pdf:
+    pdf-engine: pdflatex
+    documentclass: scrbook
+    papersize: a4
+    fontsize: 11pt
+    geometry:
+      - top=25mm
+      - bottom=25mm
+      - left=25mm
+      - right=25mm
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    code-fold: true
+    fig-format: png
+    fig-dpi: 200
+    fig-pos: "htbp"
+    keep-tex: false
+    include-in-header:
+      text: |
+        \usepackage{amsmath,amssymb,amsfonts}
+        \usepackage{bm}
+        \usepackage{algorithm2e}
+        \usepackage{booktabs}
+
+# ---------- Global execution options ----------
+
+execute:
+  echo: true
+  warning: false
+  freeze: auto
+
+jupyter: python3
+
+# ---------- Cross-references ----------
+
+crossref:
+  chapters: true

@@ -1,0 +1,164 @@
+---
+title: "2D Heat Transfer"
+---
+
+## The Strong Form
+
+The governing equation for 2D heat transfer is:
+
+$$\text{div}(\mathbf{K} \cdot \text{grad}(T)) + Q = 0$$
+
+with boundary conditions:
+
+$$T=T_A \text{ on } \partial\Omega_A, \quad q=q^* \text{ on } \partial\Omega_B$$
+
+where:
+- $\mathbf{K}$ is the thermal conductivity tensor
+- $Q$ is the heat source term
+- $q^*$ is a heat flux boundary condition
+
+## The Weak Form
+
+To develop the weak form, we multiply the strong form by a test function $V$ and integrate over the domain:
+
+$$\int_{\Omega} \text{grad}(V) \cdot \mathbf{K} \cdot \text{grad}(T) \, d\Omega = \int_{\Omega} Q V \, d\Omega - \int_{\partial\Omega_B}Vq^* \, da$$
+
+### Test and Trial Functions
+
+We choose to take both test and trial functions from the same function space, which is spanned by the shape functions ${\phi}_i$ defined via the master element coordinates $(\zeta_1, \zeta_2)$ and master element shape functions $\hat{\phi}$.
+
+$$\begin{aligned}
+T=\sum_{j=1}^N a_j \phi_j \\
+V=\sum_{i=1}^N b_i \phi_i
+\end{aligned}$$
+
+Replacing the integral over sums with sum over integrals:
+
+$$\sum_{i=1}^Nb_i\left[ \sum_{j=1}^N \left(\int_{\Omega}\text{grad}{\phi_i} \cdot \mathbf{K} \cdot \text{grad}{\phi_j} \, d\Omega\right) a_j \right]   -\sum_{i=1}^Nb_i\left(\int_{\Omega}\phi_i Q d\Omega -\int_{\partial \Omega_B}\phi_iq^*da\right)=0$$
+
+## Element Stiffness Matrix
+
+The above equation represents a summation of **element** integrals over **all nodes**.
+
+For element $e$ whose nodes are $I,J$:
+
+$$K_{IJ}^e = \int_{\Omega^e}\text{grad}{\phi_I} \cdot \mathbf{K} \cdot \text{grad}{\phi_J} \, d\Omega$$
+
+Assuming isotropic material with constant thermal conductivity $\mathbf{K} = k \mathbf{I}$, we can simplify:
+
+$$K_{IJ}^e = k \int_{\Omega^e}\text{grad}{\phi_I} \cdot \text{grad}{\phi_J} \, d\Omega$$
+
+This leads to the element stiffness matrix:
+
+$$[\mathbf{k}^e] = k \int_{\Omega^e} \mathbf{B}^T \mathbf{B} \, d\Omega$$
+
+where $\mathbf{B}$ is the B matrix containing the derivatives of the shape functions $\phi_i$ with respect to global coordinates (x,y):
+
+$$[\mathbf{B}\phi^e] = \begin{bmatrix} \frac{\partial \phi_1}{\partial x_1} & \frac{\partial \phi_1}{\partial x_2} \\ \frac{\partial \phi_2}{\partial x_1} & \frac{\partial \phi_2}{\partial x_2} \\ \frac{\partial \phi_3}{\partial x_1} & \frac{\partial \phi_3}{\partial x_2} \\ \frac{\partial \phi_4}{\partial x_1} & \frac{\partial \phi_4}{\partial x_2} \end{bmatrix}$$
+
+Such that:
+
+$$K^e=\int_{\Omega^e}k[B\phi^e][B\phi^e]^T \, d\Omega$$
+
+## Isoparametric Mapping and Jacobian
+
+Using isoparametric mapping, we can express the shape functions in terms of master element coordinates $(\zeta_1, \zeta_2)$ which are used for interpolating the space as well:
+
+$$\mathbf{x}(\zeta_1, \zeta_2) = \sum_{I=1}^{n_{\text{nodes}}} x_I\hat{\phi}_I(\zeta_1, \zeta_2)$$
+
+The derivatives transform according to:
+
+$$\frac{\partial\phi_I}{\partial x_j}= \sum_{k=1}^{dim}\frac{\partial\hat{\phi}_I}{\partial \zeta_k}\frac{\partial \zeta_k}{\partial x_j}$$
+
+The term $[\mathbf{B}\hat{\phi}^e]_{Ij}$ can be expressed as:
+
+$$\frac{\partial\hat{\phi}_I}{\partial x_j}=\sum_{k=1}^{dim}\frac{\partial{\phi}_I}{\partial x_j}\frac{\partial x_j}{\partial \zeta_k}$$
+
+Or equivalently:
+
+$$\mathbf{B}\hat{\phi^e}=\mathbf{B}\phi^e\mathbf{F} \\
+\mathbf{B}{\phi}^e=\mathbf{B}{\hat{\phi^e}}\mathbf{F}^{-1}$$
+
+With the Jacobian matrix defined as:
+
+$$F_{ij}=\frac{\partial x_i}{\partial \zeta_j}=\sum_{I=1}^{nodes}x_I^j\frac{\partial\hat{\phi}_I(\mathbf{\zeta})}{\partial\zeta_j}$$
+
+The determinant of $\mathbf{F}$ (denoted $J$) is used to transform between the area in the master element and the area in the global coordinates:
+
+$$d\Omega = J d\hat{\Omega}$$
+
+where $J = \det(\mathbf{F})$ and $d\hat{\Omega}$ is the area in the master element coordinates.
+
+## Weak Form Terms in Master Element Coordinates
+
+We can now write all the terms in the weak form at the element level:
+
+$$\begin{aligned}
+\mathbf{K}^e =\int_{\Omega^e} \mathbf{K}(\mathbf{x}(\mathbf{\zeta}))(\mathbf{B}\hat{\phi^e})(\mathbf{F}^T\mathbf{F})^{-1}  (\mathbf{B}\hat{\phi^e})^T \, Jd\hat{\Omega} \\
+\mathbf{f}^e = \int_{\Omega^e} \hat{\phi^e}(\mathbf{\zeta})f(\mathbf{x}(\mathbf{\zeta})) \, Jd\hat{\Omega}
+\end{aligned}$$
+
+## Flux Boundary Condition in Master Element Coordinates
+
+The only remaining task is to define the flux boundary condition $\int_{\partial\Omega_B}\phi_iq^*da$ in terms of the master element coordinates.
+
+We start with relating $da$ (global) and $dA$ (local):
+
+$$d\mathbf{\zeta} = \frac{d\mathbf{\zeta}}{dA} \, dA=\mathbf{M}\, dA \\
+d\mathbf{x} = \frac{d\mathbf{x}}{da} \, da \, = \mathbf{m}\, da$$
+
+The differential area relationship is:
+
+$$dx_i = \sum_{j=1}^{dim}\frac{\partial x_i}{\partial \zeta_j} d\zeta_j = \sum_{j=1}^{dim} F_{ij} d\zeta_j\Rightarrow d\mathbf{x}=\mathbf{F}d\mathbf{\zeta}$$
+
+Using the norm properties:
+
+$$d\mathbf{\zeta} \cdot d\mathbf{\zeta}=dA^2 \quad ; \quad d\mathbf{x} \cdot d\mathbf{x}=da^2$$
+
+$$da^2=\mathbf{F}d\mathbf{\zeta} \cdot \mathbf{F}d\mathbf{\zeta} = dA^2(\mathbf{F}\mathbf{M})\cdot(\mathbf{F}\mathbf{M})$$
+
+Therefore:
+
+$$\frac{da}{dA}=\sqrt{(\mathbf{F}\mathbf{M})^T(\mathbf{F}\mathbf{M})}$$
+
+The boundary integral in terms of master element coordinates becomes:
+
+$$Q_i^s = -\int_{\partial\Omega_B}\phi_iq^*da =  -\int_{\partial\hat{\Omega}_B}\hat{\phi}_i(\mathbf{\zeta})q^*(\mathbf{\zeta}(\mathbf{x}))\sqrt{(\mathbf{F}\mathbf{M})^T(\mathbf{F}\mathbf{M})}dA$$
+
+The flux boundary condition is applied on some line of the 2D element, which means either $\zeta_1$ or $\zeta_2$ will be constant and equal to $\pm 1$.
+
+## 2D Finite Element Assembly Algorithm
+
+::: {.callout-note icon=false title="Algorithm: 2D Finite Element Assembly"}
+
+**Input:** Number of elements $N_e$, Gauss points $n_g$
+
+**Output:** Global stiffness matrix $\mathbf{K}$ and force vector $\mathbf{F}$
+
+**Steps:**
+
+for $\text{elem} = 1$ to $N_e$ do
+
+$\quad$ Set $\mathbf{K}^e = \mathbf{0}$, $\mathbf{f}^e = \mathbf{0}$; Form $\mathbf{X}^e$
+
+$\quad$ for $m = 1$ to $n_g$ do (Gauss points)
+
+$\quad\quad$ for $n = 1$ to $n_g$ do
+
+$\quad\quad\quad$ $\boldsymbol{\zeta} = [\zeta_1, \zeta_2] = [\text{Points}[m], \text{Points}[n]]$
+
+$\quad\quad\quad$ Evaluate $\mathbf{x}(\boldsymbol{\zeta}) = (\mathbf{X}^e)^T \hat{\boldsymbol{\phi}}(\boldsymbol{\zeta})$, $\mathbf{F}$, $\det(\mathbf{F})$
+
+$\quad\quad\quad$ $\mathbf{K}^e \leftarrow \mathbf{K}^e + w_m w_n K(\mathbf{x}(\boldsymbol{\zeta})) \mathbf{D}{\hat{\boldsymbol{\phi}}^e} (\mathbf{F}^T \mathbf{F})^{-1} (\mathbf{D}{\hat{\boldsymbol{\phi}}^e})^T \det(\mathbf{F})$
+
+$\quad\quad\quad$ $\mathbf{f}^e \leftarrow \mathbf{f}^e + w_m w_n f(\mathbf{x}(\boldsymbol{\zeta})) \hat{\boldsymbol{\phi}}(\boldsymbol{\zeta}) \det(\mathbf{F})$
+
+$\quad\quad$ end for
+
+$\quad$ end for
+
+$\quad$ Assemble into global matrix $[\mathbf{K}]{N \times N}$ and vector $[\mathbf{F}]{N \times 1}$
+
+end for
+
+:::

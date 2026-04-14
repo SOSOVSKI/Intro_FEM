@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>symbolic-fem-workbench Docs</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+      --muted2: #475569;
+      --accent: #0f172a;
+      --accentText: #ffffff;
+      --pillBg: #f8fafc;
+      --shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.04);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .hero, .tabs-wrap, .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+    }
+    .hero { padding: 24px; margin-bottom: 20px; }
+    .eyebrow {
+      font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.18em;
+      color: var(--muted); margin: 0 0 8px;
+    }
+    h1 { margin: 0; font-size: clamp(2rem, 4vw, 3rem); line-height: 1.1; }
+    .hero-grid {
+      display: flex; gap: 16px; justify-content: space-between; align-items: flex-end; flex-wrap: wrap;
+    }
+    .hero p.desc { max-width: 760px; margin: 14px 0 0; color: var(--muted2); }
+    .pill-row, .pills { display: flex; gap: 8px; flex-wrap: wrap; }
+    .pill {
+      display: inline-flex; padding: 6px 12px; font-size: 12px; font-weight: 600; color: var(--muted2);
+      background: var(--pillBg); border: 1px solid var(--border); border-radius: 999px; white-space: nowrap;
+    }
+    .tabs-wrap { padding: 8px; overflow-x: auto; margin-bottom: 20px; }
+    .tabs { display: flex; gap: 8px; min-width: max-content; }
+    .tab {
+      border: 0; border-radius: 14px; padding: 10px 16px; background: #f8fafc; color: var(--muted2);
+      font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+    .tab.active { background: var(--accent); color: var(--accentText); }
+    .grid-2 { display: grid; gap: 16px; grid-template-columns: repeat(1, minmax(0, 1fr)); }
+    @media (min-width: 850px) { .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .stack { display: grid; gap: 16px; }
+    .card { padding: 20px; }
+    .card h3 { margin: 0; font-size: 1.1rem; }
+    .subtitle { margin-top: 6px; font-size: 0.92rem; color: var(--muted); }
+    ul, ol { margin: 0; padding-left: 20px; }
+    li + li { margin-top: 8px; }
+    p { margin: 0; }
+    .mt { margin-top: 12px; }
+    pre {
+      overflow-x: auto; border-radius: 16px; background: #f8fafc; border: 1px solid var(--border);
+      padding: 16px; font-size: 12px; color: #0f172a;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="hero">
+      <div class="hero-grid">
+        <div>
+          <p class="eyebrow">Package documentation</p>
+          <h1>symbolic-fem-workbench</h1>
+          <p class="desc">
+            Documentation for the teaching-first symbolic FEM package, with tabs for structure, workflow,
+            modules, examples, teaching use, and roadmap. Because code and docs occasionally deserve to agree.
+          </p>
+        </div>
+        <div class="pill-row">
+          <span class="pill">SymPy-first</span>
+          <span class="pill">Teaching-first</span>
+          <span class="pill">Local tensors visible</span>
+          <span class="pill">Assembly still manual</span>
+          <span class="pill">uv-managed project</span>
+        </div>
+      </div>
+    </header>
+
+    <nav class="tabs-wrap">
+      <div class="tabs" id="tabs"></div>
+    </nav>
+
+    <main id="content"></main>
+  </div>
+
+  <script>
+    const tabs = ["Overview", "Structure", "Workflow", "Modules", "Examples", "Teaching", "Roadmap"];
+    const packageTree = `src/symbolic_fem_workbench/\n  symbols.py\n  forms.py\n  transforms.py\n  fe_spaces.py\n  reference.py\n  quadrature.py\n  extract.py\n  validate.py\n  workflow.py\n  assembly.py\n  printers/\n    iheartla_printer.py\n  codegen/\n    iheartla_backend.py`;
+    const workflowSteps = [
+      { title: "1. Define symbolic objects", body: "Start with domains, coordinates, fields, test functions, and coefficients. The package should make these explicit instead of flattening everything into anonymous SymPy symbols." },
+      { title: "2. Build the weighted residual and weak form", body: "Use the transform helpers to move from the strong statement to a weighted residual and then to a weak form through explicit divergence-form integration by parts and boundary handling." },
+      { title: "3. Insert local FE approximations", body: "Use the FE-space helpers and reference-element definitions to substitute local trial and test expansions. This is where continuous fields become element-level algebra." },
+      { title: "4. Integrate and extract local tensors", body: "Use quadrature or exact symbolic integration where appropriate, then extract coefficient matrices and vectors to recover K_e and f_e." },
+      { title: "5. Assemble globally in plain Python", body: "Assembly remains visible. Connectivity, local-to-global indexing, Dirichlet elimination, and solving should stay understandable to students rather than disappearing behind a framework wall." },
+      { title: "6. Export local algebra only at the end", body: "Use the printer/codegen layer only after the mathematics is settled. I❤️LA should be a narrow backend bridge, not a substitute for formulation." },
+    ];
+    const modules = [
+      { name: "symbols.py", purpose: "Teaching-first symbolic building blocks for domains, coordinates, and fields.", exports: ["Domain objects", "field constructors", "coordinate helpers"] },
+      { name: "forms.py", purpose: "Structured containers for domain integrals, boundary terms, weighted residuals, and split weak forms.", exports: ["DomainIntegral", "BoundaryContribution", "WeightedResidual", "WeakForm"] },
+      { name: "transforms.py", purpose: "Explicit symbolic transformations: weighting, integration by parts, BC handling, FE substitution, pullback, and linearization.", exports: ["weighted_residual", "integrate_divergence_*", "boundary helpers", "substitute_fe", "gateaux_derivative"] },
+      { name: "fe_spaces.py", purpose: "Finite-element-space helpers and local trial/test expansions.", exports: ["1D element helpers", "local_trial_expansion", "local_test_expansion"] },
+      { name: "reference.py", purpose: "Reference-element definitions, shape functions, gradients, and affine maps.", exports: ["Q1", "Q2", "Hex8", "Tet4", "Tet10", "triangle P1 helpers"] },
+      { name: "quadrature.py", purpose: "Reference-domain quadrature and exact symbolic integration helpers.", exports: ["triangle rules", "quad rules", "hex rules", "tet rules"] },
+      { name: "extract.py", purpose: "Extraction of coefficient matrices and vectors from symbolic FE expressions.", exports: ["extract_coefficient_matrix", "extract_coefficient_vector"] },
+      { name: "validate.py", purpose: "Validation helpers for workflow sanity checks and future guards.", exports: ["linearity checks", "dependency checks", "consistency checks"] },
+      { name: "workflow.py", purpose: "Course-ready worked pipelines that connect the lower-level pieces.", exports: ["1D bar workflow", "triangle Poisson workflow"] },
+      { name: "assembly.py", purpose: "Manual global assembly helpers kept explicit for teaching purposes.", exports: ["assemble_dense_matrix", "assemble_dense_vector", "apply_dirichlet_by_reduction", "expand_reduced_solution"] },
+      { name: "printers/iheartla_printer.py", purpose: "Narrow formatting layer for local expressions that are ready to become I❤️LA text.", exports: ["small matrix/vector/scalar printer helpers"] },
+      { name: "codegen/iheartla_backend.py", purpose: "Backend glue for exporting or compiling finalized local algebra through I❤️LA.", exports: ["backend bridge helpers"] },
+    ];
+    const examples = [
+      { title: "bar_1d_workflow.py", focus: "Strong form to weak form to element tensors in 1D." },
+      { title: "triangle_p1_poisson_workflow.py", focus: "Reference-triangle Poisson element pipeline in 2D." },
+      { title: "manual_assembly_square_4tri.py", focus: "Manual local-to-global assembly on a tiny 2D mesh." },
+      { title: "reference_element_library_demo.py", focus: "Inspection of reference elements, shape functions, and gradients." },
+    ];
+    const teachingTopics = [
+      { topic: "Weak form before coding", body: "Use the package to show that weighting, integration by parts, and boundary-term reasoning are mathematical steps, not software magic." },
+      { topic: "Discretization as a visible substitution", body: "Students should see u_h and v_h inserted explicitly and watch the local matrix emerge from symbolic algebra." },
+      { topic: "Assembly as its own topic", body: "Keep local tensor derivation separate from topology and bookkeeping so students can debug one layer at a time." },
+      { topic: "2D and 3D as geometry extensions", body: "Reference elements, mappings, Jacobians, and quadrature become the new ideas, not a total rewrite of the method." },
+    ];
+    const roadmap = [
+      "Expand validate.py so it catches linearity mistakes, missing Jacobians, and trial/test misuse early.",
+      "Broaden workflow examples carefully instead of turning the package into a giant abstraction pile.",
+      "Keep the I❤️LA bridge narrow and local-expression focused.",
+      "Add notebook teaching assets that mirror lecture progression without becoming the main codebase.",
+    ];
+
+    function pill(text) { return `<span class="pill">${text}</span>`; }
+    function card(title, body, subtitle = "") {
+      return `<section class="card"><h3>${title}</h3>${subtitle ? `<p class="subtitle">${subtitle}</p>` : ""}<div class="mt">${body}</div></section>`;
+    }
+    function renderTab(name) {
+      if (name === "Overview") {
+        return `<div class="grid-2">${card("What this package is", `<p><strong>symbolic-fem-workbench</strong> is a teaching-first symbolic FEM package built around a very unfashionable idea: students should see the mathematics before the software hides it.</p><p class="mt">The package covers symbolic weak-form construction, FE substitution, local tensor extraction, reference-element definitions, quadrature, and manual assembly helpers. It is not trying to be a full FEM framework because that would defeat the point.</p>`)}${card("Design rules", `<ul><li>Keep analytical steps explicit.</li><li>Keep local algebra separate from global topology.</li><li>Use structured weak-form objects instead of expression soup.</li><li>Let code generation come last.</li><li>Prefer clarity over framework theatrics.</li></ul>`)}</div>`;
+      }
+      if (name === "Structure") {
+        return card("Current package structure", `<pre>${packageTree}</pre>`, "This matches the aligned package layout.");
+      }
+      if (name === "Workflow") {
+        return `<div class="grid-2">${workflowSteps.map(step => card(step.title, `<p>${step.body}</p>`)).join("")}</div>`;
+      }
+      if (name === "Modules") {
+        return `<div class="grid-2">${modules.map(m => card(m.name, `<div class="pills">${m.exports.map(pill).join("")}</div>`, m.purpose)).join("")}</div>`;
+      }
+      if (name === "Examples") {
+        return `<div class="grid-2">${examples.map(e => card(e.title, `<p>${e.focus}</p>`)).join("")}</div>`;
+      }
+      if (name === "Teaching") {
+        return `<div class="grid-2">${teachingTopics.map(t => card(t.topic, `<p>${t.body}</p>`)).join("")}</div>`;
+      }
+      if (name === "Roadmap") {
+        return card("Near-term roadmap", `<ul>${roadmap.map(item => `<li>${item}</li>`).join("")}</ul>`);
+      }
+      return "";
+    }
+
+    const tabsRoot = document.getElementById("tabs");
+    const contentRoot = document.getElementById("content");
+    let active = "Overview";
+    function render() {
+      tabsRoot.innerHTML = tabs.map(tab => `<button class="tab ${tab === active ? "active" : ""}" data-tab="${tab}">${tab}</button>`).join("");
+      contentRoot.innerHTML = renderTab(active);
+      tabsRoot.querySelectorAll("button").forEach(btn => {
+        btn.addEventListener("click", () => {
+          active = btn.dataset.tab;
+          render();
+        });
+      });
+    }
+    render();
+  </script>
+</body>
+</html>

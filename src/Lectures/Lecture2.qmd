@@ -1,0 +1,404 @@
+---
+title: "Introduction to the Finite Element Method"
+subtitle: "Lecture 2: Deriving the Algebraic System & Galerkin's Method"
+format: 
+    revealjs:
+        slide-number: true
+        multiplex: true
+        controls: true
+        # incremental: true
+        # center: true
+        # transition: slide
+        margin: 0.1
+        css: fem.css
+execute:
+  echo: true # Show code by default (we'll override for folding)
+  warning: false
+jupyter: python3
+---
+## Setup & Symbolic Definitions
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+
+import sympy as sp
+from sympy import symbols, Function, Derivative, Integral, diff, integrate, Matrix, Symbol, Idx, IndexedBase, Sum, Eq, Q, Wild, MatrixSymbol
+from sympy.printing import pprint, latex
+from IPython.display import Math, display, HTML, Markdown
+import inspect 
+
+# Use HTML for styled print
+def print_styled(text, size="1.1em",htm=False):
+    if htm:
+        display(HTML(f"<div style='margin: 5px 0; font-size: {size};'>{text}</div>"))
+    else:
+        # display(Markdown(f"<div style='margin: 5px 0; font-size: {size};'>{text}</div>"))
+        display(Markdown(text))
+
+def Lprint(expr):
+    """
+    Displays SymPy expressions or raw LaTeX strings using MathJax.
+    """
+    if not isinstance(expr, str) or hasattr(expr, '_repr_latex_'):
+        latex_str = sp.latex(expr, mode='plain')
+    else:
+        latex_str = expr
+    if not latex_str.startswith('$') and not latex_str.startswith('\\('):
+         latex_str = f"${latex_str}$"
+    display(Math(latex_str))
+
+# ---- FACTORY FUNCTION FOR CUSTOM INDEXED FUNCTIONS ----
+def create_latex_indexed_function(symbolic_name: str, latex_symbol: str):
+    """
+    Factory to create a SymPy Function subclass that renders as symbol_{index}(var).
+
+    """
+    class LatexIndexedFunc(Function):
+        
+        _latex_symbol_str = latex_symbol
+        is_commutative = False # Functions are generally not commutative
+
+        def _latex(self, printer):
+
+            if len(self.args) == 2:
+
+                func_name = self._latex_symbol_str
+                index_latex = printer._print(self.args[0])
+                var_latex = printer._print(self.args[1])
+                return rf"{func_name}_{{{index_latex}}}({var_latex})"
+            else:
+                cls_name = self.__class__.__name__
+                args_latex = ", ".join(printer._print(arg) for arg in self.args)
+                return rf"{cls_name}({args_latex})"
+
+    LatexIndexedFunc.__name__ = symbolic_name
+    return LatexIndexedFunc
+
+x, L = symbols('x L', real=True, positive=True)
+i = Symbol('i', integer=True, positive=True)
+j = Symbol('j', integer=True, positive=True)
+N = Symbol('N', integer=True, positive=True)
+y = Function('y')(x)
+v = Function('v')(x)
+A, B, C = symbols('A B C', real=True)
+F = Function('F')(x) 
+phi = create_latex_indexed_function("phi", r"\phi")
+a = IndexedBase('a')
+b = IndexedBase('b')
+```
+
+---
+
+## Last Weak... {auto-animate="true" .smaller .scrollable}
+```{python}
+#| code-fold: true
+#| echo: fenced
+print_styled("Assuming constant A, B, C and Dirichlet BCs v(0)=v(L)=0:")
+weak_term1 = -Integral(A * diff(v, x) * diff(y, x), (x, 0, L))
+weak_term2 = Integral(v * B * diff(y, x), (x, 0, L))
+weak_term3 = Integral(v * C * y, (x, 0, L))
+rhs_term = Integral(v * F, (x, 0, L))
+weak_form_eq = Eq(weak_term1 + weak_term2 + weak_term3, rhs_term)
+print_styled("The weak form is:")
+Lprint(weak_form_eq)
+```
+
+## 2. Discretization using Shape Functions {auto-animate="true" .smaller .scrollable}
+```{python}
+#| code-fold: true
+#| echo: fenced
+print_styled("Assuming constant A, B, C and Dirichlet BCs v(0)=v(L)=0:")
+weak_term1 = -Integral(A * diff(v, x) * diff(y, x), (x, 0, L))
+weak_term2 = Integral(v * B * diff(y, x), (x, 0, L))
+weak_term3 = Integral(v * C * y, (x, 0, L))
+rhs_term = Integral(v * F, (x, 0, L))
+weak_form_eq = Eq(weak_term1 + weak_term2 + weak_term3, rhs_term)
+print_styled("The weak form is:")
+Lprint(weak_form_eq)
+```
+
+
+## Discretization using Shape Functions {auto-animate="true" .smaller .scrollable}
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+print_styled("The weak form is:")
+Lprint(weak_form_eq)
+print_styled(" Substitute Discretized Approximations",htm=True,size='1.5em')
+print_styled("Approximate solution $y(x)$ and test function $v(x)$ using shape functions $\phi_k(x)$:")
+
+y_approx = Sum(a[j] * phi(j,x), (j, 1, N))
+v_approx = Sum(b[i] * phi(i,x), (i, 1, N))
+
+print_styled("Approximate solution $y(x)$:")
+
+Lprint(Eq(y, y_approx, evaluate=False))
+
+print_styled("Test function $v(x)$:")
+
+Lprint(Eq(v, v_approx, evaluate=False))
+
+print_styled("Derivatives:")
+
+dy_dx_approx = Derivative(y_approx, x)
+dv_dx_approx = Derivative(v_approx, x)
+
+Lprint(Eq(Derivative(y,x), dy_dx_approx, evaluate=False))
+
+Lprint(Eq(Derivative(v,x), dv_dx_approx, evaluate=False))
+
+print_styled("Substitute sums into the weak form terms:")
+term1_subst_sym = weak_term1.subs({v: v_approx, y: y_approx})
+term2_subst_sym = weak_term2.subs({v: v_approx, y: y_approx})
+term3_subst_sym = weak_term3.subs({v: v_approx, y: y_approx})
+rhs_subst_sym = rhs_term.subs({v: v_approx})
+
+print_styled("Term 1 ($-\int A v' y' dx$):")
+Lprint(term1_subst_sym)
+print_styled("Term 2 ($\int B v y' dx$):")
+Lprint(term2_subst_sym)
+print_styled("Term 3 ($\int C v y dx$):")
+Lprint(term3_subst_sym)
+print_styled("RHS Term ($\int v F dx$):")
+Lprint(rhs_subst_sym)
+```
+---
+
+## 3. Rearranging the Summation and Integrals {auto-animate="true" .smaller .scrollable}
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+# print_styled("<h2>3. Rearrange Sums and Integrals</h2>")
+print_styled("Assuming continuity, swap integration and summation, then factor out $b_i$.",htm=True,size='1.5em')
+print_styled(r"The weak form $\sum_{\text{term}} (\text{Term}) = \text{RHS}$ becomes:") 
+Lprint(r"\sum_{i=1}^N b_i \left( [\text{Inner part for Term 1}]_i + [\text{Inner part for Term 2}]_i + [\text{Inner part for Term 3}]_i \right) = \sum_{i=1}^N b_i [\text{Inner part for RHS}]_i")
+
+print_styled(r"Where the inner parts (coefficients of $b_i$) are:")
+
+# Define inner terms (these were already correctly defined using SymPy)
+term1_inner = Sum( -A * Integral(diff(phi(i,x), x) * diff(phi(j,x), x), (x, 0, L)) * a[j], (j, 1, N))
+term2_inner = Sum(  B * Integral(phi(i,x) * diff(phi(j,x), x), (x, 0, L)) * a[j], (j, 1, N))
+term3_inner = Sum(  C * Integral(phi(i,x) * phi(j,x), (x, 0, L)) * a[j], (j, 1, N))
+rhs_inner = Integral(phi(i,x) * F, (x, 0, L))
+
+print_styled("Inner part for Term 1 (coefficient of $b_i$):")
+Lprint(term1_inner)
+print_styled("Inner part for Term 2 (coefficient of $b_i$):")
+Lprint(term2_inner)
+print_styled("Inner part for Term 3 (coefficient of $b_i$):")
+Lprint(term3_inner)
+print_styled("Inner part for RHS (coefficient of $b_i$):")
+Lprint(rhs_inner)
+```
+---
+
+## 4. Obtaining N Equations {auto-animate="true" .smaller .scrollable}
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+
+print_styled("The rearranged form is:",htm=True,size='1.5em')
+print_styled("$\\sum_{i=1}^N b_i ( \\text{LHS}_i - \\text{RHS}_i ) = 0$.")
+print_styled("Since this must hold for arbitrary $b_i$, the term in parentheses must be zero for each $i$:")
+print_styled("  $\\text{LHS}_i - \\text{RHS}_i = 0$.")
+
+equation_for_i = Eq(term1_inner + term2_inner + term3_inner, rhs_inner)
+print_styled("This gives N equations (for $i = 1, ..., N$):")
+Lprint(equation_for_i)
+```
+---
+
+## 5. Assemble the Matrix System of Linear Equations {auto-animate="true" .smaller .scrollable}
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+# print_styled(" Assemble the Matrix System K a = F")
+print_styled("The $i$-th equation:")
+print_styled("$\\sum_{j=1}^N [ ... ]_{ij} a_j = F_i$")
+print_styled("leads to the matrix form:")
+print_styled("$K a = F$")
+
+# Define K_ij and F_i symbolically 
+K_ij = -A * Integral(diff(phi(i,x), x) * diff(phi(j,x), x), (x, 0, L)) + \
+        B * Integral(phi(i,x) * diff(phi(j,x), x), (x, 0, L)) + \
+        C * Integral(phi(i,x) * phi(j,x), (x, 0, L))
+F_i = Integral(phi(i,x) * F, (x, 0, L))
+
+print_styled("Where the matrix/vector components are:")
+Lprint(Eq(Symbol('K_{ij}'), K_ij))
+Lprint(Eq(Symbol('F_i'), F_i))
+
+# Define and display symbolic matrix equation 
+K_sym = MatrixSymbol('K', N, N)
+a_sym = MatrixSymbol('a', N, 1)
+F_sym = MatrixSymbol('F', N, 1)
+matrix_eq = Eq(K_sym * a_sym, F_sym, evaluate=False)
+print_styled("The matrix system:")
+Lprint(matrix_eq)
+
+print_styled("Summing over $j$ gives the $i$-th equation:") 
+print_styled("$\\sum_{j=1}^N K_{ij} a_j = F_i$") 
+print_styled("Writing the full system for $i=1, ..., N$ gives the matrix form $Ka=F$:")
+
+latex_matrix_form = r"""
+\begin{bmatrix}
+K_{11} & K_{12} & \dots & K_{1N} \\
+K_{21} & K_{22} & \dots & K_{2N} \\
+\vdots & \vdots & \ddots & \vdots \\
+K_{N1} & K_{N2} & \dots & K_{NN}
+\end{bmatrix}
+\begin{bmatrix}
+a_{1} \\
+a_{2} \\
+\vdots \\
+a_{N}
+\end{bmatrix}
+=
+\begin{bmatrix}
+F_{1} \\
+F_{2} \\
+\vdots \\
+F_{N}
+\end{bmatrix}
+"""
+Lprint(latex_matrix_form)
+
+print_styled("Where the matrix and vector components are defined by the integrals:")
+
+Lprint(Eq(Symbol('K_{ij}'), K_ij))
+Lprint(Eq(Symbol('F_i'), F_i))
+
+print_styled("This linear system $Ka = F$ can be solved for the unknown coefficients vector $a = [a_1, a_2, ..., a_N]^T$.")
+
+
+```
+---
+
+## 6. Note on Boundary Conditions {auto-animate="true" .smaller .scrollable}
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+# print_styled("<h2>6. Note on Boundary Conditions</h2>")
+print_styled("We assumed $y(0)=0$ and $y(L)=0$. How are these applied to the matrix system?")
+print_styled("If using nodal basis functions where:")
+print_styled("$\phi_k(x_{node}) = \delta_{knode}$")
+print_styled(" then:")
+print_styled("$y(x_1) = y(0) = \sum a_j \phi_j(x_1) = a_1$.")
+print_styled("Similarly")
+print_styled("$y(x_N) = y(L) = a_N$.")
+print_styled("So, for $y(0)=y(L)=0$, we know $a_1 = 0$ and $a_N = 0$.")
+print_styled("These known values must be incorporated when solving $Ka=F$. Common methods include:")
+print_styled("  - Modifying the K matrix and F vector (e.g., setting rows/columns to enforce the condition).")
+print_styled("  - Partitioning the system into known and unknown degrees of freedom.")
+print_styled("Handling boundary conditions precisely is a key part of FEM implementation and will be detailed later.")
+
+```
+---
+
+## 7.1 Introduction to Weighted Residuals and Galerkin's Method {auto-animate="true" .smaller .scrollable}
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+# print_styled("<h2>7. Weighted Residual Method and Galerkin's Method</h2>")
+print_styled("Let's revisit the core idea from a different perspective.",htm=True,size='1.5em')
+print_styled("Our original differential equation is $A(y) = F$, where $A$ is the differential operator.")
+def differential_operator(y):
+    """Define the strong form of the 1D differential equation"""
+    return A * diff(y, x, 2) + B * diff(y, x) + C * y
+eq = sp.Eq(differential_operator(y), F)
+Lprint(eq)
+print_styled("next, we will represent the $y(x)$ as a linear combination of basis functions $\phi_j(x)$, resulting in an approximated function $y^N(x) ≈ y(x)$:")
+
+yn = Function('y^N')(x)
+Lprint(Eq(yn, y_approx, evaluate=False))
+
+print_styled("Now, we can define the residual $r^N(x)$ for the approximate solution $y^N(x) given by $A(y^N)-F=r^N$:")
+A_op = lambda func: A * diff(func, x, 2) + B * diff(func, x) + C * func
+r_N = Symbol('r^N')
+# Use y_approx definition from Section 2
+residual_def = Eq(r_N, A_op(y_approx) - F, evaluate=False)
+Lprint(residual_def)
+print_styled("The residual $r^N(x)$ is the difference between the left and right sides of the equation. In other words, it is the error in the approximation of the solution we seek.")
+print_styled("The goal of FEM is to make this residual 'small' in some sense.")
+n = sp.Symbol('n', integer=True, positive=True)
+x_sym = sp.MatrixSymbol('x', n, 1) # n x 1 column vector
+PI = sp.Symbol('PI', positive=True) 
+print_styled("Since $r^N$ is a function defined on the domain $[0,L]$, we can measure its 'size' using the integral:")
+Lprint(Eq(PI,Integral(r_N**2, (x, 0, L)),evaluate=False))
+print_styled(" A possible approach of minimizing $\Pi$ is by taking the drivative of $\Pi$ with respect to the coefficients $a_j$ and setting it to zero.")
+```
+---
+
+## 7.2 Introduction to Weighted Residuals and Galerkin's Method {auto-animate="true" .smaller .scrollable}
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+# print_styled("<h2>7. Weighted Residual Method and Galerkin's Method</h2>")
+print_styled("In the Galerkin approach, we start by defining weighting functions $w_i(x)$.")
+w = Function('w')
+weighted_residual_eq = Eq(Integral(r_N * w(i, x), (x, 0, L)), 0)
+Lprint(weighted_residual_eq) 
+print_styled("The **Method of Weighted Residuals** requires the residual to be orthogonal to the *weighting functions*, $w_i(x)$")
+print_styled("The **Galerkin Method** makes a specific choice: use the *same* functions for weighting as for the basis/shape functions.")
+print_styled("This means we set $w_i(x) = \phi_i(x)$ in the weighted residual equation:")
+galerkin_eq_from_WR = weighted_residual_eq.subs({w(i,x): phi(i,x)})
+Lprint(galerkin_eq_from_WR)
+print_styled(r"This must hold for $i = 1, 2, ..., N$.")
+
+
+print_styled("Substituting the definition of $r^N$ into the Galerkin equation gives:")
+galerkin_expanded = galerkin_eq_from_WR.subs({r_N: A_op(y_approx) - F})
+Lprint(galerkin_expanded) # Display SymPy generated expanded Galerkin eq
+
+
+print_styled("Applying integration by parts to the second derivative term (and assuming boundary terms like we did in the pevious lecture and requiring that $\phi_i$ satisfy the boundary conditions (as we did with $v(x)$) we obtain:")
+# Display the result conceptually using print_styled (Markdown version) with LaTeX
+print_styled(r"$\int_0^L \left( -A \frac{d\phi_i}{dx} \sum_{j=1}^N\frac{d\phi_j}{dx} + B \phi_i \sum_{j=1}^N\frac{d\phi_j}{dx} + C \phi_i \sum_{j=1}^N\phi_j - \phi_i F \right) dx = 0$",htm=False)
+
+print_styled("Notice that this equation is the *exact same* $i$-th equation we derived earlier from the weak form.")
+print_styled("Therefore, the Galerkin method provides a powerful theoretical justification for the weak form procedure: it systematically minimizes the residual by making it orthogonal to the basis functions used for the approximation.")
+
+```
+---
+
+## Symbolic Workbench: Galerkin Discretization {auto-animate="true" .smaller .scrollable}
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+import sys, os; sys.path.insert(0, os.path.abspath(".."))
+from symbolic_fem_workbench import (
+    build_bar_1d_local_problem, LinearElement1D,
+    local_trial_expansion, local_test_expansion,
+    substitute_fe, extract_coefficient_matrix, extract_coefficient_vector,
+)
+
+problem = build_bar_1d_local_problem()
+x_s, L_s = problem["x"], problem["L"]
+u_s, v_s = problem["u"], problem["v"]
+
+print_styled("**Using the symbolic FEM workbench to derive element matrices:**")
+print_styled("Bilinear form a(u,v):")
+Lprint(problem["weak_bilinear"])
+
+element = LinearElement1D(x=x_s, x0=0, x1=L_s)
+N = element.shape_functions
+print_styled(f"Shape functions: N1 = {N[0]}, N2 = {N[1]}")
+print_styled(f"Partition of unity: {sp.simplify(N[0] + N[1])}")
+
+print_styled("**Element stiffness matrix** $K_e$ (extracted by coefficient matching):")
+Lprint(problem["Ke"])
+print_styled("**Element load vector** $f_e$:")
+Lprint(problem["fe"])
+```
+---
+
+

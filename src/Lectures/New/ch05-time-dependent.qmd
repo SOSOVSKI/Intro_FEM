@@ -1,0 +1,201 @@
+---
+title: "Time-Dependent 1D Problems"
+---
+
+## Problem Introduction
+
+In the following, we use the FEM methods for spatial discretization and the finite difference method for time discretization.
+
+Consider the Balance of Linear momentum equation in 1D:
+
+$$
+\begin{aligned}
+\text{grad} \cdot \sigma+f(x,t)&=\rho_0\frac{\partial^2u}{\partial t^2} \\
+&=\rho_0\frac{\partial v}{\partial t} \\
+&=\rho_0 a(x,t)
+\end{aligned}
+$$
+
+where:
+
+- $\sigma(x,t)$ is the stress
+- $f(x,t)$ is the body force
+- $\rho_0$ is the density
+- $u$ is the displacement
+- $v$ is the velocity
+- $a$ is the acceleration
+
+## Single Point in Space
+
+For a specific point in space, we can write the equation as:
+
+$$
+m\dot{v} = F = ma \quad (\text{I})
+$$
+
+where all the forces acting on the point are lumped into a single force $F$ and the mass is $m=\rho_0\Delta x$.
+
+In the following, we will use the Taylor expansion around the time $t+\theta \Delta t$ to expand the quantities of interest at times $t$ and $t+\Delta t$ where $\theta$ is a parameter that can be chosen to optimize the time integration scheme.
+
+### Velocity Expansions
+
+For the velocities:
+
+$$
+\begin{aligned}
+v(t + \Delta t) &= v(t + \theta \Delta t) + \frac{dv}{dt}\bigg|_{t+\theta \Delta t} (1 - \theta) \Delta t + \frac{1}{2} \frac{d^2 v}{dt^2}\bigg|_{t+\theta \Delta t} (1 - \theta)^2 (\Delta t)^2 + O(\Delta t)^3 \quad (2.1)\\
+v(t) &= v(t + \theta \Delta t) - \frac{dv}{dt}\bigg|_{t+\theta \Delta t} \theta \Delta t + \frac{1}{2} \frac{d^2 v}{dt^2}\bigg|_{t+\theta \Delta t} \theta^2 (\Delta t)^2 + O(\Delta t)^3 \quad (2.2)
+\end{aligned}
+$$
+
+### Position Expansions
+
+For the position:
+
+$$
+\begin{aligned}
+u(t + \Delta t) &= u(t + \theta \Delta t) + \frac{du}{dt}\bigg|_{t+\theta \Delta t} (1 - \theta) \Delta t + \frac{1}{2} \frac{d^2 u}{dt^2}\bigg|_{t+\theta \Delta t} (1 - \theta)^2 (\Delta t)^2 + O(\Delta t)^3 \quad (2.3) \\
+u(t) &= u(t + \theta \Delta t) - \frac{du}{dt}\bigg|_{t+\theta \Delta t} \theta \Delta t + \frac{1}{2} \frac{d^2 u}{dt^2}\bigg|_{t+\theta \Delta t} \theta^2 (\Delta t)^2 + O(\Delta t)^3 \quad (2.4)
+\end{aligned}
+$$
+
+### Force Averaging
+
+For the Force we obtain a weighted average of the forces at the two time steps:
+
+$$
+F(t+\theta \Delta t) = \theta F(t+\Delta t) + (1-\theta) F(t) \quad (2.5)
+$$
+
+### Velocity Time Derivative
+
+Subtracting Equations (2.1) and (2.2) we obtain:
+
+$$
+\frac{dv}{dt}\bigg|_{t+\theta \Delta t} = \frac{v(t + \Delta t) - v(t)}{\Delta t} + \hat{O}(\Delta t) \quad (2.6)
+$$
+
+where $\hat{O}(\Delta t)$ is the error term that depends on the choice of $\theta$. For $\theta=1/2$ we obtain $\hat{O}=O(\Delta t)^2$ and otherwise we get $\hat{O}=O(\Delta t)$.
+
+By using equation (2.6) and inserting it into equation (I) we obtain:
+
+$$
+v(t + \Delta t) = v(t) + \frac{\Delta t}{m} F(t + \theta \Delta t) + \hat{O}(\Delta t)^2 \quad (2.7)
+$$
+
+### Velocity at Intermediate Time
+
+If we take the weighted sum of (2.1) and (2.2) we obtain:
+
+$$
+v(t+\theta \Delta t) = \theta v(t+\Delta t) + (1-\theta) v(t) + O(\Delta t)^2 \quad (2.8)
+$$
+
+### Position Time Derivative
+
+We can do the same for the positions and obtain:
+
+$$
+\frac{u(t+\Delta t)-u(t)}{\Delta t} = v(t+\theta \Delta t) + \hat{O}(\Delta t) \quad (2.9)
+$$
+
+Which combined with equation (2.8) gives us:
+
+$$
+u(t + \Delta t) = u(t) + (\theta v(t + \Delta t) + (1 - \theta)v(t)) \Delta t + \hat{O}(\Delta t)^2 \quad (2.10)
+$$
+
+### Final Position Update
+
+Now, we can use equations (2.10) and (2.7) to obtain:
+
+$$
+u(t + \Delta t) = u(t) + v(t) \Delta t + \frac{\theta (\Delta t)^2}{m} F(t + \theta \Delta t) + \hat{O}(\Delta t)^2 \quad(2.11)
+$$
+
+### Time Integration Schemes
+
+When $\theta = 1$ we obtain an implicit integration scheme (backward Euler) and when $\theta = 0$ we obtain an explicit integration scheme (forward Euler).
+
+The backward Euler scheme is unconditionally stable, while the forward Euler scheme is conditionally stable and requires a small time step to ensure stability.
+
+For both we obtain $\hat{O}(\Delta t)^2 = O(\Delta t)^2$.
+
+For $\theta = 1/2$ we obtain the "midpoint rule" which is unconditionally stable and $\hat{O}(\Delta t)^2 = O(\Delta t)^3$.
+
+## FEM Formulation
+
+The continuum Equation we try to solve is:
+
+$$
+\rho_0\frac{\partial^2 u}{\partial t^2} = \rho_0\frac{\partial v}{\partial t} = \nabla \cdot \sigma + f(x,t) \quad (3.0)
+$$
+
+We will make our life easier by defining $F=\nabla \cdot \sigma + f(x,t)$.
+
+Using the equations we derived above we can reformulate the problem as:
+
+$$
+\rho_0v(t+\Delta t) = \rho_0v(t) + \Delta t(\theta F(t+\Delta t) + (1-\theta) F(t)) \quad (3.1)
+$$
+
+### Weak Form Development
+
+Multiplying by the test function and integrating by parts we obtain:
+
+$$
+\int_\Omega v \cdot \rho_0 v(t + \Delta t) \, d\Omega = \int_\Omega v \cdot \rho_0 v(t) \, d\Omega + \Delta t \int_\Omega v \cdot (\theta \Psi(t + \Delta t) + (1 - \theta) \Psi(t)) \, d\Omega \quad (3.2)
+$$
+
+And after applying the divergence theorem and enforcing $v=0$ on the boundary we obtain:
+
+$$
+\begin{aligned}
+\int_\Omega v \cdot \rho_0 v^{t+\Delta t} \, d\Omega &= \int_\Omega v \cdot \rho_0 v^{t} \, d\Omega \\
+&+ \Delta t \theta \left( -\int_\Omega \nabla v : \sigma \, d\Omega + \int_{\Gamma_t} v \cdot (\sigma \cdot n) \, dA + \int_\Omega v \cdot f \, d\Omega \right)^{t+\Delta t} \\
+&+ \Delta t (1 - \theta) \left( -\int_\Omega \nabla v : \sigma \, d\Omega + \int_{\Gamma_t} v \cdot t^* \, dA + \int_\Omega v \cdot f \, d\Omega \right)^{t} \qquad (3.3)
+\end{aligned}
+$$
+
+### Discretized System
+
+Plugging in our shape function, and defining the standard matrices with $\{a\}$ being the coefficients vector, we obtain:
+
+$$
+[M]\{a\}^{t+\Delta t} = [M]\{a\}^t + (\Delta t \theta) \left( -[K]\{a\}^{t+\Delta t} + \{R_f\}^{t+\Delta t} + \{R_t\}^{t+\Delta t} \right) \\
++ \Delta t (1 - \theta) \left( -[K]\{a\}^t + \{R_f\}^t + \{R_t\}^t \right) \qquad (3.4)
+$$
+
+where we use:
+
+$$
+\{a\}^{t+\Delta t} = \{a\}^{t}+\Delta t (\theta \{\dot{a}\})^{t+\Delta t} + (1 - \theta) \{\dot{a}\}^{t} \qquad (3.5)
+$$
+
+## Implicit Backward Euler Scheme
+
+For $\theta=1$ we get the implicit backward Euler scheme:
+
+$$
+\left( [M]\{\ddot{a}\}^{t+\Delta t} + \Delta t [K]\{a\}^{t+\Delta t} \right) = [M]\{\ddot{a}\}^t + \Delta t \left( \{R_t\}^{t+\Delta t} + \{R_f\}^{t+\Delta t} \right) \qquad (3.6)
+$$
+
+where we use:
+
+$$
+\{a\}^{t+\Delta t} = \{a\}^{t}+\Delta t (\{\dot{a}\})^{t+\Delta t}  \qquad (3.7)
+$$
+
+## Explicit Forward Euler Scheme
+
+For $\theta=0$ we get the explicit forward Euler scheme:
+
+$$
+\{\dot{a}\}^{t+\Delta t} = \{\dot{a}\}^t + \Delta t [M]^{-1} \left( -[K]\{a\}^t + \{R_f\}^t + \{R_t\}^t \right) \qquad (3.8)
+$$
+
+where we use:
+
+$$
+\{a\}^{t+\Delta t} = \{a\}^t + \Delta t \{\dot{a}\}^t \qquad (3.9)
+$$

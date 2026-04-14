@@ -1,0 +1,99 @@
+---
+title: "Introduction and 1D Setup"
+---
+
+## Setup
+
+```{python}
+#| include: false
+%run _common.py
+import python.L1 as fem
+import python.L1a as fem_viz
+```
+
+## The Strong Form
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+fem.display_strong_form()
+```
+
+## Deriving the Weak Form
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+weak_eq = fem.derive_weak_form()
+```
+
+## Shape Functions for Discretization
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+N = 5
+phi, a, b, y_approx, v_approx = fem.define_shape_functions(N)
+```
+
+## Assembling the FEM System
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+K, F_vec = fem.assemble_fem_system(weak_eq, phi, a, b, y_approx, v_approx, N)
+```
+
+## Putting It All Together
+
+```{python}
+#| code-fold: true
+#| echo: fenced
+fem.finite_element_method_1d_demo()
+```
+
+## Example: Convergence with Mesh Refinement {#sec-convergence-example}
+
+The following plots show the FEM solution for increasing numbers of elements, demonstrating how the numerical solution converges to the exact solution as the mesh is refined.
+
+```{python}
+#| code-fold: true
+#| echo: true
+#| fig-cap: "FEM solution with varying mesh refinement"
+#| output: true
+import matplotlib.pyplot as plt
+
+fig, axes = plt.subplots(2, 2, figsize=(10, 8))
+x_exact = np.linspace(0, 1, 100)
+y_exact = 0.5 * x_exact * (1 - x_exact)
+
+for idx, n_elem in enumerate([2, 5, 10, 20]):
+    ax = axes[idx // 2, idx % 2]
+
+    # --- Compute FEM solution ---
+    n_nodes = n_elem + 1
+    h = 1.0 / n_elem
+    K = np.zeros((n_nodes, n_nodes))
+    F_vec = np.zeros(n_nodes)
+    for e in range(n_elem):
+        k_e = np.array([[1, -1], [-1, 1]]) / h
+        f_e = np.array([h / 2, h / 2])
+        K[e:e+2, e:e+2] += k_e
+        F_vec[e:e+2] += f_e
+    a = np.linalg.solve(K[1:-1, 1:-1], F_vec[1:-1])
+    y_fem = np.zeros(n_nodes)
+    y_fem[1:-1] = a
+    x_fem = np.linspace(0, 1, n_nodes)
+
+    # --- Plot on the subplot ---
+    ax.plot(x_exact, y_exact, 'b-', label='Exact: y = 0.5x(1-x)')
+    ax.plot(x_fem, y_fem, 'ro-', label=f'FEM ({n_elem} elements)')
+    ax.set_title(f'{n_elem} elements')
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+    ax.grid(True)
+    ax.legend(fontsize=8)
+
+plt.tight_layout()
+plt.show()
+```

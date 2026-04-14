@@ -1,0 +1,187 @@
+{
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "---\n",
+        "title: \"Introduction to the Finite Element Method\"\n",
+        "subtitle: \"Lecture 1: Introduction + 1D Setup\"\n",
+        "format: \n",
+        "    revealjs:\n",
+        "        slide-number: true\n",
+        "        multiplex: true\n",
+        "        controls: true\n",
+        "        # incremental: true\n",
+        "        # center: true\n",
+        "        # transition: slide\n",
+        "        margin: 0.1\n",
+        "        css: fem.css\n",
+        "execute:\n",
+        "  echo: true # Show code by default (we'll override for folding)\n",
+        "  warning: false\n",
+        "jupyter: python3\n",
+        "---\n",
+        "\n",
+        "\n",
+        "## Setup\n"
+      ],
+      "id": "dc870bfb"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| include: false # Usually hide the setup chunk itself\n",
+        "\n",
+        "import matplotlib.pyplot as plt\n",
+        "import numpy as np\n",
+        "import sympy as sp\n",
+        "from IPython.display import Math, display\n",
+        "\n",
+        "# Import functions FROM your saved .py file\n",
+        "import L1 as fem "
+      ],
+      "id": "785c54f0",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## The strong form {auto-animate=\"true\" .smaller .scrollable}\n"
+      ],
+      "id": "34b4d262"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| code-fold: true\n",
+        "#| echo: fenced\n",
+        "fem.display_strong_form()"
+      ],
+      "id": "e49e10dd",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Derive the weak form of the equation {auto-animate=\"true\" .smaller .scrollable}"
+      ],
+      "id": "8dc9b349"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| code-fold: true\n",
+        "#| echo: fenced\n",
+        "weak_eq = fem.derive_weak_form()"
+      ],
+      "id": "c1b833c2",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Define shape functions for discretization with N elements {auto-animate=\"true\" .smaller .scrollable}"
+      ],
+      "id": "65e40683"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| code-fold: true\n",
+        "#| echo: fenced\n",
+        "N=5\n",
+        "phi, a, b, y_approx, v_approx = fem.define_shape_functions(N)"
+      ],
+      "id": "94a6a9f2",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Assemble the FEM system using the weak form and shape functions {auto-animate=\"true\" .smaller .scrollable}"
+      ],
+      "id": "329c8863"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| code-fold: true\n",
+        "#| echo: fenced\n",
+        "K, F_vec = fem.assemble_fem_system(weak_eq, phi, a, b, y_approx, v_approx, N)"
+      ],
+      "id": "20e5ed08",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## All together now! {auto-animate=\"true\" .smaller .scrollable}"
+      ],
+      "id": "46cac0e3"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| code-fold: true\n",
+        "#| echo: fenced\n",
+        "fem.finite_element_method_1d_demo()"
+      ],
+      "id": "e2d020f8",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Example problem: {auto-animate=\"true\" .smaller .scrollable}"
+      ],
+      "id": "8b1e02dd"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| code-fold: true\n",
+        "#| echo: true\n",
+        "from ipywidgets import interact, IntSlider\n",
+        "@interact(n_elements=IntSlider(min=1, max=50, step=1, value=2, description='# Elements:'))\n",
+        "def interactive_solver_plot(n_elements):\n",
+        "    # This function is called whenever the slider changes\n",
+        "    # It calls your original solver/plotter function\n",
+        "    fig = fem.solve_specific_1d_problem_animated(n_elements)\n",
+        "    # ipywidgets automatically displays the returned figure\n",
+        "    return fig"
+      ],
+      "id": "a3ad8b0f",
+      "execution_count": null,
+      "outputs": []
+    }
+  ],
+  "metadata": {
+    "kernelspec": {
+      "display_name": "Python 3",
+      "language": "python",
+      "name": "python3"
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 5
+}

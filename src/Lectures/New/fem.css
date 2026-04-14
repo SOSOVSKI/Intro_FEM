@@ -1,0 +1,15 @@
+/* Increase the base font size for revealjs slides */
+.reveal .slides {
+    font-size: 30px; /* Experiment with this value (e.g., 18px, 22px, 1.2em) */
+  }
+  
+  /* You might also need to target text within code output blocks if necessary */
+  .reveal pre code {
+     font-size: 0.9em; /* Adjust relative to the base slide font size */
+  }
+  
+  /* Ensure MathJax scales reasonably with the new base font */
+  .reveal .slides section .MJXc-display, /* For MathJax v2 CommonHTML */
+  .reveal .slides section .MathJax_Display { /* For MathJax v2 HTML-CSS/SVG */
+      font-size: 80%; /* Adjust if needed, e.g., 95% or 105% */
+  }
