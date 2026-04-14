@@ -1,0 +1,1649 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.37">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>7&nbsp; From 1D to Multi-Dimensional FEM – Introduction to the Finite Element Method</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./ch07-b-matrix.html" rel="next">
+<link href="./ch05-time-dependent.html" rel="prev">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-36bf55b16c7cb4b1420f41495cb5446a.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="custom.css">
+</head>
+
+<body class="nav-sidebar floating quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./ch06-math-prelim-2d3d.html">Part III: Multi-Dimensional FEM</a></li><li class="breadcrumb-item"><a href="./ch06-math-prelim-2d3d.html"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">From 1D to Multi-Dimensional FEM</span></a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="./">Introduction to the Finite Element Method</a> 
+        <div class="sidebar-tools-main tools-wide">
+    <a href="https://github.com/SOSOVSKI/Intro_FEM" title="Source Repository" class="quarto-navigation-tool px-1" aria-label="Source Repository"><i class="bi bi-github"></i></a>
+    <a href="./notebooks/" title="Companion Notebooks" class="quarto-navigation-tool px-1" aria-label="Companion Notebooks"><i class="bi bi-journal-code"></i></a>
+    <a href="./docs/" title="Package Docs" class="quarto-navigation-tool px-1" aria-label="Package Docs"><i class="bi bi-book"></i></a>
+    <a href="https://github.com/SOSOVSKI/Intro_FEM/tree/main/book/" title="Source Code" class="quarto-navigation-tool px-1" aria-label="Source Code"><i class="bi bi-github"></i></a>
+    <a href="./Intro-FEM-Lecture-Notes.pdf" title="Download PDF" class="quarto-navigation-tool px-1" aria-label="Download PDF"><i class="bi bi-file-pdf"></i></a>
+</div>
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Preface</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part I: Foundations</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch01-introduction.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Introduction and 1D Setup</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch02-algebraic-system.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Deriving the Algebraic System and Galerkin’s Method</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch03-function-spaces.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Function Spaces</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part II: 1D Finite Elements</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch04-1d-fem.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Galerkin’s Method and 1D FEM</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch05-time-dependent.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">Time-Dependent 1D Problems</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part III: Multi-Dimensional FEM</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch06-math-prelim-2d3d.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">From 1D to Multi-Dimensional FEM</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch07-b-matrix.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">The B Matrix</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch08-heat-transfer-2d.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">2D Heat Transfer</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part IV: Elasticity</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch09-continuum-mechanics.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">Continuum Mechanics Fundamentals</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch10-elasticity-3d.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">Quasi-Static Elasticity in 3D</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part V: Implementation &amp; Error Analysis</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch11-fem-implementation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">12</span>&nbsp; <span class="chapter-title">FEM Implementation</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch12-error-estimates.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">13</span>&nbsp; <span class="chapter-title">Error Estimation and Adaptivity</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch14-fenicsx.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">14</span>&nbsp; <span class="chapter-title">FEniCSx Tutorial</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part VI: Structural Elements</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch15-beams-theory.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">15</span>&nbsp; <span class="chapter-title">Structural Elements: Beam Theory</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch16-beams-fenicsx.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">16</span>&nbsp; <span class="chapter-title">Beam Elements in FEniCSx</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#mathematical-preliminaries" id="toc-mathematical-preliminaries" class="nav-link active" data-scroll-target="#mathematical-preliminaries"><span class="header-section-number">7.1</span> Mathematical Preliminaries</a>
+  <ul class="collapse">
+  <li><a href="#temperature-as-a-scalar-field" id="toc-temperature-as-a-scalar-field" class="nav-link" data-scroll-target="#temperature-as-a-scalar-field"><span class="header-section-number">7.1.1</span> Temperature as a Scalar Field</a></li>
+  <li><a href="#conductivity-matrix-operation" id="toc-conductivity-matrix-operation" class="nav-link" data-scroll-target="#conductivity-matrix-operation"><span class="header-section-number">7.1.2</span> Conductivity Matrix Operation</a></li>
+  <li><a href="#heat-flux-vector" id="toc-heat-flux-vector" class="nav-link" data-scroll-target="#heat-flux-vector"><span class="header-section-number">7.1.3</span> Heat Flux Vector</a></li>
+  </ul></li>
+  <li><a href="#the-product-rule-for-divergence" id="toc-the-product-rule-for-divergence" class="nav-link" data-scroll-target="#the-product-rule-for-divergence"><span class="header-section-number">7.2</span> The Product Rule for Divergence</a>
+  <ul class="collapse">
+  <li><a href="#detailed-expansion" id="toc-detailed-expansion" class="nav-link" data-scroll-target="#detailed-expansion"><span class="header-section-number">7.2.1</span> Detailed Expansion</a></li>
+  <li><a href="#the-key-relationship" id="toc-the-key-relationship" class="nav-link" data-scroll-target="#the-key-relationship"><span class="header-section-number">7.2.2</span> The Key Relationship</a></li>
+  <li><a href="#physical-interpretation" id="toc-physical-interpretation" class="nav-link" data-scroll-target="#physical-interpretation"><span class="header-section-number">7.2.3</span> Physical Interpretation</a></li>
+  <li><a href="#weak-form-foundation" id="toc-weak-form-foundation" class="nav-link" data-scroll-target="#weak-form-foundation"><span class="header-section-number">7.2.4</span> Weak Form Foundation</a></li>
+  </ul></li>
+  <li><a href="#fem-in-2d3d-heat-equation" id="toc-fem-in-2d3d-heat-equation" class="nav-link" data-scroll-target="#fem-in-2d3d-heat-equation"><span class="header-section-number">7.3</span> FEM in 2D/3D: Heat Equation</a>
+  <ul class="collapse">
+  <li><a href="#problem-setup" id="toc-problem-setup" class="nav-link" data-scroll-target="#problem-setup"><span class="header-section-number">7.3.1</span> Problem Setup</a></li>
+  </ul></li>
+  <li><a href="#weak-form-derivation" id="toc-weak-form-derivation" class="nav-link" data-scroll-target="#weak-form-derivation"><span class="header-section-number">7.4</span> Weak Form Derivation</a></li>
+  <li><a href="#d3d-finite-elements-geometry-and-shape-functions" id="toc-d3d-finite-elements-geometry-and-shape-functions" class="nav-link" data-scroll-target="#d3d-finite-elements-geometry-and-shape-functions"><span class="header-section-number">7.5</span> 2D/3D Finite Elements: Geometry and Shape Functions</a>
+  <ul class="collapse">
+  <li><a href="#transition-from-1d-to-2d3d" id="toc-transition-from-1d-to-2d3d" class="nav-link" data-scroll-target="#transition-from-1d-to-2d3d"><span class="header-section-number">7.5.1</span> Transition from 1D to 2D/3D</a></li>
+  <li><a href="#d-rectangular-elements-linear-shape-functions" id="toc-d-rectangular-elements-linear-shape-functions" class="nav-link" data-scroll-target="#d-rectangular-elements-linear-shape-functions"><span class="header-section-number">7.5.2</span> 2D Rectangular Elements: Linear Shape Functions</a></li>
+  <li><a href="#rectangular-element-with-linear-shape-functions" id="toc-rectangular-element-with-linear-shape-functions" class="nav-link" data-scroll-target="#rectangular-element-with-linear-shape-functions"><span class="header-section-number">7.5.3</span> Rectangular Element with Linear Shape Functions</a></li>
+  </ul></li>
+  <li><a href="#master-element-concept-in-2d" id="toc-master-element-concept-in-2d" class="nav-link" data-scroll-target="#master-element-concept-in-2d"><span class="header-section-number">7.6</span> Master Element Concept in 2D</a>
+  <ul class="collapse">
+  <li><a href="#mapping-to-master-element" id="toc-mapping-to-master-element" class="nav-link" data-scroll-target="#mapping-to-master-element"><span class="header-section-number">7.6.1</span> Mapping to Master Element</a></li>
+  </ul></li>
+  <li><a href="#jacobian-and-coordinate-transformation" id="toc-jacobian-and-coordinate-transformation" class="nav-link" data-scroll-target="#jacobian-and-coordinate-transformation"><span class="header-section-number">7.7</span> Jacobian and Coordinate Transformation</a>
+  <ul class="collapse">
+  <li><a href="#jacobian-matrix" id="toc-jacobian-matrix" class="nav-link" data-scroll-target="#jacobian-matrix"><span class="header-section-number">7.7.1</span> Jacobian Matrix</a></li>
+  <li><a href="#isoparametric-mapping" id="toc-isoparametric-mapping" class="nav-link" data-scroll-target="#isoparametric-mapping"><span class="header-section-number">7.7.2</span> Isoparametric Mapping</a></li>
+  </ul></li>
+  <li><a href="#element-quality-good-vs-bad-elements" id="toc-element-quality-good-vs-bad-elements" class="nav-link" data-scroll-target="#element-quality-good-vs-bad-elements"><span class="header-section-number">7.8</span> Element Quality: Good vs Bad Elements</a>
+  <ul class="collapse">
+  <li><a href="#acceptable-elements" id="toc-acceptable-elements" class="nav-link" data-scroll-target="#acceptable-elements"><span class="header-section-number">7.8.1</span> Acceptable Elements</a></li>
+  <li><a href="#unacceptable-elements" id="toc-unacceptable-elements" class="nav-link" data-scroll-target="#unacceptable-elements"><span class="header-section-number">7.8.2</span> Unacceptable Elements</a></li>
+  </ul></li>
+  <li><a href="#bookkeeping-in-2d-finite-elements" id="toc-bookkeeping-in-2d-finite-elements" class="nav-link" data-scroll-target="#bookkeeping-in-2d-finite-elements"><span class="header-section-number">7.9</span> Bookkeeping in 2D Finite Elements</a>
+  <ul class="collapse">
+  <li><a href="#difference-from-1d" id="toc-difference-from-1d" class="nav-link" data-scroll-target="#difference-from-1d"><span class="header-section-number">7.9.1</span> Difference from 1D</a></li>
+  <li><a href="#element-connectivity-tables" id="toc-element-connectivity-tables" class="nav-link" data-scroll-target="#element-connectivity-tables"><span class="header-section-number">7.9.2</span> Element Connectivity Tables</a></li>
+  </ul></li>
+  <li><a href="#shape-functions-differential-properties" id="toc-shape-functions-differential-properties" class="nav-link" data-scroll-target="#shape-functions-differential-properties"><span class="header-section-number">7.10</span> Shape Functions: Differential Properties</a>
+  <ul class="collapse">
+  <li><a href="#coordinate-transformation-relations" id="toc-coordinate-transformation-relations" class="nav-link" data-scroll-target="#coordinate-transformation-relations"><span class="header-section-number">7.10.1</span> Coordinate Transformation Relations</a></li>
+  <li><a href="#gradient-calculation-in-master-element" id="toc-gradient-calculation-in-master-element" class="nav-link" data-scroll-target="#gradient-calculation-in-master-element"><span class="header-section-number">7.10.2</span> Gradient Calculation in Master Element</a></li>
+  </ul></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/SOSOVSKI/Intro_FEM/edit/main/book/ch06-math-prelim-2d3d.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/SOSOVSKI/Intro_FEM/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li><li><a href="https://github.com/SOSOVSKI/Intro_FEM/blob/main/book/ch06-math-prelim-2d3d.qmd" class="toc-action"><i class="bi empty"></i>View source</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./ch06-math-prelim-2d3d.html">Part III: Multi-Dimensional FEM</a></li><li class="breadcrumb-item"><a href="./ch06-math-prelim-2d3d.html"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">From 1D to Multi-Dimensional FEM</span></a></li></ol></nav>
+<div class="quarto-title">
+<div class="quarto-title-block"><div><h1 class="title"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">From 1D to Multi-Dimensional FEM</span></h1><button type="button" class="btn code-tools-button" id="quarto-code-tools-source"><i class="bi"></i> Code</button></div></div>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Companion notebooks
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Work through these hands-on notebooks alongside this chapter:</p>
+<ul>
+<li><a href="notebooks/05_reference_element_gallery.html">05 – Reference Element Gallery</a></li>
+<li><a href="notebooks/06_2d_triangle_poisson.html">06 – 2D Triangle Poisson</a></li>
+</ul>
+</div>
+</div>
+<section id="mathematical-preliminaries" class="level2" data-number="7.1">
+<h2 data-number="7.1" class="anchored" data-anchor-id="mathematical-preliminaries"><span class="header-section-number">7.1</span> Mathematical Preliminaries</h2>
+<p>Looking at the following equation:</p>
+<p><span class="math display">\[
+\text{div}(\mathbf{K}\cdot \text{grad}(T))
+\]</span></p>
+<p>if <span class="math inline">\(\mathbf{K}\)</span> is a constant multiplied by the identity matrix, we can write it as:</p>
+<p><span class="math display">\[
+\text{div}(\mathbf{K}\cdot \text{grad}(T))  = \text{div}(\mathbf{K} \left [\frac{\partial T}{\partial x} \mathbf{e}_1 +\frac{\partial T}{\partial y} \mathbf{e}_2+\frac{\partial T}{\partial z} \mathbf{e}_3 \right ]) = \mathbf{K} \left ( \frac{\partial^2 T}{\partial x^2}+\frac{\partial^2 T}{\partial y^2}+\frac{\partial^2 T}{\partial z^2} \right) = \mathbf{K}\nabla^2T
+\]</span></p>
+<section id="temperature-as-a-scalar-field" class="level3" data-number="7.1.1">
+<h3 data-number="7.1.1" class="anchored" data-anchor-id="temperature-as-a-scalar-field"><span class="header-section-number">7.1.1</span> Temperature as a Scalar Field</h3>
+<p><span class="math display">\[
+T \text{ - Scalar} \Rightarrow \text{grad}(T) = \left(\frac{\partial T}{\partial x}\mathbf{e_1} + \frac{\partial T}{\partial y}\mathbf{e_2} + \frac{\partial T}{\partial z}\mathbf{e_3}\right) \text{ - vector}
+\]</span></p>
+</section>
+<section id="conductivity-matrix-operation" class="level3" data-number="7.1.2">
+<h3 data-number="7.1.2" class="anchored" data-anchor-id="conductivity-matrix-operation"><span class="header-section-number">7.1.2</span> Conductivity Matrix Operation</h3>
+<p><span class="math display">\[
+\mathbf{K} \cdot \text{grad}(T) = \begin{bmatrix} K_{11} &amp; K_{12} &amp; K_{13} \\ K_{21} &amp; K_{22} &amp; K_{23} \\ K_{31} &amp; K_{32} &amp; K_{33} \end{bmatrix} \text{transpose}\left(\left(\frac{\partial T}{\partial x}\mathbf{e_1} + \frac{\partial T}{\partial y}\mathbf{e_2} + \frac{\partial T}{\partial z}\mathbf{e_3}\right)\right)
+\]</span></p>
+</section>
+<section id="heat-flux-vector" class="level3" data-number="7.1.3">
+<h3 data-number="7.1.3" class="anchored" data-anchor-id="heat-flux-vector"><span class="header-section-number">7.1.3</span> Heat Flux Vector</h3>
+<p>Let’s define <span class="math inline">\(\mathbf{q} = -\mathbf{K} \cdot \text{grad}(T)\)</span> as the heat flux vector.</p>
+<p>Divergence of heat flux:</p>
+<p><span class="math display">\[
+\text{div}(\mathbf{q}) = \frac{\partial q_x}{\partial x} + \frac{\partial q_y}{\partial y} + \frac{\partial q_z}{\partial z}
+\]</span></p>
+</section>
+</section>
+<section id="the-product-rule-for-divergence" class="level2" data-number="7.2">
+<h2 data-number="7.2" class="anchored" data-anchor-id="the-product-rule-for-divergence"><span class="header-section-number">7.2</span> The Product Rule for Divergence</h2>
+<p>To answer the question “What happens when we multiply the heat conduction equation by a test function V?”, we need to use the <strong>product rule for divergence</strong>:</p>
+<p><span class="math display">\[
+\text{div}(V \mathbf{K} \text{ grad}(T)) = \text{grad}(V) \cdot \mathbf{K} \cdot \text{grad}(T) + V \text{ div}(\mathbf{K} \cdot \text{grad}(T))
+\]</span></p>
+<p>However, if <span class="math inline">\(\mathbf{K}=k\)</span> is constant, we can simplify this to:</p>
+<p><span class="math display">\[
+\text{div}(V \mathbf{K} \text{ grad}(T))=k\text{div}(V \text{ grad}(T))=k(\text{grad}(V) \cdot \text{grad}(T) + V \nabla^2(T))
+\]</span></p>
+<section id="detailed-expansion" class="level3" data-number="7.2.1">
+<h3 data-number="7.2.1" class="anchored" data-anchor-id="detailed-expansion"><span class="header-section-number">7.2.1</span> Detailed Expansion</h3>
+<p>Let’s expand <span class="math inline">\(\text{div}(V \mathbf{K} \text{ grad}(T))\)</span> step by step:</p>
+<p><span class="math display">\[\text{div}(V \mathbf{K} \text{ grad}(T)) = \frac{\partial}{\partial x}\left(V K \frac{\partial T}{\partial x}\right) + \frac{\partial}{\partial y}\left(V K \frac{\partial T}{\partial y}\right) + \frac{\partial}{\partial z}\left(V K \frac{\partial T}{\partial z}\right)\]</span></p>
+<p>Applying the product rule to each term:</p>
+<p><span class="math display">\[
+= \frac{\partial V}{\partial x} K \frac{\partial T}{\partial x} + \frac{\partial V}{\partial y} K \frac{\partial T}{\partial y} + \frac{\partial V}{\partial z} K \frac{\partial T}{\partial z} + V K \frac{\partial^2 T}{\partial x^2} + V K \frac{\partial^2 T}{\partial y^2} + V K \frac{\partial^2 T}{\partial z^2}
+\]</span></p>
+<p>We can group these terms into two parts:</p>
+<p><strong>Gradient Terms:</strong></p>
+<p><span class="math display">\[
+\text{grad}(V) \cdot \mathbf{K} \cdot \text{grad}(T) = \left(\frac{\partial V}{\partial x}, \frac{\partial V}{\partial y}, \frac{\partial V}{\partial z}\right) \cdot \mathbf{K} \cdot \left(\frac{\partial T}{\partial x}, \frac{\partial T}{\partial y}, \frac{\partial T}{\partial z}\right)
+\]</span></p>
+<p>For constant K, this becomes:</p>
+<p><span class="math display">\[
+= K\left(\frac{\partial V}{\partial x} \frac{\partial T}{\partial x} + \frac{\partial V}{\partial y} \frac{\partial T}{\partial y} + \frac{\partial V}{\partial z} \frac{\partial T}{\partial z}\right) = A
+\]</span></p>
+<p><strong>Second Derivative Terms:</strong></p>
+<p><span class="math display">\[
+V \text{ div}(\mathbf{K} \cdot \text{grad}(T)) = V K \left(\frac{\partial^2 T}{\partial x^2} + \frac{\partial^2 T}{\partial y^2} + \frac{\partial^2 T}{\partial z^2}\right) = B
+\]</span></p>
+</section>
+<section id="the-key-relationship" class="level3" data-number="7.2.2">
+<h3 data-number="7.2.2" class="anchored" data-anchor-id="the-key-relationship"><span class="header-section-number">7.2.2</span> The Key Relationship</h3>
+<p>From the product rule, we have:</p>
+<p><span class="math display">\[
+\text{div}(V \mathbf{K} \text{ grad}(T)) = A + B
+\]</span></p>
+<p>Therefore:</p>
+<p><span class="math display">\[
+B = \text{div}(V \mathbf{K} \text{ grad}(T)) - A
+\]</span></p>
+<p>Which gives us:</p>
+<p><span class="math display">\[
+\text{div}(\mathbf{K} \text{ grad}(T)) V = \text{div}(V \mathbf{K} \text{ grad}(T)) - \text{grad}(V) \cdot \mathbf{K} \cdot \text{grad}(T)
+\]</span></p>
+</section>
+<section id="physical-interpretation" class="level3" data-number="7.2.3">
+<h3 data-number="7.2.3" class="anchored" data-anchor-id="physical-interpretation"><span class="header-section-number">7.2.3</span> Physical Interpretation</h3>
+<p>This mathematical identity is the foundation for:</p>
+<ol type="1">
+<li><strong>Integration by parts</strong> in the weak formulation</li>
+<li><strong>Converting strong form to weak form</strong> in finite element methods</li>
+<li><strong>Moving derivatives from the solution to the test function</strong></li>
+</ol>
+<p>The term <span class="math inline">\(\text{div}(V \mathbf{K} \text{ grad}(T))\)</span> will become a boundary integral when integrated over the domain, while <span class="math inline">\(\text{grad}(V) \cdot \mathbf{K} \cdot \text{grad}(T)\)</span> becomes the bilinear form in the finite element formulation.</p>
+</section>
+<section id="weak-form-foundation" class="level3" data-number="7.2.4">
+<h3 data-number="7.2.4" class="anchored" data-anchor-id="weak-form-foundation"><span class="header-section-number">7.2.4</span> Weak Form Foundation</h3>
+<p>When integrated over a domain <span class="math inline">\(\Omega\)</span>, this relationship becomes:</p>
+<p><span class="math display">\[\int_\Omega V \text{ div}(\mathbf{K} \text{ grad}(T)) \, d\Omega = \int_\Omega \text{div}(V \mathbf{K} \text{ grad}(T)) \, d\Omega - \int_\Omega \text{grad}(V) \cdot \mathbf{K} \cdot \text{grad}(T) \, d\Omega\]</span></p>
+<p>Using the divergence theorem, the first integral on the right becomes a boundary integral, leading to the standard weak form used in finite element analysis.</p>
+</section>
+</section>
+<section id="fem-in-2d3d-heat-equation" class="level2" data-number="7.3">
+<h2 data-number="7.3" class="anchored" data-anchor-id="fem-in-2d3d-heat-equation"><span class="header-section-number">7.3</span> FEM in 2D/3D: Heat Equation</h2>
+<section id="problem-setup" class="level3" data-number="7.3.1">
+<h3 data-number="7.3.1" class="anchored" data-anchor-id="problem-setup"><span class="header-section-number">7.3.1</span> Problem Setup</h3>
+<p><strong>Governing equation:</strong> <span class="math inline">\(\text{div}(\mathbf{q}) = 0\)</span> where we assumed that there is no source term for simplicity.</p>
+<p><strong>Constitutive equation (Fourier’s law):</strong> <span class="math inline">\(\mathbf{q} = -\mathbf{K} \cdot \text{grad}(T)\)</span></p>
+<p><strong>Boundary conditions:</strong></p>
+<ul>
+<li><span class="math inline">\(\Gamma_{T_0}: T = T_0\)</span> (Essential BC)</li>
+<li><span class="math inline">\(\Gamma_{T_1}: T = T_1\)</span> (Essential BC)</li>
+<li><span class="math inline">\(\Gamma_q: \mathbf{q} = \mathbf{q}^*_n\)</span> (Natural BC)</li>
+</ul>
+<p>where <span class="math inline">\(\mathbf{q}^*_n\)</span> is the prescribed heat flux on the boundary <span class="math inline">\(\Gamma_q\)</span> in the direction of the (outwards) normal to the surface.</p>
+<p><strong>Combined form:</strong> <span class="math inline">\(\text{div}(\mathbf{q}) = -\text{div}(\mathbf{K} \cdot \text{grad}(T)) = 0\)</span></p>
+</section>
+</section>
+<section id="weak-form-derivation" class="level2" data-number="7.4">
+<h2 data-number="7.4" class="anchored" data-anchor-id="weak-form-derivation"><span class="header-section-number">7.4</span> Weak Form Derivation</h2>
+<p><strong>Step 1:</strong> Multiply by test function V and integrate over domain</p>
+<p><span class="math display">\[\int_\Omega \text{div}(\mathbf{K} \cdot \text{grad}(T)) V \, d\Omega = 0\]</span></p>
+<p><strong>Step 2:</strong> Apply the product rule result</p>
+<p><span class="math display">\[\int_\Omega \text{div}(V \mathbf{K} \cdot \text{grad}(T)) \, d\Omega - \int_\Omega \text{grad}(V) \cdot \mathbf{K} \cdot \text{grad}(T) \, d\Omega = 0\]</span></p>
+<p><strong>Step 3:</strong> Apply divergence theorem to first integral</p>
+<p><span class="math display">\[\int_\Omega \text{div}(V \mathbf{K} \cdot \text{grad}(T)) \, d\Omega = \int_\Omega \text{div}(V \mathbf{q}) \, d\Omega = \int_{\partial\Omega} V \mathbf{q} \cdot \mathbf{n} \, d\Gamma\]</span></p>
+<p><strong>Final weak form:</strong></p>
+<p><span class="math display">\[\int_{\partial\Omega} V \mathbf{q} \cdot \mathbf{n} \, d\Gamma - \int_\Omega \text{grad}(V) \cdot \mathbf{K} \cdot \text{grad}(T) \, d\Omega = 0\]</span></p>
+<p><strong>Finite element approximation:</strong></p>
+<p><span class="math display">\[V_h = \sum_{i=1}^N b_i \phi_i(x,y), \quad T_h = \sum_{j=1}^N a_j \phi_j(x,y) \Rightarrow \{a_j\}\]</span></p>
+</section>
+<section id="d3d-finite-elements-geometry-and-shape-functions" class="level2" data-number="7.5">
+<h2 data-number="7.5" class="anchored" data-anchor-id="d3d-finite-elements-geometry-and-shape-functions"><span class="header-section-number">7.5</span> 2D/3D Finite Elements: Geometry and Shape Functions</h2>
+<section id="transition-from-1d-to-2d3d" class="level3" data-number="7.5.1">
+<h3 data-number="7.5.1" class="anchored" data-anchor-id="transition-from-1d-to-2d3d"><span class="header-section-number">7.5.1</span> Transition from 1D to 2D/3D</h3>
+<p><strong>Key differences:</strong></p>
+<ul>
+<li><strong>1D:</strong> Geometric description is simpler - element domain is simply a line</li>
+<li><strong>2D/3D:</strong> Geometry plays a crucial role and complexity increases significantly</li>
+</ul>
+<p><strong>Most common finite element geometries:</strong></p>
+<ul>
+<li><strong>2D:</strong> Triangular elements and Rectangular elements</li>
+<li><strong>3D:</strong> Tetrahedron elements and Hexahedron elements</li>
+</ul>
+</section>
+<section id="d-rectangular-elements-linear-shape-functions" class="level3" data-number="7.5.2">
+<h3 data-number="7.5.2" class="anchored" data-anchor-id="d-rectangular-elements-linear-shape-functions"><span class="header-section-number">7.5.2</span> 2D Rectangular Elements: Linear Shape Functions</h3>
+<p><strong>Design requirements for shape functions:</strong></p>
+<ul>
+<li><strong>Simplicity:</strong> Describe change in the element’s domain with minimal complexity</li>
+<li><strong>Local support:</strong> Each shape function corresponds to one node, value of “1” at one node, “0” at all other nodes</li>
+</ul>
+<p><strong>1D analogy:</strong> <span class="math inline">\(u^e = a_i \phi_i^g + a_{i+1} \phi_{i+1}^g\)</span> (where <span class="math inline">\(u^e \in [x_i, x_{i+1}]\)</span>)</p>
+<p><strong>2D extension:</strong> For a linear rectangular element, we need <strong>four shape functions</strong> to describe <span class="math inline">\(u^e\)</span></p>
+</section>
+<section id="rectangular-element-with-linear-shape-functions" class="level3" data-number="7.5.3">
+<h3 data-number="7.5.3" class="anchored" data-anchor-id="rectangular-element-with-linear-shape-functions"><span class="header-section-number">7.5.3</span> Rectangular Element with Linear Shape Functions</h3>
+<p>Consider a rectangular element with nodes numbered as follows:</p>
+<pre><code>4 ────── 3
+│        │  b
+│   ue   │
+│        │
+1 ────── 2
+    a</code></pre>
+<p><strong>Shape functions for specific rectangular element:</strong></p>
+<p><span class="math display">\[\phi_1^g = \frac{1}{ab}(a-x)(b-y)\]</span></p>
+<p><span class="math display">\[\phi_2^g = \frac{1}{ab}x(b-y)\]</span></p>
+<p><span class="math display">\[\phi_3^g = \frac{1}{ab}xy\]</span></p>
+<p><span class="math display">\[\phi_4^g = \frac{1}{ab}(a-x)y\]</span></p>
+<p><strong>Verification:</strong></p>
+<ul>
+<li><span class="math inline">\(\phi_1^g(0,0) = 1\)</span>, <span class="math inline">\(\phi_1^g(a,0) = 0\)</span>, <span class="math inline">\(\phi_1^g(0,b) = 0\)</span>, <span class="math inline">\(\phi_1^g(a,b) = 0\)</span> ✓</li>
+<li><span class="math inline">\(\phi_2^g(0,0) = 0\)</span>, <span class="math inline">\(\phi_2^g(a,0) = 1\)</span>, <span class="math inline">\(\phi_2^g(0,b) = 0\)</span>, <span class="math inline">\(\phi_2^g(a,b) = 0\)</span> ✓</li>
+</ul>
+<p><strong>Element solution:</strong> <span class="math inline">\(u^e = a_1 \phi_1^g + a_2 \phi_2^g + a_3 \phi_3^g + a_4 \phi_4^g = u^e(x,y)\)</span></p>
+</section>
+</section>
+<section id="master-element-concept-in-2d" class="level2" data-number="7.6">
+<h2 data-number="7.6" class="anchored" data-anchor-id="master-element-concept-in-2d"><span class="header-section-number">7.6</span> Master Element Concept in 2D</h2>
+<section id="mapping-to-master-element" class="level3" data-number="7.6.1">
+<h3 data-number="7.6.1" class="anchored" data-anchor-id="mapping-to-master-element"><span class="header-section-number">7.6.1</span> Mapping to Master Element</h3>
+<p><strong>Purpose:</strong> Map general elements to a standardized <strong>master element</strong> for easier computation</p>
+<p><strong>Coordinate transformation:</strong> <span class="math inline">\([x,y] \rightarrow [\zeta_1, \zeta_2] \in [-1,1] \times [-1,1]\)</span></p>
+<p><strong>Master element node numbering convention:</strong></p>
+<pre><code>4 ────── 3   z2
+│        │    ^
+│        │    |
+│        │    |
+1 ────── 2    +-&gt; z1</code></pre>
+<p><strong>Master element shape functions:</strong></p>
+<p><span class="math display">\[\hat{\phi}_1 = \phi_1^e(\zeta_1, \zeta_2) = \frac{1}{4}(1-\zeta_1)(1-\zeta_2)\]</span></p>
+<p><span class="math display">\[\hat{\phi}_2 = \phi_2^e(\zeta_1, \zeta_2) = \frac{1}{4}(1+\zeta_1)(1-\zeta_2)\]</span></p>
+<p><span class="math display">\[\hat{\phi}_3 = \phi_3^e(\zeta_1, \zeta_2) = \frac{1}{4}(1+\zeta_1)(1+\zeta_2)\]</span></p>
+<p><span class="math display">\[\hat{\phi}_4 = \phi_4^e(\zeta_1, \zeta_2) = \frac{1}{4}(1-\zeta_1)(1+\zeta_2)\]</span></p>
+<p><strong>Bi-linear nature:</strong> Each <span class="math inline">\(\hat{\phi}_i\)</span> equals “1” at the <span class="math inline">\(i\)</span>-th node and “0” at other nodes, creating <strong>bi-linear</strong> shape functions.</p>
+<p><strong>Example expansion:</strong> <span class="math inline">\(\hat{\phi}_1 = \frac{1}{4}(1-\zeta_1)(1-\zeta_2) = \frac{1}{4}(1-\zeta_1-\zeta_2+\zeta_1\zeta_2)\)</span></p>
+<p>The term <span class="math inline">\(\zeta_1\zeta_2\)</span> makes it bi-linear (linear in both coordinates).</p>
+<div id="fig-isoparametric-map" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-isoparametric-map-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="images/GLmap.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-isoparametric-map-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;7.1: Isoparametric mapping from the master element <span class="math inline">\(\hat{\Omega}=[-1,1]^2\)</span> in reference coordinates <span class="math inline">\((\zeta_1,\zeta_2)\)</span> to a physical element <span class="math inline">\(\Omega_e\)</span> in global coordinates <span class="math inline">\((x,y)\)</span> via the interpolation <span class="math inline">\(\mathbf{x}=\sum_i N_i(\boldsymbol{\zeta})\,\mathbf{x}_i\)</span>.
+</figcaption>
+</figure>
+</div>
+</section>
+</section>
+<section id="jacobian-and-coordinate-transformation" class="level2" data-number="7.7">
+<h2 data-number="7.7" class="anchored" data-anchor-id="jacobian-and-coordinate-transformation"><span class="header-section-number">7.7</span> Jacobian and Coordinate Transformation</h2>
+<section id="jacobian-matrix" class="level3" data-number="7.7.1">
+<h3 data-number="7.7.1" class="anchored" data-anchor-id="jacobian-matrix"><span class="header-section-number">7.7.1</span> Jacobian Matrix</h3>
+<p><strong>Definition:</strong></p>
+<p><span class="math display">\[\mathbf{F} = \begin{bmatrix} \frac{\partial x}{\partial \zeta_1} &amp; \frac{\partial x}{\partial \zeta_2} \\ \frac{\partial y}{\partial \zeta_1} &amp; \frac{\partial y}{\partial \zeta_2} \end{bmatrix}, \quad J = \text{Det}(\mathbf{F}) = \frac{\partial x}{\partial \zeta_1}\frac{\partial y}{\partial \zeta_2} - \frac{\partial x}{\partial \zeta_2}\frac{\partial y}{\partial \zeta_1}\]</span></p>
+<p><strong>Critical requirement:</strong> <span class="math inline">\(J &gt; 0\)</span> throughout the element for a “good” mapping</p>
+</section>
+<section id="isoparametric-mapping" class="level3" data-number="7.7.2">
+<h3 data-number="7.7.2" class="anchored" data-anchor-id="isoparametric-mapping"><span class="header-section-number">7.7.2</span> Isoparametric Mapping</h3>
+<p>We will use <strong>isoparametric</strong> mapping, where the same shape functions are used for both geometry and field variables.</p>
+<p><strong>Coordinate transformation:</strong></p>
+<p><span class="math display">\[x (\chi_1,\chi_2)= \sum_{i=1}^4 \chi_{1i} \hat{\phi}_i = \chi_{11}\hat{\phi}_1 + \chi_{12}\hat{\phi}_2 + \chi_{13}\hat{\phi}_3 + \chi_{14}\hat{\phi}_4\]</span></p>
+<p><span class="math display">\[y(\chi_1, \chi_2) = \sum_{i=1}^4 \chi_{2i} \hat{\phi}_i\]</span></p>
+<p>Where <span class="math inline">\(\chi_{1i}\)</span> are global x-coordinates and <span class="math inline">\(\chi_{2i}\)</span> are global y-coordinates of element nodes.</p>
+</section>
+</section>
+<section id="element-quality-good-vs-bad-elements" class="level2" data-number="7.8">
+<h2 data-number="7.8" class="anchored" data-anchor-id="element-quality-good-vs-bad-elements"><span class="header-section-number">7.8</span> Element Quality: Good vs Bad Elements</h2>
+<section id="acceptable-elements" class="level3" data-number="7.8.1">
+<h3 data-number="7.8.1" class="anchored" data-anchor-id="acceptable-elements"><span class="header-section-number">7.8.1</span> Acceptable Elements</h3>
+<p><strong>Case 1 - Rectangular element:</strong> <span class="math inline">\(0 &lt; J(\zeta_1, \zeta_2) &lt; \infty\)</span> throughout element</p>
+<ul>
+<li>Jacobian is constant</li>
+<li>Acceptable</li>
+</ul>
+<p><strong>Case 3 - Distorted but convex:</strong> <span class="math inline">\(0 &lt; J(\zeta_1, \zeta_2) &lt; \infty\)</span> throughout element</p>
+<ul>
+<li>Jacobian varies but remains positive and bounded</li>
+<li>Acceptable</li>
+</ul>
+</section>
+<section id="unacceptable-elements" class="level3" data-number="7.8.2">
+<h3 data-number="7.8.2" class="anchored" data-anchor-id="unacceptable-elements"><span class="header-section-number">7.8.2</span> Unacceptable Elements</h3>
+<p><strong>Case 2 - Incorrect node numbering:</strong> <span class="math inline">\(J(\zeta_1, \zeta_2) &lt; 0\)</span> throughout element</p>
+<ul>
+<li>Nodes numbered incorrectly, turning element “inside out”</li>
+<li>Unacceptable</li>
+</ul>
+<p><strong>Case 4 - Partially negative Jacobian:</strong> <span class="math inline">\(J(\zeta_1, \zeta_2) &lt; 0\)</span> in some regions</p>
+<ul>
+<li>Can cause singularities in stiffness matrix</li>
+<li>Unacceptable</li>
+</ul>
+<div id="fig-element-cases" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-element-cases-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="images/elementscases.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-element-cases-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;7.2: Element validity: Cases 1 and 3 are valid (convex, CCW node ordering, <span class="math inline">\(J&gt;0\)</span> everywhere). Case 2 fails due to clockwise node ordering (<span class="math inline">\(J&lt;0\)</span>). Case 4 fails because the concave (folded) shape causes <span class="math inline">\(J&lt;0\)</span> inside the element.
+</figcaption>
+</figure>
+</div>
+<p><strong>Key insight for linear elements:</strong> The primary indicator of problematic elements is <strong>non-convexity</strong>, even with correct numbering.</p>
+</section>
+</section>
+<section id="bookkeeping-in-2d-finite-elements" class="level2" data-number="7.9">
+<h2 data-number="7.9" class="anchored" data-anchor-id="bookkeeping-in-2d-finite-elements"><span class="header-section-number">7.9</span> Bookkeeping in 2D Finite Elements</h2>
+<section id="difference-from-1d" class="level3" data-number="7.9.1">
+<h3 data-number="7.9.1" class="anchored" data-anchor-id="difference-from-1d"><span class="header-section-number">7.9.1</span> Difference from 1D</h3>
+<p><strong>1D:</strong> Node numbering is intuitive and element connectivity is straightforward</p>
+<pre><code>1 ── 2 ── 3 ── 4 ── 5 ── 6 ── 7 ── 8 ── 9</code></pre>
+<p><strong>2D:</strong> More complex connectivity patterns require systematic bookkeeping</p>
+</section>
+<section id="element-connectivity-tables" class="level3" data-number="7.9.2">
+<h3 data-number="7.9.2" class="anchored" data-anchor-id="element-connectivity-tables"><span class="header-section-number">7.9.2</span> Element Connectivity Tables</h3>
+<p><strong>Element-to-node connectivity:</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Element</th>
+<th>Node 1</th>
+<th>Node 2</th>
+<th>Node 3</th>
+<th>Node 4</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>20</td>
+<td>21</td>
+<td>2</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>21</td>
+<td>22</td>
+<td>3</td>
+<td>2</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Node coordinate table:</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Node</th>
+<th>X-coord</th>
+<th>Y-coord</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>X₁</td>
+<td>Y₁</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>X₂</td>
+<td>Y₂</td>
+</tr>
+<tr class="odd">
+<td>…</td>
+<td>…</td>
+<td>…</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Importance:</strong> Essential for assembling the global stiffness matrix <span class="math inline">\([K_{ij}^g]\)</span> and load vector <span class="math inline">\(\{F_i^g\}\)</span>, and for enforcing boundary conditions.</p>
+</section>
+</section>
+<section id="shape-functions-differential-properties" class="level2" data-number="7.10">
+<h2 data-number="7.10" class="anchored" data-anchor-id="shape-functions-differential-properties"><span class="header-section-number">7.10</span> Shape Functions: Differential Properties</h2>
+<section id="coordinate-transformation-relations" class="level3" data-number="7.10.1">
+<h3 data-number="7.10.1" class="anchored" data-anchor-id="coordinate-transformation-relations"><span class="header-section-number">7.10.1</span> Coordinate Transformation Relations</h3>
+<p><strong>Forward transformation (ζ → x):</strong></p>
+<p><span class="math display">\[\frac{\partial}{\partial \zeta_1} = \frac{\partial}{\partial x}\frac{\partial x}{\partial \zeta_1} + \frac{\partial}{\partial y}\frac{\partial y}{\partial \zeta_1}\]</span></p>
+<p><span class="math display">\[\frac{\partial}{\partial \zeta_2} = \frac{\partial}{\partial x}\frac{\partial x}{\partial \zeta_2} + \frac{\partial}{\partial y}\frac{\partial y}{\partial \zeta_2}\]</span></p>
+<p><strong>Inverse transformation (x → ζ):</strong></p>
+<p><span class="math display">\[\frac{\partial}{\partial x} = \frac{\partial}{\partial \zeta_1}\frac{\partial \zeta_1}{\partial x} + \frac{\partial}{\partial \zeta_2}\frac{\partial \zeta_2}{\partial x}\]</span></p>
+<p><span class="math display">\[\frac{\partial}{\partial y} = \frac{\partial}{\partial \zeta_1}\frac{\partial \zeta_1}{\partial y} + \frac{\partial}{\partial \zeta_2}\frac{\partial \zeta_2}{\partial y}\]</span></p>
+<p><strong>Matrix form:</strong></p>
+<p><span class="math display">\[\begin{bmatrix} dx \\ dy \end{bmatrix} = \mathbf{F} \begin{bmatrix} d\zeta_1 \\ d\zeta_2 \end{bmatrix}, \quad \begin{bmatrix} d\zeta_1 \\ d\zeta_2 \end{bmatrix} = \mathbf{F}^{-1} \begin{bmatrix} dx \\ dy \end{bmatrix}\]</span></p>
+</section>
+<section id="gradient-calculation-in-master-element" class="level3" data-number="7.10.2">
+<h3 data-number="7.10.2" class="anchored" data-anchor-id="gradient-calculation-in-master-element"><span class="header-section-number">7.10.2</span> Gradient Calculation in Master Element</h3>
+<p><strong>For test function V:</strong></p>
+<p><span class="math display">\[\text{grad}(V) = \begin{bmatrix} \frac{\partial V}{\partial x} \\ \frac{\partial V}{\partial y} \end{bmatrix} = \begin{bmatrix} \frac{\partial \zeta_1}{\partial x} &amp; \frac{\partial \zeta_2}{\partial x} \\ \frac{\partial \zeta_1}{\partial y} &amp; \frac{\partial \zeta_2}{\partial y} \end{bmatrix}^T \begin{bmatrix} \frac{\partial V}{\partial \zeta_1} \\ \frac{\partial V}{\partial \zeta_2} \end{bmatrix}\]</span></p>
+<p><strong>For temperature field T:</strong></p>
+<p><span class="math display">\[\text{grad}(T) = \begin{bmatrix} \frac{\partial T}{\partial x} \\ \frac{\partial T}{\partial y} \end{bmatrix} = \begin{bmatrix} \frac{\partial \zeta_1}{\partial x} &amp; \frac{\partial \zeta_2}{\partial x} \\ \frac{\partial \zeta_1}{\partial y} &amp; \frac{\partial \zeta_2}{\partial y} \end{bmatrix}^T \begin{bmatrix} \frac{\partial T}{\partial \zeta_1} \\ \frac{\partial T}{\partial \zeta_2} \end{bmatrix}\]</span></p>
+
+
+<!-- -->
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+    const viewSource = window.document.getElementById('quarto-view-source') ||
+                       window.document.getElementById('quarto-code-tools-source');
+    if (viewSource) {
+      const sourceUrl = viewSource.getAttribute("data-quarto-source-url");
+      viewSource.addEventListener("click", function(e) {
+        if (sourceUrl) {
+          // rstudio viewer pane
+          if (/\bcapabilities=\b/.test(window.location)) {
+            window.open(sourceUrl);
+          } else {
+            window.location.href = sourceUrl;
+          }
+        } else {
+          const modal = new bootstrap.Modal(document.getElementById('quarto-embedded-source-code-modal'));
+          modal.show();
+        }
+        return false;
+      });
+    }
+    function toggleCodeHandler(show) {
+      return function(e) {
+        const detailsSrc = window.document.querySelectorAll(".cell > details > .sourceCode");
+        for (let i=0; i<detailsSrc.length; i++) {
+          const details = detailsSrc[i].parentElement;
+          if (show) {
+            details.open = true;
+          } else {
+            details.removeAttribute("open");
+          }
+        }
+        const cellCodeDivs = window.document.querySelectorAll(".cell > .sourceCode");
+        const fromCls = show ? "hidden" : "unhidden";
+        const toCls = show ? "unhidden" : "hidden";
+        for (let i=0; i<cellCodeDivs.length; i++) {
+          const codeDiv = cellCodeDivs[i];
+          if (codeDiv.classList.contains(fromCls)) {
+            codeDiv.classList.remove(fromCls);
+            codeDiv.classList.add(toCls);
+          } 
+        }
+        return false;
+      }
+    }
+    const hideAllCode = window.document.getElementById("quarto-hide-all-code");
+    if (hideAllCode) {
+      hideAllCode.addEventListener("click", toggleCodeHandler(false));
+    }
+    const showAllCode = window.document.getElementById("quarto-show-all-code");
+    if (showAllCode) {
+      showAllCode.addEventListener("click", toggleCodeHandler(true));
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="./ch05-time-dependent.html" class="pagination-link" aria-label="Time-Dependent 1D Problems">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">Time-Dependent 1D Problems</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="./ch07-b-matrix.html" class="pagination-link" aria-label="The B Matrix">
+        <span class="nav-page-text"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">The B Matrix</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> "From 1D to Multi-Dimensional FEM"</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>::: {.content-visible when-format="html"}</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>::: {.callout-tip}</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="fu">## Companion notebooks</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>Work through these hands-on notebooks alongside this chapter:</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">05 – Reference Element Gallery</span><span class="co">](notebooks/05_reference_element_gallery.html)</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="co">[</span><span class="ot">06 – 2D Triangle Poisson</span><span class="co">](notebooks/06_2d_triangle_poisson.html)</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="fu">## Mathematical Preliminaries</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>Looking at the following equation:</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>\text{div}(\mathbf{K}\cdot \text{grad}(T))</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>if $\mathbf{K}$ is a constant multiplied by the identity matrix, we can write it as:</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>\text{div}(\mathbf{K}\cdot \text{grad}(T))  = \text{div}(\mathbf{K} \left <span class="co">[</span><span class="ot">\frac{\partial T}{\partial x} \mathbf{e}_1 +\frac{\partial T}{\partial y} \mathbf{e}_2+\frac{\partial T}{\partial z} \mathbf{e}_3 \right </span><span class="co">]</span>) = \mathbf{K} \left ( \frac{\partial^2 T}{\partial x^2}+\frac{\partial^2 T}{\partial y^2}+\frac{\partial^2 T}{\partial z^2} \right) = \mathbf{K}\nabla^2T</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a><span class="fu">### Temperature as a Scalar Field</span></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>T \text{ - Scalar} \Rightarrow \text{grad}(T) = \left(\frac{\partial T}{\partial x}\mathbf{e_1} + \frac{\partial T}{\partial y}\mathbf{e_2} + \frac{\partial T}{\partial z}\mathbf{e_3}\right) \text{ - vector}</span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a><span class="fu">### Conductivity Matrix Operation</span></span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>\mathbf{K} \cdot \text{grad}(T) = \begin{bmatrix} K_{11} &amp; K_{12} &amp; K_{13} <span class="sc">\\</span> K_{21} &amp; K_{22} &amp; K_{23} <span class="sc">\\</span> K_{31} &amp; K_{32} &amp; K_{33} \end{bmatrix} \text{transpose}\left(\left(\frac{\partial T}{\partial x}\mathbf{e_1} + \frac{\partial T}{\partial y}\mathbf{e_2} + \frac{\partial T}{\partial z}\mathbf{e_3}\right)\right)</span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a><span class="fu">### Heat Flux Vector</span></span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a>Let's define $\mathbf{q} = -\mathbf{K} \cdot \text{grad}(T)$ as the heat flux vector.</span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a>Divergence of heat flux:</span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a>\text{div}(\mathbf{q}) = \frac{\partial q_x}{\partial x} + \frac{\partial q_y}{\partial y} + \frac{\partial q_z}{\partial z}</span>
+<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb4-50"><a href="#cb4-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-51"><a href="#cb4-51" aria-hidden="true" tabindex="-1"></a><span class="fu">## The Product Rule for Divergence</span></span>
+<span id="cb4-52"><a href="#cb4-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-53"><a href="#cb4-53" aria-hidden="true" tabindex="-1"></a>To answer the question "What happens when we multiply the heat conduction equation by a test function V?", we need to use the **product rule for divergence**:</span>
+<span id="cb4-54"><a href="#cb4-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-55"><a href="#cb4-55" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb4-56"><a href="#cb4-56" aria-hidden="true" tabindex="-1"></a>\text{div}(V \mathbf{K} \text{ grad}(T)) = \text{grad}(V) \cdot \mathbf{K} \cdot \text{grad}(T) + V \text{ div}(\mathbf{K} \cdot \text{grad}(T))</span>
+<span id="cb4-57"><a href="#cb4-57" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb4-58"><a href="#cb4-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-59"><a href="#cb4-59" aria-hidden="true" tabindex="-1"></a>However, if $\mathbf{K}=k$ is constant, we can simplify this to:</span>
+<span id="cb4-60"><a href="#cb4-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-61"><a href="#cb4-61" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb4-62"><a href="#cb4-62" aria-hidden="true" tabindex="-1"></a>\text{div}(V \mathbf{K} \text{ grad}(T))=k\text{div}(V \text{ grad}(T))=k(\text{grad}(V) \cdot \text{grad}(T) + V \nabla^2(T))</span>
+<span id="cb4-63"><a href="#cb4-63" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb4-64"><a href="#cb4-64" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-65"><a href="#cb4-65" aria-hidden="true" tabindex="-1"></a><span class="fu">### Detailed Expansion</span></span>
+<span id="cb4-66"><a href="#cb4-66" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-67"><a href="#cb4-67" aria-hidden="true" tabindex="-1"></a>Let's expand $\text{div}(V \mathbf{K} \text{ grad}(T))$ step by step:</span>
+<span id="cb4-68"><a href="#cb4-68" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-69"><a href="#cb4-69" aria-hidden="true" tabindex="-1"></a>$$\text{div}(V \mathbf{K} \text{ grad}(T)) = \frac{\partial}{\partial x}\left(V K \frac{\partial T}{\partial x}\right) + \frac{\partial}{\partial y}\left(V K \frac{\partial T}{\partial y}\right) + \frac{\partial}{\partial z}\left(V K \frac{\partial T}{\partial z}\right)$$</span>
+<span id="cb4-70"><a href="#cb4-70" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-71"><a href="#cb4-71" aria-hidden="true" tabindex="-1"></a>Applying the product rule to each term:</span>
+<span id="cb4-72"><a href="#cb4-72" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-73"><a href="#cb4-73" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb4-74"><a href="#cb4-74" aria-hidden="true" tabindex="-1"></a>= \frac{\partial V}{\partial x} K \frac{\partial T}{\partial x} + \frac{\partial V}{\partial y} K \frac{\partial T}{\partial y} + \frac{\partial V}{\partial z} K \frac{\partial T}{\partial z} + V K \frac{\partial^2 T}{\partial x^2} + V K \frac{\partial^2 T}{\partial y^2} + V K \frac{\partial^2 T}{\partial z^2}</span>
+<span id="cb4-75"><a href="#cb4-75" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb4-76"><a href="#cb4-76" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-77"><a href="#cb4-77" aria-hidden="true" tabindex="-1"></a>We can group these terms into two parts:</span>
+<span id="cb4-78"><a href="#cb4-78" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-79"><a href="#cb4-79" aria-hidden="true" tabindex="-1"></a>**Gradient Terms:**</span>
+<span id="cb4-80"><a href="#cb4-80" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-81"><a href="#cb4-81" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb4-82"><a href="#cb4-82" aria-hidden="true" tabindex="-1"></a>\text{grad}(V) \cdot \mathbf{K} \cdot \text{grad}(T) = \left(\frac{\partial V}{\partial x}, \frac{\partial V}{\partial y}, \frac{\partial V}{\partial z}\right) \cdot \mathbf{K} \cdot \left(\frac{\partial T}{\partial x}, \frac{\partial T}{\partial y}, \frac{\partial T}{\partial z}\right)</span>
+<span id="cb4-83"><a href="#cb4-83" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb4-84"><a href="#cb4-84" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-85"><a href="#cb4-85" aria-hidden="true" tabindex="-1"></a>For constant K, this becomes:</span>
+<span id="cb4-86"><a href="#cb4-86" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-87"><a href="#cb4-87" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb4-88"><a href="#cb4-88" aria-hidden="true" tabindex="-1"></a>= K\left(\frac{\partial V}{\partial x} \frac{\partial T}{\partial x} + \frac{\partial V}{\partial y} \frac{\partial T}{\partial y} + \frac{\partial V}{\partial z} \frac{\partial T}{\partial z}\right) = A</span>
+<span id="cb4-89"><a href="#cb4-89" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb4-90"><a href="#cb4-90" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-91"><a href="#cb4-91" aria-hidden="true" tabindex="-1"></a>**Second Derivative Terms:**</span>
+<span id="cb4-92"><a href="#cb4-92" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-93"><a href="#cb4-93" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb4-94"><a href="#cb4-94" aria-hidden="true" tabindex="-1"></a>V \text{ div}(\mathbf{K} \cdot \text{grad}(T)) = V K \left(\frac{\partial^2 T}{\partial x^2} + \frac{\partial^2 T}{\partial y^2} + \frac{\partial^2 T}{\partial z^2}\right) = B</span>
+<span id="cb4-95"><a href="#cb4-95" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb4-96"><a href="#cb4-96" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-97"><a href="#cb4-97" aria-hidden="true" tabindex="-1"></a><span class="fu">### The Key Relationship</span></span>
+<span id="cb4-98"><a href="#cb4-98" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-99"><a href="#cb4-99" aria-hidden="true" tabindex="-1"></a>From the product rule, we have:</span>
+<span id="cb4-100"><a href="#cb4-100" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-101"><a href="#cb4-101" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb4-102"><a href="#cb4-102" aria-hidden="true" tabindex="-1"></a>\text{div}(V \mathbf{K} \text{ grad}(T)) = A + B</span>
+<span id="cb4-103"><a href="#cb4-103" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb4-104"><a href="#cb4-104" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-105"><a href="#cb4-105" aria-hidden="true" tabindex="-1"></a>Therefore:</span>
+<span id="cb4-106"><a href="#cb4-106" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-107"><a href="#cb4-107" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb4-108"><a href="#cb4-108" aria-hidden="true" tabindex="-1"></a>B = \text{div}(V \mathbf{K} \text{ grad}(T)) - A</span>
+<span id="cb4-109"><a href="#cb4-109" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb4-110"><a href="#cb4-110" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-111"><a href="#cb4-111" aria-hidden="true" tabindex="-1"></a>Which gives us:</span>
+<span id="cb4-112"><a href="#cb4-112" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-113"><a href="#cb4-113" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb4-114"><a href="#cb4-114" aria-hidden="true" tabindex="-1"></a>\text{div}(\mathbf{K} \text{ grad}(T)) V = \text{div}(V \mathbf{K} \text{ grad}(T)) - \text{grad}(V) \cdot \mathbf{K} \cdot \text{grad}(T)</span>
+<span id="cb4-115"><a href="#cb4-115" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb4-116"><a href="#cb4-116" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-117"><a href="#cb4-117" aria-hidden="true" tabindex="-1"></a><span class="fu">### Physical Interpretation</span></span>
+<span id="cb4-118"><a href="#cb4-118" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-119"><a href="#cb4-119" aria-hidden="true" tabindex="-1"></a>This mathematical identity is the foundation for:</span>
+<span id="cb4-120"><a href="#cb4-120" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-121"><a href="#cb4-121" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**Integration by parts** in the weak formulation</span>
+<span id="cb4-122"><a href="#cb4-122" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**Converting strong form to weak form** in finite element methods</span>
+<span id="cb4-123"><a href="#cb4-123" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>**Moving derivatives from the solution to the test function**</span>
+<span id="cb4-124"><a href="#cb4-124" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-125"><a href="#cb4-125" aria-hidden="true" tabindex="-1"></a>The term $\text{div}(V \mathbf{K} \text{ grad}(T))$ will become a boundary integral when integrated over the domain, while $\text{grad}(V) \cdot \mathbf{K} \cdot \text{grad}(T)$ becomes the bilinear form in the finite element formulation.</span>
+<span id="cb4-126"><a href="#cb4-126" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-127"><a href="#cb4-127" aria-hidden="true" tabindex="-1"></a><span class="fu">### Weak Form Foundation</span></span>
+<span id="cb4-128"><a href="#cb4-128" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-129"><a href="#cb4-129" aria-hidden="true" tabindex="-1"></a>When integrated over a domain $\Omega$, this relationship becomes:</span>
+<span id="cb4-130"><a href="#cb4-130" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-131"><a href="#cb4-131" aria-hidden="true" tabindex="-1"></a>$$\int_\Omega V \text{ div}(\mathbf{K} \text{ grad}(T)) \, d\Omega = \int_\Omega \text{div}(V \mathbf{K} \text{ grad}(T)) \, d\Omega - \int_\Omega \text{grad}(V) \cdot \mathbf{K} \cdot \text{grad}(T) \, d\Omega$$</span>
+<span id="cb4-132"><a href="#cb4-132" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-133"><a href="#cb4-133" aria-hidden="true" tabindex="-1"></a>Using the divergence theorem, the first integral on the right becomes a boundary integral, leading to the standard weak form used in finite element analysis.</span>
+<span id="cb4-134"><a href="#cb4-134" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-135"><a href="#cb4-135" aria-hidden="true" tabindex="-1"></a><span class="fu">## FEM in 2D/3D: Heat Equation</span></span>
+<span id="cb4-136"><a href="#cb4-136" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-137"><a href="#cb4-137" aria-hidden="true" tabindex="-1"></a><span class="fu">### Problem Setup</span></span>
+<span id="cb4-138"><a href="#cb4-138" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-139"><a href="#cb4-139" aria-hidden="true" tabindex="-1"></a>**Governing equation:** $\text{div}(\mathbf{q}) = 0$</span>
+<span id="cb4-140"><a href="#cb4-140" aria-hidden="true" tabindex="-1"></a>where we assumed that there is no source term for simplicity.</span>
+<span id="cb4-141"><a href="#cb4-141" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-142"><a href="#cb4-142" aria-hidden="true" tabindex="-1"></a>**Constitutive equation (Fourier's law):** $\mathbf{q} = -\mathbf{K} \cdot \text{grad}(T)$</span>
+<span id="cb4-143"><a href="#cb4-143" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-144"><a href="#cb4-144" aria-hidden="true" tabindex="-1"></a>**Boundary conditions:**</span>
+<span id="cb4-145"><a href="#cb4-145" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-146"><a href="#cb4-146" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>$\Gamma_{T_0}: T = T_0$ (Essential BC)</span>
+<span id="cb4-147"><a href="#cb4-147" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>$\Gamma_{T_1}: T = T_1$ (Essential BC)</span>
+<span id="cb4-148"><a href="#cb4-148" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>$\Gamma_q: \mathbf{q} = \mathbf{q}^*_n$ (Natural BC)</span>
+<span id="cb4-149"><a href="#cb4-149" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-150"><a href="#cb4-150" aria-hidden="true" tabindex="-1"></a>where $\mathbf{q}^*_n$ is the prescribed heat flux on the boundary $\Gamma_q$ in the direction of the (outwards) normal to the surface.</span>
+<span id="cb4-151"><a href="#cb4-151" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-152"><a href="#cb4-152" aria-hidden="true" tabindex="-1"></a>**Combined form:** $\text{div}(\mathbf{q}) = -\text{div}(\mathbf{K} \cdot \text{grad}(T)) = 0$</span>
+<span id="cb4-153"><a href="#cb4-153" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-154"><a href="#cb4-154" aria-hidden="true" tabindex="-1"></a><span class="fu">## Weak Form Derivation</span></span>
+<span id="cb4-155"><a href="#cb4-155" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-156"><a href="#cb4-156" aria-hidden="true" tabindex="-1"></a>**Step 1:** Multiply by test function V and integrate over domain</span>
+<span id="cb4-157"><a href="#cb4-157" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-158"><a href="#cb4-158" aria-hidden="true" tabindex="-1"></a>$$\int_\Omega \text{div}(\mathbf{K} \cdot \text{grad}(T)) V \, d\Omega = 0$$</span>
+<span id="cb4-159"><a href="#cb4-159" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-160"><a href="#cb4-160" aria-hidden="true" tabindex="-1"></a>**Step 2:** Apply the product rule result</span>
+<span id="cb4-161"><a href="#cb4-161" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-162"><a href="#cb4-162" aria-hidden="true" tabindex="-1"></a>$$\int_\Omega \text{div}(V \mathbf{K} \cdot \text{grad}(T)) \, d\Omega - \int_\Omega \text{grad}(V) \cdot \mathbf{K} \cdot \text{grad}(T) \, d\Omega = 0$$</span>
+<span id="cb4-163"><a href="#cb4-163" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-164"><a href="#cb4-164" aria-hidden="true" tabindex="-1"></a>**Step 3:** Apply divergence theorem to first integral</span>
+<span id="cb4-165"><a href="#cb4-165" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-166"><a href="#cb4-166" aria-hidden="true" tabindex="-1"></a>$$\int_\Omega \text{div}(V \mathbf{K} \cdot \text{grad}(T)) \, d\Omega = \int_\Omega \text{div}(V \mathbf{q}) \, d\Omega = \int_{\partial\Omega} V \mathbf{q} \cdot \mathbf{n} \, d\Gamma$$</span>
+<span id="cb4-167"><a href="#cb4-167" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-168"><a href="#cb4-168" aria-hidden="true" tabindex="-1"></a>**Final weak form:**</span>
+<span id="cb4-169"><a href="#cb4-169" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-170"><a href="#cb4-170" aria-hidden="true" tabindex="-1"></a>$$\int_{\partial\Omega} V \mathbf{q} \cdot \mathbf{n} \, d\Gamma - \int_\Omega \text{grad}(V) \cdot \mathbf{K} \cdot \text{grad}(T) \, d\Omega = 0$$</span>
+<span id="cb4-171"><a href="#cb4-171" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-172"><a href="#cb4-172" aria-hidden="true" tabindex="-1"></a>**Finite element approximation:**</span>
+<span id="cb4-173"><a href="#cb4-173" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-174"><a href="#cb4-174" aria-hidden="true" tabindex="-1"></a>$$V_h = \sum_{i=1}^N b_i \phi_i(x,y), \quad T_h = \sum_{j=1}^N a_j \phi_j(x,y) \Rightarrow <span class="sc">\{</span>a_j<span class="sc">\}</span>$$</span>
+<span id="cb4-175"><a href="#cb4-175" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-176"><a href="#cb4-176" aria-hidden="true" tabindex="-1"></a><span class="fu">## 2D/3D Finite Elements: Geometry and Shape Functions</span></span>
+<span id="cb4-177"><a href="#cb4-177" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-178"><a href="#cb4-178" aria-hidden="true" tabindex="-1"></a><span class="fu">### Transition from 1D to 2D/3D</span></span>
+<span id="cb4-179"><a href="#cb4-179" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-180"><a href="#cb4-180" aria-hidden="true" tabindex="-1"></a>**Key differences:**</span>
+<span id="cb4-181"><a href="#cb4-181" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-182"><a href="#cb4-182" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**1D:** Geometric description is simpler - element domain is simply a line</span>
+<span id="cb4-183"><a href="#cb4-183" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**2D/3D:** Geometry plays a crucial role and complexity increases significantly</span>
+<span id="cb4-184"><a href="#cb4-184" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-185"><a href="#cb4-185" aria-hidden="true" tabindex="-1"></a>**Most common finite element geometries:**</span>
+<span id="cb4-186"><a href="#cb4-186" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-187"><a href="#cb4-187" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**2D:** Triangular elements and Rectangular elements</span>
+<span id="cb4-188"><a href="#cb4-188" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**3D:** Tetrahedron elements and Hexahedron elements</span>
+<span id="cb4-189"><a href="#cb4-189" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-190"><a href="#cb4-190" aria-hidden="true" tabindex="-1"></a><span class="fu">### 2D Rectangular Elements: Linear Shape Functions</span></span>
+<span id="cb4-191"><a href="#cb4-191" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-192"><a href="#cb4-192" aria-hidden="true" tabindex="-1"></a>**Design requirements for shape functions:**</span>
+<span id="cb4-193"><a href="#cb4-193" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-194"><a href="#cb4-194" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Simplicity:** Describe change in the element's domain with minimal complexity</span>
+<span id="cb4-195"><a href="#cb4-195" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Local support:** Each shape function corresponds to one node, value of "1" at one node, "0" at all other nodes</span>
+<span id="cb4-196"><a href="#cb4-196" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-197"><a href="#cb4-197" aria-hidden="true" tabindex="-1"></a>**1D analogy:** $u^e = a_i \phi_i^g + a_{i+1} \phi_{i+1}^g$ (where $u^e \in <span class="co">[</span><span class="ot">x_i, x_{i+1}</span><span class="co">]</span>$)</span>
+<span id="cb4-198"><a href="#cb4-198" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-199"><a href="#cb4-199" aria-hidden="true" tabindex="-1"></a>**2D extension:** For a linear rectangular element, we need **four shape functions** to describe $u^e$</span>
+<span id="cb4-200"><a href="#cb4-200" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-201"><a href="#cb4-201" aria-hidden="true" tabindex="-1"></a><span class="fu">### Rectangular Element with Linear Shape Functions</span></span>
+<span id="cb4-202"><a href="#cb4-202" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-203"><a href="#cb4-203" aria-hidden="true" tabindex="-1"></a>Consider a rectangular element with nodes numbered as follows:</span>
+<span id="cb4-204"><a href="#cb4-204" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-205"><a href="#cb4-205" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb4-206"><a href="#cb4-206" aria-hidden="true" tabindex="-1"></a><span class="in">4 ────── 3</span></span>
+<span id="cb4-207"><a href="#cb4-207" aria-hidden="true" tabindex="-1"></a><span class="in">│        │  b</span></span>
+<span id="cb4-208"><a href="#cb4-208" aria-hidden="true" tabindex="-1"></a><span class="in">│   ue   │</span></span>
+<span id="cb4-209"><a href="#cb4-209" aria-hidden="true" tabindex="-1"></a><span class="in">│        │</span></span>
+<span id="cb4-210"><a href="#cb4-210" aria-hidden="true" tabindex="-1"></a><span class="in">1 ────── 2</span></span>
+<span id="cb4-211"><a href="#cb4-211" aria-hidden="true" tabindex="-1"></a><span class="in">    a</span></span>
+<span id="cb4-212"><a href="#cb4-212" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb4-213"><a href="#cb4-213" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-214"><a href="#cb4-214" aria-hidden="true" tabindex="-1"></a>**Shape functions for specific rectangular element:**</span>
+<span id="cb4-215"><a href="#cb4-215" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-216"><a href="#cb4-216" aria-hidden="true" tabindex="-1"></a>$$\phi_1^g = \frac{1}{ab}(a-x)(b-y)$$</span>
+<span id="cb4-217"><a href="#cb4-217" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-218"><a href="#cb4-218" aria-hidden="true" tabindex="-1"></a>$$\phi_2^g = \frac{1}{ab}x(b-y)$$</span>
+<span id="cb4-219"><a href="#cb4-219" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-220"><a href="#cb4-220" aria-hidden="true" tabindex="-1"></a>$$\phi_3^g = \frac{1}{ab}xy$$</span>
+<span id="cb4-221"><a href="#cb4-221" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-222"><a href="#cb4-222" aria-hidden="true" tabindex="-1"></a>$$\phi_4^g = \frac{1}{ab}(a-x)y$$</span>
+<span id="cb4-223"><a href="#cb4-223" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-224"><a href="#cb4-224" aria-hidden="true" tabindex="-1"></a>**Verification:**</span>
+<span id="cb4-225"><a href="#cb4-225" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-226"><a href="#cb4-226" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>$\phi_1^g(0,0) = 1$, $\phi_1^g(a,0) = 0$, $\phi_1^g(0,b) = 0$, $\phi_1^g(a,b) = 0$ ✓</span>
+<span id="cb4-227"><a href="#cb4-227" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>$\phi_2^g(0,0) = 0$, $\phi_2^g(a,0) = 1$, $\phi_2^g(0,b) = 0$, $\phi_2^g(a,b) = 0$ ✓</span>
+<span id="cb4-228"><a href="#cb4-228" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-229"><a href="#cb4-229" aria-hidden="true" tabindex="-1"></a>**Element solution:** $u^e = a_1 \phi_1^g + a_2 \phi_2^g + a_3 \phi_3^g + a_4 \phi_4^g = u^e(x,y)$</span>
+<span id="cb4-230"><a href="#cb4-230" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-231"><a href="#cb4-231" aria-hidden="true" tabindex="-1"></a><span class="fu">## Master Element Concept in 2D</span></span>
+<span id="cb4-232"><a href="#cb4-232" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-233"><a href="#cb4-233" aria-hidden="true" tabindex="-1"></a><span class="fu">### Mapping to Master Element</span></span>
+<span id="cb4-234"><a href="#cb4-234" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-235"><a href="#cb4-235" aria-hidden="true" tabindex="-1"></a>**Purpose:** Map general elements to a standardized **master element** for easier computation</span>
+<span id="cb4-236"><a href="#cb4-236" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-237"><a href="#cb4-237" aria-hidden="true" tabindex="-1"></a>**Coordinate transformation:** $<span class="co">[</span><span class="ot">x,y</span><span class="co">]</span> \rightarrow <span class="co">[</span><span class="ot">\zeta_1, \zeta_2</span><span class="co">]</span> \in <span class="co">[</span><span class="ot">-1,1</span><span class="co">]</span> \times <span class="co">[</span><span class="ot">-1,1</span><span class="co">]</span>$</span>
+<span id="cb4-238"><a href="#cb4-238" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-239"><a href="#cb4-239" aria-hidden="true" tabindex="-1"></a>**Master element node numbering convention:**</span>
+<span id="cb4-240"><a href="#cb4-240" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-241"><a href="#cb4-241" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb4-242"><a href="#cb4-242" aria-hidden="true" tabindex="-1"></a><span class="in">4 ────── 3   z2</span></span>
+<span id="cb4-243"><a href="#cb4-243" aria-hidden="true" tabindex="-1"></a><span class="in">│        │    ^</span></span>
+<span id="cb4-244"><a href="#cb4-244" aria-hidden="true" tabindex="-1"></a><span class="in">│        │    |</span></span>
+<span id="cb4-245"><a href="#cb4-245" aria-hidden="true" tabindex="-1"></a><span class="in">│        │    |</span></span>
+<span id="cb4-246"><a href="#cb4-246" aria-hidden="true" tabindex="-1"></a><span class="in">1 ────── 2    +-&gt; z1</span></span>
+<span id="cb4-247"><a href="#cb4-247" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb4-248"><a href="#cb4-248" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-249"><a href="#cb4-249" aria-hidden="true" tabindex="-1"></a>**Master element shape functions:**</span>
+<span id="cb4-250"><a href="#cb4-250" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-251"><a href="#cb4-251" aria-hidden="true" tabindex="-1"></a>$$\hat{\phi}_1 = \phi_1^e(\zeta_1, \zeta_2) = \frac{1}{4}(1-\zeta_1)(1-\zeta_2)$$</span>
+<span id="cb4-252"><a href="#cb4-252" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-253"><a href="#cb4-253" aria-hidden="true" tabindex="-1"></a>$$\hat{\phi}_2 = \phi_2^e(\zeta_1, \zeta_2) = \frac{1}{4}(1+\zeta_1)(1-\zeta_2)$$</span>
+<span id="cb4-254"><a href="#cb4-254" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-255"><a href="#cb4-255" aria-hidden="true" tabindex="-1"></a>$$\hat{\phi}_3 = \phi_3^e(\zeta_1, \zeta_2) = \frac{1}{4}(1+\zeta_1)(1+\zeta_2)$$</span>
+<span id="cb4-256"><a href="#cb4-256" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-257"><a href="#cb4-257" aria-hidden="true" tabindex="-1"></a>$$\hat{\phi}_4 = \phi_4^e(\zeta_1, \zeta_2) = \frac{1}{4}(1-\zeta_1)(1+\zeta_2)$$</span>
+<span id="cb4-258"><a href="#cb4-258" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-259"><a href="#cb4-259" aria-hidden="true" tabindex="-1"></a>**Bi-linear nature:** Each $\hat{\phi}_i$ equals "1" at the $i$-th node and "0" at other nodes, creating **bi-linear** shape functions.</span>
+<span id="cb4-260"><a href="#cb4-260" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-261"><a href="#cb4-261" aria-hidden="true" tabindex="-1"></a>**Example expansion:** $\hat{\phi}_1 = \frac{1}{4}(1-\zeta_1)(1-\zeta_2) = \frac{1}{4}(1-\zeta_1-\zeta_2+\zeta_1\zeta_2)$</span>
+<span id="cb4-262"><a href="#cb4-262" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-263"><a href="#cb4-263" aria-hidden="true" tabindex="-1"></a>The term $\zeta_1\zeta_2$ makes it bi-linear (linear in both coordinates).</span>
+<span id="cb4-264"><a href="#cb4-264" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-265"><a href="#cb4-265" aria-hidden="true" tabindex="-1"></a>!<span class="co">[</span><span class="ot">Isoparametric mapping from the master element $\hat{\Omega}=[-1,1]^2$ in reference coordinates $(\zeta_1,\zeta_2)$ to a physical element $\Omega_e$ in global coordinates $(x,y)$ via the interpolation $\mathbf{x}=\sum_i N_i(\boldsymbol{\zeta})\,\mathbf{x}_i$.</span><span class="co">](images/GLmap.png)</span>{#fig-isoparametric-map}</span>
+<span id="cb4-266"><a href="#cb4-266" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-267"><a href="#cb4-267" aria-hidden="true" tabindex="-1"></a><span class="fu">## Jacobian and Coordinate Transformation</span></span>
+<span id="cb4-268"><a href="#cb4-268" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-269"><a href="#cb4-269" aria-hidden="true" tabindex="-1"></a><span class="fu">### Jacobian Matrix</span></span>
+<span id="cb4-270"><a href="#cb4-270" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-271"><a href="#cb4-271" aria-hidden="true" tabindex="-1"></a>**Definition:**</span>
+<span id="cb4-272"><a href="#cb4-272" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-273"><a href="#cb4-273" aria-hidden="true" tabindex="-1"></a>$$\mathbf{F} = \begin{bmatrix} \frac{\partial x}{\partial \zeta_1} &amp; \frac{\partial x}{\partial \zeta_2} <span class="sc">\\</span> \frac{\partial y}{\partial \zeta_1} &amp; \frac{\partial y}{\partial \zeta_2} \end{bmatrix}, \quad J = \text{Det}(\mathbf{F}) = \frac{\partial x}{\partial \zeta_1}\frac{\partial y}{\partial \zeta_2} - \frac{\partial x}{\partial \zeta_2}\frac{\partial y}{\partial \zeta_1}$$</span>
+<span id="cb4-274"><a href="#cb4-274" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-275"><a href="#cb4-275" aria-hidden="true" tabindex="-1"></a>**Critical requirement:** $J &gt; 0$ throughout the element for a "good" mapping</span>
+<span id="cb4-276"><a href="#cb4-276" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-277"><a href="#cb4-277" aria-hidden="true" tabindex="-1"></a><span class="fu">### Isoparametric Mapping</span></span>
+<span id="cb4-278"><a href="#cb4-278" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-279"><a href="#cb4-279" aria-hidden="true" tabindex="-1"></a>We will use **isoparametric** mapping, where the same shape functions are used for both geometry and field variables.</span>
+<span id="cb4-280"><a href="#cb4-280" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-281"><a href="#cb4-281" aria-hidden="true" tabindex="-1"></a>**Coordinate transformation:**</span>
+<span id="cb4-282"><a href="#cb4-282" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-283"><a href="#cb4-283" aria-hidden="true" tabindex="-1"></a>$$x (\chi_1,\chi_2)= \sum_{i=1}^4 \chi_{1i} \hat{\phi}_i = \chi_{11}\hat{\phi}_1 + \chi_{12}\hat{\phi}_2 + \chi_{13}\hat{\phi}_3 + \chi_{14}\hat{\phi}_4$$</span>
+<span id="cb4-284"><a href="#cb4-284" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-285"><a href="#cb4-285" aria-hidden="true" tabindex="-1"></a>$$y(\chi_1, \chi_2) = \sum_{i=1}^4 \chi_{2i} \hat{\phi}_i$$</span>
+<span id="cb4-286"><a href="#cb4-286" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-287"><a href="#cb4-287" aria-hidden="true" tabindex="-1"></a>Where $\chi_{1i}$ are global x-coordinates and $\chi_{2i}$ are global y-coordinates of element nodes.</span>
+<span id="cb4-288"><a href="#cb4-288" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-289"><a href="#cb4-289" aria-hidden="true" tabindex="-1"></a><span class="fu">## Element Quality: Good vs Bad Elements</span></span>
+<span id="cb4-290"><a href="#cb4-290" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-291"><a href="#cb4-291" aria-hidden="true" tabindex="-1"></a><span class="fu">### Acceptable Elements</span></span>
+<span id="cb4-292"><a href="#cb4-292" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-293"><a href="#cb4-293" aria-hidden="true" tabindex="-1"></a>**Case 1 - Rectangular element:** $0 &lt; J(\zeta_1, \zeta_2) &lt; \infty$ throughout element</span>
+<span id="cb4-294"><a href="#cb4-294" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-295"><a href="#cb4-295" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Jacobian is constant</span>
+<span id="cb4-296"><a href="#cb4-296" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Acceptable</span>
+<span id="cb4-297"><a href="#cb4-297" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-298"><a href="#cb4-298" aria-hidden="true" tabindex="-1"></a>**Case 3 - Distorted but convex:** $0 &lt; J(\zeta_1, \zeta_2) &lt; \infty$ throughout element</span>
+<span id="cb4-299"><a href="#cb4-299" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-300"><a href="#cb4-300" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Jacobian varies but remains positive and bounded</span>
+<span id="cb4-301"><a href="#cb4-301" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Acceptable</span>
+<span id="cb4-302"><a href="#cb4-302" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-303"><a href="#cb4-303" aria-hidden="true" tabindex="-1"></a><span class="fu">### Unacceptable Elements</span></span>
+<span id="cb4-304"><a href="#cb4-304" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-305"><a href="#cb4-305" aria-hidden="true" tabindex="-1"></a>**Case 2 - Incorrect node numbering:** $J(\zeta_1, \zeta_2) &lt; 0$ throughout element</span>
+<span id="cb4-306"><a href="#cb4-306" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-307"><a href="#cb4-307" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Nodes numbered incorrectly, turning element "inside out"</span>
+<span id="cb4-308"><a href="#cb4-308" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Unacceptable</span>
+<span id="cb4-309"><a href="#cb4-309" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-310"><a href="#cb4-310" aria-hidden="true" tabindex="-1"></a>**Case 4 - Partially negative Jacobian:** $J(\zeta_1, \zeta_2) &lt; 0$ in some regions</span>
+<span id="cb4-311"><a href="#cb4-311" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-312"><a href="#cb4-312" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Can cause singularities in stiffness matrix</span>
+<span id="cb4-313"><a href="#cb4-313" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Unacceptable</span>
+<span id="cb4-314"><a href="#cb4-314" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-315"><a href="#cb4-315" aria-hidden="true" tabindex="-1"></a><span class="al">![Element validity: Cases 1 and 3 are valid (convex, CCW node ordering, $J&gt;0$ everywhere). Case 2 fails due to clockwise node ordering ($J&lt;0$). Case 4 fails because the concave (folded) shape causes $J&lt;0$ inside the element.](images/elementscases.png)</span>{#fig-element-cases}</span>
+<span id="cb4-316"><a href="#cb4-316" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-317"><a href="#cb4-317" aria-hidden="true" tabindex="-1"></a>**Key insight for linear elements:** The primary indicator of problematic elements is **non-convexity**, even with correct numbering.</span>
+<span id="cb4-318"><a href="#cb4-318" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-319"><a href="#cb4-319" aria-hidden="true" tabindex="-1"></a><span class="fu">## Bookkeeping in 2D Finite Elements</span></span>
+<span id="cb4-320"><a href="#cb4-320" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-321"><a href="#cb4-321" aria-hidden="true" tabindex="-1"></a><span class="fu">### Difference from 1D</span></span>
+<span id="cb4-322"><a href="#cb4-322" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-323"><a href="#cb4-323" aria-hidden="true" tabindex="-1"></a>**1D:** Node numbering is intuitive and element connectivity is straightforward</span>
+<span id="cb4-324"><a href="#cb4-324" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-325"><a href="#cb4-325" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb4-326"><a href="#cb4-326" aria-hidden="true" tabindex="-1"></a><span class="in">1 ── 2 ── 3 ── 4 ── 5 ── 6 ── 7 ── 8 ── 9</span></span>
+<span id="cb4-327"><a href="#cb4-327" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb4-328"><a href="#cb4-328" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-329"><a href="#cb4-329" aria-hidden="true" tabindex="-1"></a>**2D:** More complex connectivity patterns require systematic bookkeeping</span>
+<span id="cb4-330"><a href="#cb4-330" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-331"><a href="#cb4-331" aria-hidden="true" tabindex="-1"></a><span class="fu">### Element Connectivity Tables</span></span>
+<span id="cb4-332"><a href="#cb4-332" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-333"><a href="#cb4-333" aria-hidden="true" tabindex="-1"></a>**Element-to-node connectivity:**</span>
+<span id="cb4-334"><a href="#cb4-334" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-335"><a href="#cb4-335" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Element <span class="pp">|</span> Node 1 <span class="pp">|</span> Node 2 <span class="pp">|</span> Node 3 <span class="pp">|</span> Node 4 <span class="pp">|</span></span>
+<span id="cb4-336"><a href="#cb4-336" aria-hidden="true" tabindex="-1"></a><span class="pp">|---------|--------|--------|--------|--------|</span></span>
+<span id="cb4-337"><a href="#cb4-337" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 1       <span class="pp">|</span> 20     <span class="pp">|</span> 21     <span class="pp">|</span> 2      <span class="pp">|</span> 1      <span class="pp">|</span></span>
+<span id="cb4-338"><a href="#cb4-338" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 2       <span class="pp">|</span> 21     <span class="pp">|</span> 22     <span class="pp">|</span> 3      <span class="pp">|</span> 2      <span class="pp">|</span></span>
+<span id="cb4-339"><a href="#cb4-339" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-340"><a href="#cb4-340" aria-hidden="true" tabindex="-1"></a>**Node coordinate table:**</span>
+<span id="cb4-341"><a href="#cb4-341" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-342"><a href="#cb4-342" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Node <span class="pp">|</span> X-coord <span class="pp">|</span> Y-coord <span class="pp">|</span></span>
+<span id="cb4-343"><a href="#cb4-343" aria-hidden="true" tabindex="-1"></a><span class="pp">|------|---------|---------|</span></span>
+<span id="cb4-344"><a href="#cb4-344" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 1    <span class="pp">|</span> X₁      <span class="pp">|</span> Y₁      <span class="pp">|</span></span>
+<span id="cb4-345"><a href="#cb4-345" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 2    <span class="pp">|</span> X₂      <span class="pp">|</span> Y₂      <span class="pp">|</span></span>
+<span id="cb4-346"><a href="#cb4-346" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> ...  <span class="pp">|</span> ...     <span class="pp">|</span> ...     <span class="pp">|</span></span>
+<span id="cb4-347"><a href="#cb4-347" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-348"><a href="#cb4-348" aria-hidden="true" tabindex="-1"></a>**Importance:** Essential for assembling the global stiffness matrix $<span class="co">[</span><span class="ot">K_{ij}^g</span><span class="co">]</span>$ and load vector $<span class="sc">\{</span>F_i^g<span class="sc">\}</span>$, and for enforcing boundary conditions.</span>
+<span id="cb4-349"><a href="#cb4-349" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-350"><a href="#cb4-350" aria-hidden="true" tabindex="-1"></a><span class="fu">## Shape Functions: Differential Properties</span></span>
+<span id="cb4-351"><a href="#cb4-351" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-352"><a href="#cb4-352" aria-hidden="true" tabindex="-1"></a><span class="fu">### Coordinate Transformation Relations</span></span>
+<span id="cb4-353"><a href="#cb4-353" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-354"><a href="#cb4-354" aria-hidden="true" tabindex="-1"></a>**Forward transformation (ζ → x):**</span>
+<span id="cb4-355"><a href="#cb4-355" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-356"><a href="#cb4-356" aria-hidden="true" tabindex="-1"></a>$$\frac{\partial}{\partial \zeta_1} = \frac{\partial}{\partial x}\frac{\partial x}{\partial \zeta_1} + \frac{\partial}{\partial y}\frac{\partial y}{\partial \zeta_1}$$</span>
+<span id="cb4-357"><a href="#cb4-357" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-358"><a href="#cb4-358" aria-hidden="true" tabindex="-1"></a>$$\frac{\partial}{\partial \zeta_2} = \frac{\partial}{\partial x}\frac{\partial x}{\partial \zeta_2} + \frac{\partial}{\partial y}\frac{\partial y}{\partial \zeta_2}$$</span>
+<span id="cb4-359"><a href="#cb4-359" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-360"><a href="#cb4-360" aria-hidden="true" tabindex="-1"></a>**Inverse transformation (x → ζ):**</span>
+<span id="cb4-361"><a href="#cb4-361" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-362"><a href="#cb4-362" aria-hidden="true" tabindex="-1"></a>$$\frac{\partial}{\partial x} = \frac{\partial}{\partial \zeta_1}\frac{\partial \zeta_1}{\partial x} + \frac{\partial}{\partial \zeta_2}\frac{\partial \zeta_2}{\partial x}$$</span>
+<span id="cb4-363"><a href="#cb4-363" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-364"><a href="#cb4-364" aria-hidden="true" tabindex="-1"></a>$$\frac{\partial}{\partial y} = \frac{\partial}{\partial \zeta_1}\frac{\partial \zeta_1}{\partial y} + \frac{\partial}{\partial \zeta_2}\frac{\partial \zeta_2}{\partial y}$$</span>
+<span id="cb4-365"><a href="#cb4-365" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-366"><a href="#cb4-366" aria-hidden="true" tabindex="-1"></a>**Matrix form:**</span>
+<span id="cb4-367"><a href="#cb4-367" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-368"><a href="#cb4-368" aria-hidden="true" tabindex="-1"></a>$$\begin{bmatrix} dx <span class="sc">\\</span> dy \end{bmatrix} = \mathbf{F} \begin{bmatrix} d\zeta_1 <span class="sc">\\</span> d\zeta_2 \end{bmatrix}, \quad \begin{bmatrix} d\zeta_1 <span class="sc">\\</span> d\zeta_2 \end{bmatrix} = \mathbf{F}^{-1} \begin{bmatrix} dx <span class="sc">\\</span> dy \end{bmatrix}$$</span>
+<span id="cb4-369"><a href="#cb4-369" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-370"><a href="#cb4-370" aria-hidden="true" tabindex="-1"></a><span class="fu">### Gradient Calculation in Master Element</span></span>
+<span id="cb4-371"><a href="#cb4-371" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-372"><a href="#cb4-372" aria-hidden="true" tabindex="-1"></a>**For test function V:**</span>
+<span id="cb4-373"><a href="#cb4-373" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-374"><a href="#cb4-374" aria-hidden="true" tabindex="-1"></a>$$\text{grad}(V) = \begin{bmatrix} \frac{\partial V}{\partial x} <span class="sc">\\</span> \frac{\partial V}{\partial y} \end{bmatrix} = \begin{bmatrix} \frac{\partial \zeta_1}{\partial x} &amp; \frac{\partial \zeta_2}{\partial x} <span class="sc">\\</span> \frac{\partial \zeta_1}{\partial y} &amp; \frac{\partial \zeta_2}{\partial y} \end{bmatrix}^T \begin{bmatrix} \frac{\partial V}{\partial \zeta_1} <span class="sc">\\</span> \frac{\partial V}{\partial \zeta_2} \end{bmatrix}$$</span>
+<span id="cb4-375"><a href="#cb4-375" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-376"><a href="#cb4-376" aria-hidden="true" tabindex="-1"></a>**For temperature field T:**</span>
+<span id="cb4-377"><a href="#cb4-377" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-378"><a href="#cb4-378" aria-hidden="true" tabindex="-1"></a>$$\text{grad}(T) = \begin{bmatrix} \frac{\partial T}{\partial x} <span class="sc">\\</span> \frac{\partial T}{\partial y} \end{bmatrix} = \begin{bmatrix} \frac{\partial \zeta_1}{\partial x} &amp; \frac{\partial \zeta_2}{\partial x} <span class="sc">\\</span> \frac{\partial \zeta_1}{\partial y} &amp; \frac{\partial \zeta_2}{\partial y} \end{bmatrix}^T \begin{bmatrix} \frac{\partial T}{\partial \zeta_1} <span class="sc">\\</span> \frac{\partial T}{\partial \zeta_2} \end{bmatrix}$$</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
+</div></div></div></div></div>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/SOSOVSKI/Intro_FEM/edit/main/book/ch06-math-prelim-2d3d.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/SOSOVSKI/Intro_FEM/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li><li><a href="https://github.com/SOSOVSKI/Intro_FEM/blob/main/book/ch06-math-prelim-2d3d.qmd" class="toc-action"><i class="bi empty"></i>View source</a></li></ul></div></div></div></footer></body></html>
