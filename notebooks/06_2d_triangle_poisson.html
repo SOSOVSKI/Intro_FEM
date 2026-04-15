@@ -357,7 +357,7 @@ window.Quarto = {
 
 
 <p>This notebook extends finite element analysis to 2D by deriving local element matrices for a Poisson equation on a P1 triangle. The key new concepts are the Jacobian-based gradient transformation (pullback) and handling 2D integrands over distorted elements.</p>
-<div id="cell-1" class="cell">
+<div id="cell-1" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sympy <span class="im">as</span> sp</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Math, display</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> symbolic_fem_workbench <span class="im">import</span> (</span>
@@ -373,7 +373,7 @@ window.Quarto = {
 <h2 data-number="7.1" class="anchored" data-anchor-id="step-1-reference-triangle-and-shape-functions"><span class="header-section-number">7.1</span> Step 1: Reference triangle and shape functions</h2>
 <p>The reference triangle is defined on the unit triangle in the <span class="math inline">\(\xi\)</span>-<span class="math inline">\(\eta\)</span> parameter space: <span class="math display">\[\hat{\Omega} = \{(\xi, \eta) : 0 \le \xi, \eta, \xi + \eta \le 1\}\]</span></p>
 <p>Linear shape functions (P1) are barycentric coordinates.</p>
-<div id="cell-3" class="cell">
+<div id="cell-3" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>xi, eta <span class="op">=</span> sp.symbols(<span class="st">"xi eta"</span>)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>ref <span class="op">=</span> ReferenceTriangleP1(xi, eta)</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -384,97 +384,192 @@ window.Quarto = {
 <span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Reference gradients (constant for P1):"</span>)</span>
 <span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, grad <span class="kw">in</span> <span class="bu">enumerate</span>(ref.shape_gradients_reference):</span>
 <span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    display(Math(<span class="vs">r"</span><span class="ch">\n</span><span class="vs">abla_{</span><span class="er">\</span><span class="vs">hat{}} N_"</span> <span class="op">+</span> <span class="bu">str</span>(i<span class="op">+</span><span class="dv">1</span>) <span class="op">+</span> <span class="st">" = "</span> <span class="op">+</span> sp.latex(grad)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Reference nodes: ((0, 0), (1, 0), (0, 1))</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle N_{1} = - \eta - \xi + 1\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle N_{2} = \xi\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle N_{3} = \eta\)</span></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Reference gradients (constant for P1):</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \nabla_{\hat{}} N_1 = \left[\begin{matrix}-1\\-1\end{matrix}\right]\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \nabla_{\hat{}} N_2 = \left[\begin{matrix}1\\0\end{matrix}\right]\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \nabla_{\hat{}} N_3 = \left[\begin{matrix}0\\1\end{matrix}\right]\)</span></p>
+</div>
 </div>
 </section>
 <section id="step-2-affine-mapping-to-physical-triangle" class="level2" data-number="7.2">
 <h2 data-number="7.2" class="anchored" data-anchor-id="step-2-affine-mapping-to-physical-triangle"><span class="header-section-number">7.2</span> Step 2: Affine mapping to physical triangle</h2>
 <p>The affine mapping transforms the reference triangle to a physical triangle with vertices <span class="math inline">\((x_1, y_1)\)</span>, <span class="math inline">\((x_2, y_2)\)</span>, <span class="math inline">\((x_3, y_3)\)</span>: <span class="math display">\[\mathbf{x}(\xi, \eta) = \mathbf{x}_1 + (\mathbf{x}_2 - \mathbf{x}_1)\xi + (\mathbf{x}_3 - \mathbf{x}_1)\eta\]</span></p>
 <p>The Jacobian matrix is constant and relates derivatives in the two spaces.</p>
-<div id="cell-5" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>x1, y1, x2, y2, x3, y3 <span class="op">=</span> sp.symbols(<span class="st">"x1 y1 x2 y2 x3 y3"</span>, real<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>geom <span class="op">=</span> AffineTriangleMap2D(xi<span class="op">=</span>xi, eta<span class="op">=</span>eta, x1<span class="op">=</span>x1, y1<span class="op">=</span>y1, x2<span class="op">=</span>x2, y2<span class="op">=</span>y2, x3<span class="op">=</span>x3, y3<span class="op">=</span>y3)</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Jacobian matrix J:"</span>)</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"J = "</span> <span class="op">+</span> sp.latex(geom.jacobian)))</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Determinant of J:"</span>)</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"</span><span class="cf">|</span><span class="vs">J</span><span class="cf">|</span><span class="vs"> = "</span> <span class="op">+</span> sp.latex(geom.det_jacobian)))</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Triangle area = |J|/2 ="</span>, geom.area)</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Inverse transpose J^{-T} (for gradient pullback):"</span>)</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"J</span><span class="dv">^</span><span class="vs">{-T} = "</span> <span class="op">+</span> sp.latex(geom.inverse_transpose_jacobian)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-5" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>x1, y1, x2, y2, x3, y3 <span class="op">=</span> sp.symbols(<span class="st">"x1 y1 x2 y2 x3 y3"</span>, real<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>geom <span class="op">=</span> AffineTriangleMap2D(xi<span class="op">=</span>xi, eta<span class="op">=</span>eta, x1<span class="op">=</span>x1, y1<span class="op">=</span>y1, x2<span class="op">=</span>x2, y2<span class="op">=</span>y2, x3<span class="op">=</span>x3, y3<span class="op">=</span>y3)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Jacobian matrix J:"</span>)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"J = "</span> <span class="op">+</span> sp.latex(geom.jacobian)))</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Determinant of J:"</span>)</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"</span><span class="cf">|</span><span class="vs">J</span><span class="cf">|</span><span class="vs"> = "</span> <span class="op">+</span> sp.latex(geom.det_jacobian)))</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Triangle area = |J|/2 ="</span>, geom.area)</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Inverse transpose J^{-T} (for gradient pullback):"</span>)</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"J</span><span class="dv">^</span><span class="vs">{-T} = "</span> <span class="op">+</span> sp.latex(geom.inverse_transpose_jacobian)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Jacobian matrix J:</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle J = \left[\begin{matrix}- x_{1} + x_{2} &amp; - x_{1} + x_{3}\\- y_{1} + y_{2} &amp; - y_{1} + y_{3}\end{matrix}\right]\)</span></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Determinant of J:</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle |J| = x_{1} y_{2} - x_{1} y_{3} - x_{2} y_{1} + x_{2} y_{3} + x_{3} y_{1} - x_{3} y_{2}\)</span></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Triangle area = |J|/2 = x1*y2/2 - x1*y3/2 - x2*y1/2 + x2*y3/2 + x3*y1/2 - x3*y2/2
+
+Inverse transpose J^{-T} (for gradient pullback):</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle J^{-T} = \left[\begin{matrix}\frac{- y_{1} + y_{3}}{x_{1} y_{2} - x_{1} y_{3} - x_{2} y_{1} + x_{2} y_{3} + x_{3} y_{1} - x_{3} y_{2}} &amp; \frac{y_{1} - y_{2}}{x_{1} y_{2} - x_{1} y_{3} - x_{2} y_{1} + x_{2} y_{3} + x_{3} y_{1} - x_{3} y_{2}}\\\frac{x_{1} - x_{3}}{x_{1} y_{2} - x_{1} y_{3} - x_{2} y_{1} + x_{2} y_{3} + x_{3} y_{1} - x_{3} y_{2}} &amp; \frac{- x_{1} + x_{2}}{x_{1} y_{2} - x_{1} y_{3} - x_{2} y_{1} + x_{2} y_{3} + x_{3} y_{1} - x_{3} y_{2}}\end{matrix}\right]\)</span></p>
+</div>
 </div>
 </section>
 <section id="step-3-gradient-pullback" class="level2" data-number="7.3">
 <h2 data-number="7.3" class="anchored" data-anchor-id="step-3-gradient-pullback"><span class="header-section-number">7.3</span> Step 3: Gradient pullback</h2>
 <p>The key transformation: gradients in physical space relate to reference gradients via the inverse Jacobian transpose: <span class="math display">\[\nabla u = J^{-T} \nabla_{\hat{}} \hat{u}\]</span></p>
 <p>This ensures the chain rule is satisfied correctly for distorted elements.</p>
-<div id="cell-7" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>d0, d1, d2 <span class="op">=</span> sp.symbols(<span class="st">"d0 d1 d2"</span>, real<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>w0, w1, w2 <span class="op">=</span> sp.symbols(<span class="st">"w0 w1 w2"</span>, real<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>uh <span class="op">=</span> local_trial_expansion(ref.shape_functions, [d0, d1, d2])</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>vh <span class="op">=</span> local_test_expansion(ref.shape_functions, [w0, w1, w2])</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>grad_uh_ref <span class="op">=</span> grad_2d(uh, xi, eta)</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>grad_uh_phys <span class="op">=</span> pullback_gradient_2d(grad_uh_ref, geom.jacobian)</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Gradient of u_h in reference coords:"</span>)</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>display(Math(sp.latex(grad_uh_ref)))</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Gradient of u_h in physical coords (after J^{-T} pullback):"</span>)</span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>display(Math(sp.latex(grad_uh_phys)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-7" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>d0, d1, d2 <span class="op">=</span> sp.symbols(<span class="st">"d0 d1 d2"</span>, real<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>w0, w1, w2 <span class="op">=</span> sp.symbols(<span class="st">"w0 w1 w2"</span>, real<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>uh <span class="op">=</span> local_trial_expansion(ref.shape_functions, [d0, d1, d2])</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>vh <span class="op">=</span> local_test_expansion(ref.shape_functions, [w0, w1, w2])</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>grad_uh_ref <span class="op">=</span> grad_2d(uh, xi, eta)</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>grad_uh_phys <span class="op">=</span> pullback_gradient_2d(grad_uh_ref, geom.jacobian)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Gradient of u_h in reference coords:"</span>)</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>display(Math(sp.latex(grad_uh_ref)))</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Gradient of u_h in physical coords (after J^{-T} pullback):"</span>)</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>display(Math(sp.latex(grad_uh_phys)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Gradient of u_h in reference coords:</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \left[\begin{matrix}- d_{0} + d_{1}\\- d_{0} + d_{2}\end{matrix}\right]\)</span></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Gradient of u_h in physical coords (after J^{-T} pullback):</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \left[\begin{matrix}\frac{\left(d_{0} - d_{1}\right) \left(y_{1} - y_{3}\right) - \left(d_{0} - d_{2}\right) \left(y_{1} - y_{2}\right)}{x_{1} y_{2} - x_{1} y_{3} - x_{2} y_{1} + x_{2} y_{3} + x_{3} y_{1} - x_{3} y_{2}}\\\frac{- \left(d_{0} - d_{1}\right) \left(x_{1} - x_{3}\right) + \left(d_{0} - d_{2}\right) \left(x_{1} - x_{2}\right)}{x_{1} y_{2} - x_{1} y_{3} - x_{2} y_{1} + x_{2} y_{3} + x_{3} y_{1} - x_{3} y_{2}}\end{matrix}\right]\)</span></p>
+</div>
 </div>
 </section>
 <section id="step-4-form-the-integrand-and-extract-local-tensors" class="level2" data-number="7.4">
 <h2 data-number="7.4" class="anchored" data-anchor-id="step-4-form-the-integrand-and-extract-local-tensors"><span class="header-section-number">7.4</span> Step 4: Form the integrand and extract local tensors</h2>
 <p>The weak form of the Poisson equation is: <span class="math display">\[a(u, v) = \int_\Omega \nabla u \cdot \nabla v \, dx\]</span> <span class="math display">\[F(v) = \int_\Omega f v \, dx\]</span></p>
 <p>We evaluate the integrals on the reference element and extract coefficients.</p>
-<div id="cell-9" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>grad_vh_ref <span class="op">=</span> grad_2d(vh, xi, eta)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>grad_vh_phys <span class="op">=</span> pullback_gradient_2d(grad_vh_ref, geom.jacobian)</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>bilinear_integrand <span class="op">=</span> sp.simplify((grad_uh_phys.T <span class="op">*</span> grad_vh_phys)[<span class="dv">0</span>] <span class="op">*</span> geom.det_jacobian)</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>f <span class="op">=</span> sp.Symbol(<span class="st">"f"</span>, real<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>linear_integrand <span class="op">=</span> sp.simplify(f <span class="op">*</span> vh <span class="op">*</span> geom.det_jacobian)</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>bilinear_val <span class="op">=</span> integrate_reference_triangle_exact(bilinear_integrand, xi, eta)</span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>linear_val <span class="op">=</span> integrate_reference_triangle_exact(linear_integrand, xi, eta)</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>Ke <span class="op">=</span> extract_coefficient_matrix(bilinear_val, [d0, d1, d2], [w0, w1, w2])</span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>fe <span class="op">=</span> extract_coefficient_vector(linear_val, [w0, w1, w2])</span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Element stiffness matrix Ke (generic triangle):"</span>)</span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"K_e = "</span> <span class="op">+</span> sp.latex(sp.simplify(Ke))))</span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Element load vector fe (constant source f):"</span>)</span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"f_e = "</span> <span class="op">+</span> sp.latex(sp.simplify(fe))))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-9" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>grad_vh_ref <span class="op">=</span> grad_2d(vh, xi, eta)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>grad_vh_phys <span class="op">=</span> pullback_gradient_2d(grad_vh_ref, geom.jacobian)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>bilinear_integrand <span class="op">=</span> sp.simplify((grad_uh_phys.T <span class="op">*</span> grad_vh_phys)[<span class="dv">0</span>] <span class="op">*</span> geom.det_jacobian)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>f <span class="op">=</span> sp.Symbol(<span class="st">"f"</span>, real<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>linear_integrand <span class="op">=</span> sp.simplify(f <span class="op">*</span> vh <span class="op">*</span> geom.det_jacobian)</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>bilinear_val <span class="op">=</span> integrate_reference_triangle_exact(bilinear_integrand, xi, eta)</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>linear_val <span class="op">=</span> integrate_reference_triangle_exact(linear_integrand, xi, eta)</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>Ke <span class="op">=</span> extract_coefficient_matrix(bilinear_val, [d0, d1, d2], [w0, w1, w2])</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>fe <span class="op">=</span> extract_coefficient_vector(linear_val, [w0, w1, w2])</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Element stiffness matrix Ke (generic triangle):"</span>)</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"K_e = "</span> <span class="op">+</span> sp.latex(sp.simplify(Ke))))</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Element load vector fe (constant source f):"</span>)</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"f_e = "</span> <span class="op">+</span> sp.latex(sp.simplify(fe))))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Element stiffness matrix Ke (generic triangle):</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle K_e = \left[\begin{matrix}\frac{\frac{x_{2}^{2}}{2} - x_{2} x_{3} + \frac{x_{3}^{2}}{2} + \frac{y_{2}^{2}}{2} - y_{2} y_{3} + \frac{y_{3}^{2}}{2}}{x_{1} y_{2} - x_{1} y_{3} - x_{2} y_{1} + x_{2} y_{3} + x_{3} y_{1} - x_{3} y_{2}} &amp; \frac{- x_{1} x_{2} + x_{1} x_{3} + x_{2} x_{3} - x_{3}^{2} - y_{1} y_{2} + y_{1} y_{3} + y_{2} y_{3} - y_{3}^{2}}{2 \left(x_{1} y_{2} - x_{1} y_{3} - x_{2} y_{1} + x_{2} y_{3} + x_{3} y_{1} - x_{3} y_{2}\right)} &amp; \frac{x_{1} x_{2} - x_{1} x_{3} - x_{2}^{2} + x_{2} x_{3} + y_{1} y_{2} - y_{1} y_{3} - y_{2}^{2} + y_{2} y_{3}}{2 \left(x_{1} y_{2} - x_{1} y_{3} - x_{2} y_{1} + x_{2} y_{3} + x_{3} y_{1} - x_{3} y_{2}\right)}\\\frac{- x_{1} x_{2} + x_{1} x_{3} + x_{2} x_{3} - x_{3}^{2} - y_{1} y_{2} + y_{1} y_{3} + y_{2} y_{3} - y_{3}^{2}}{2 \left(x_{1} y_{2} - x_{1} y_{3} - x_{2} y_{1} + x_{2} y_{3} + x_{3} y_{1} - x_{3} y_{2}\right)} &amp; \frac{\frac{x_{1}^{2}}{2} - x_{1} x_{3} + \frac{x_{3}^{2}}{2} + \frac{y_{1}^{2}}{2} - y_{1} y_{3} + \frac{y_{3}^{2}}{2}}{x_{1} y_{2} - x_{1} y_{3} - x_{2} y_{1} + x_{2} y_{3} + x_{3} y_{1} - x_{3} y_{2}} &amp; \frac{- x_{1}^{2} + x_{1} x_{2} + x_{1} x_{3} - x_{2} x_{3} - y_{1}^{2} + y_{1} y_{2} + y_{1} y_{3} - y_{2} y_{3}}{2 \left(x_{1} y_{2} - x_{1} y_{3} - x_{2} y_{1} + x_{2} y_{3} + x_{3} y_{1} - x_{3} y_{2}\right)}\\\frac{x_{1} x_{2} - x_{1} x_{3} - x_{2}^{2} + x_{2} x_{3} + y_{1} y_{2} - y_{1} y_{3} - y_{2}^{2} + y_{2} y_{3}}{2 \left(x_{1} y_{2} - x_{1} y_{3} - x_{2} y_{1} + x_{2} y_{3} + x_{3} y_{1} - x_{3} y_{2}\right)} &amp; \frac{- x_{1}^{2} + x_{1} x_{2} + x_{1} x_{3} - x_{2} x_{3} - y_{1}^{2} + y_{1} y_{2} + y_{1} y_{3} - y_{2} y_{3}}{2 \left(x_{1} y_{2} - x_{1} y_{3} - x_{2} y_{1} + x_{2} y_{3} + x_{3} y_{1} - x_{3} y_{2}\right)} &amp; \frac{\frac{x_{1}^{2}}{2} - x_{1} x_{2} + \frac{x_{2}^{2}}{2} + \frac{y_{1}^{2}}{2} - y_{1} y_{2} + \frac{y_{2}^{2}}{2}}{x_{1} y_{2} - x_{1} y_{3} - x_{2} y_{1} + x_{2} y_{3} + x_{3} y_{1} - x_{3} y_{2}}\end{matrix}\right]\)</span></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Element load vector fe (constant source f):</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle f_e = \left[\begin{matrix}\frac{f \left(x_{1} y_{2} - x_{1} y_{3} - x_{2} y_{1} + x_{2} y_{3} + x_{3} y_{1} - x_{3} y_{2}\right)}{6}\\\frac{f \left(x_{1} y_{2} - x_{1} y_{3} - x_{2} y_{1} + x_{2} y_{3} + x_{3} y_{1} - x_{3} y_{2}\right)}{6}\\\frac{f \left(x_{1} y_{2} - x_{1} y_{3} - x_{2} y_{1} + x_{2} y_{3} + x_{3} y_{1} - x_{3} y_{2}\right)}{6}\end{matrix}\right]\)</span></p>
+</div>
 </div>
 </section>
 <section id="step-5-specialize-to-the-unit-right-triangle" class="level2" data-number="7.5">
 <h2 data-number="7.5" class="anchored" data-anchor-id="step-5-specialize-to-the-unit-right-triangle"><span class="header-section-number">7.5</span> Step 5: Specialize to the unit right triangle</h2>
 <p>For the special case of a unit right triangle with vertices at <span class="math inline">\((0,0)\)</span>, <span class="math inline">\((1,0)\)</span>, <span class="math inline">\((0,1)\)</span>, the Jacobian is the identity, and formulas simplify.</p>
-<div id="cell-11" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>unit_subs <span class="op">=</span> {x1: <span class="dv">0</span>, y1: <span class="dv">0</span>, x2: <span class="dv">1</span>, y2: <span class="dv">0</span>, x3: <span class="dv">0</span>, y3: <span class="dv">1</span>}</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Unit right triangle Ke:"</span>)</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"K_e = "</span> <span class="op">+</span> sp.latex(sp.simplify(Ke.subs(unit_subs)))))</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Unit right triangle fe:"</span>)</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"f_e = "</span> <span class="op">+</span> sp.latex(sp.simplify(fe.subs(unit_subs)))))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-11" class="cell" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>unit_subs <span class="op">=</span> {x1: <span class="dv">0</span>, y1: <span class="dv">0</span>, x2: <span class="dv">1</span>, y2: <span class="dv">0</span>, x3: <span class="dv">0</span>, y3: <span class="dv">1</span>}</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Unit right triangle Ke:"</span>)</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"K_e = "</span> <span class="op">+</span> sp.latex(sp.simplify(Ke.subs(unit_subs)))))</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Unit right triangle fe:"</span>)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"f_e = "</span> <span class="op">+</span> sp.latex(sp.simplify(fe.subs(unit_subs)))))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Unit right triangle Ke:</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle K_e = \left[\begin{matrix}1 &amp; - \frac{1}{2} &amp; - \frac{1}{2}\\- \frac{1}{2} &amp; \frac{1}{2} &amp; 0\\- \frac{1}{2} &amp; 0 &amp; \frac{1}{2}\end{matrix}\right]\)</span></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Unit right triangle fe:</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle f_e = \left[\begin{matrix}\frac{f}{6}\\\frac{f}{6}\\\frac{f}{6}\end{matrix}\right]\)</span></p>
+</div>
 </div>
 </section>
 <section id="verify-with-pre-built-workflow" class="level2" data-number="7.6">
 <h2 data-number="7.6" class="anchored" data-anchor-id="verify-with-pre-built-workflow"><span class="header-section-number">7.6</span> Verify with pre-built workflow</h2>
-<div id="cell-13" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> build_poisson_triangle_p1_local_problem()</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Pre-built Ke (unit right triangle):"</span>)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>display(Math(sp.latex(data[<span class="st">"Ke_unit_right_triangle"</span>])))</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Match:"</span>, sp.simplify(Ke.subs(unit_subs) <span class="op">-</span> data[<span class="st">"Ke_unit_right_triangle"</span>]) <span class="op">==</span> sp.zeros(<span class="dv">3</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-13" class="cell" data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> build_poisson_triangle_p1_local_problem()</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Pre-built Ke (unit right triangle):"</span>)</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>display(Math(sp.latex(data[<span class="st">"Ke_unit_right_triangle"</span>])))</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Match:"</span>, sp.simplify(Ke.subs(unit_subs) <span class="op">-</span> data[<span class="st">"Ke_unit_right_triangle"</span>]) <span class="op">==</span> sp.zeros(<span class="dv">3</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Pre-built Ke (unit right triangle):</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \left[\begin{matrix}1 &amp; - \frac{1}{2} &amp; - \frac{1}{2}\\- \frac{1}{2} &amp; \frac{1}{2} &amp; 0\\- \frac{1}{2} &amp; 0 &amp; \frac{1}{2}\end{matrix}\right]\)</span></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Match: True</code></pre>
+</div>
 </div>
 </section>
 <section id="exercise" class="level2" data-number="7.7">
 <h2 data-number="7.7" class="anchored" data-anchor-id="exercise"><span class="header-section-number">7.7</span> Exercise</h2>
 <p><strong>Question:</strong> Evaluate <span class="math inline">\(K_e\)</span> for an equilateral triangle with vertices at <span class="math inline">\((0,0)\)</span>, <span class="math inline">\((1,0)\)</span>, <span class="math inline">\((1/2, \sqrt{3}/2)\)</span>. Is the matrix still symmetric? Compare the diagonal entries with the unit right triangle case. Why do they differ?</p>
-<div id="cell-15" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Exercise: Evaluate Ke for an equilateral triangle with vertices</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co"># (0,0), (1,0), (0.5, sqrt(3)/2). Is the matrix still symmetric?</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Compare the diagonal entries with the unit right triangle case.</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-15" class="cell" data-execution_count="8">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Exercise: Evaluate Ke for an equilateral triangle with vertices</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="co"># (0,0), (1,0), (0.5, sqrt(3)/2). Is the matrix still symmetric?</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Compare the diagonal entries with the unit right triangle case.</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 
 

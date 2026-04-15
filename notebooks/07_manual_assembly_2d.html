@@ -356,7 +356,7 @@ window.Quarto = {
 
 
 <p>This notebook demonstrates the assembly process: combining element matrices and vectors into a global system, applying boundary conditions, and solving for the finite element solution. Assembly is fundamentally a topological operation—it depends only on node connectivity, not on the analytical properties of elements.</p>
-<div id="cell-1" class="cell">
+<div id="cell-1" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sympy <span class="im">as</span> sp</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
@@ -370,7 +370,7 @@ window.Quarto = {
 <section id="step-1-get-symbolic-local-tensors-and-convert-to-numerical" class="level2" data-number="8.1">
 <h2 data-number="8.1" class="anchored" data-anchor-id="step-1-get-symbolic-local-tensors-and-convert-to-numerical"><span class="header-section-number">8.1</span> Step 1: Get symbolic local tensors and convert to numerical</h2>
 <p>We retrieve the element stiffness matrix and load vector from the previous notebook and convert them to numerical functions via <code>lambdify</code>.</p>
-<div id="cell-3" class="cell">
+<div id="cell-3" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> build_poisson_triangle_p1_local_problem()</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>geom <span class="op">=</span> data[<span class="st">"geometry"</span>]</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -383,115 +383,166 @@ window.Quarto = {
 <span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    data[<span class="st">"fe"</span>], <span class="st">"numpy"</span></span>
 <span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Numerical kernels ready."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Numerical kernels ready.</code></pre>
+</div>
 </div>
 </section>
 <section id="step-2-define-a-tiny-mesh" class="level2" data-number="8.2">
 <h2 data-number="8.2" class="anchored" data-anchor-id="step-2-define-a-tiny-mesh"><span class="header-section-number">8.2</span> Step 2: Define a tiny mesh</h2>
 <p>We discretize the unit square using 4 triangles arranged around a central point. This simple mesh illustrates the assembly process without excessive complexity.</p>
-<div id="cell-5" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>nodes <span class="op">=</span> np.array([</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    [<span class="fl">0.0</span>, <span class="fl">0.0</span>],  <span class="co"># 0: bottom-left</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    [<span class="fl">1.0</span>, <span class="fl">0.0</span>],  <span class="co"># 1: bottom-right</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    [<span class="fl">1.0</span>, <span class="fl">1.0</span>],  <span class="co"># 2: top-right</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    [<span class="fl">0.0</span>, <span class="fl">1.0</span>],  <span class="co"># 3: top-left</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    [<span class="fl">0.5</span>, <span class="fl">0.5</span>],  <span class="co"># 4: center</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>])</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>elements <span class="op">=</span> [(<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">4</span>), (<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">4</span>), (<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>), (<span class="dv">3</span>,<span class="dv">0</span>,<span class="dv">4</span>)]</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Visualize the mesh</span></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">1</span>, figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="dv">5</span>))</span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> tri <span class="kw">in</span> elements:</span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    pts <span class="op">=</span> nodes[<span class="bu">list</span>(tri) <span class="op">+</span> [tri[<span class="dv">0</span>]]]</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    ax.plot(pts[:, <span class="dv">0</span>], pts[:, <span class="dv">1</span>], <span class="st">"b-"</span>)</span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, (x, y) <span class="kw">in</span> <span class="bu">enumerate</span>(nodes):</span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    ax.plot(x, y, <span class="st">"ko"</span>, markersize<span class="op">=</span><span class="dv">8</span>)</span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    ax.annotate(<span class="ss">f"  </span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">"</span>, (x, y), fontsize<span class="op">=</span><span class="dv">12</span>)</span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"Mesh: 4 triangles, 5 nodes"</span>)</span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>ax.set_aspect(<span class="st">"equal"</span>)</span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-5" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>nodes <span class="op">=</span> np.array([</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    [<span class="fl">0.0</span>, <span class="fl">0.0</span>],  <span class="co"># 0: bottom-left</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    [<span class="fl">1.0</span>, <span class="fl">0.0</span>],  <span class="co"># 1: bottom-right</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    [<span class="fl">1.0</span>, <span class="fl">1.0</span>],  <span class="co"># 2: top-right</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    [<span class="fl">0.0</span>, <span class="fl">1.0</span>],  <span class="co"># 3: top-left</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    [<span class="fl">0.5</span>, <span class="fl">0.5</span>],  <span class="co"># 4: center</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>])</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>elements <span class="op">=</span> [(<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">4</span>), (<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">4</span>), (<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>), (<span class="dv">3</span>,<span class="dv">0</span>,<span class="dv">4</span>)]</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Visualize the mesh</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">1</span>, figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="dv">5</span>))</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> tri <span class="kw">in</span> elements:</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    pts <span class="op">=</span> nodes[<span class="bu">list</span>(tri) <span class="op">+</span> [tri[<span class="dv">0</span>]]]</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    ax.plot(pts[:, <span class="dv">0</span>], pts[:, <span class="dv">1</span>], <span class="st">"b-"</span>)</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, (x, y) <span class="kw">in</span> <span class="bu">enumerate</span>(nodes):</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    ax.plot(x, y, <span class="st">"ko"</span>, markersize<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    ax.annotate(<span class="ss">f"  </span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">"</span>, (x, y), fontsize<span class="op">=</span><span class="dv">12</span>)</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"Mesh: 4 triangles, 5 nodes"</span>)</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>ax.set_aspect(<span class="st">"equal"</span>)</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="07_manual_assembly_2d_files/figure-html/cell-4-output-1.png" width="423" height="431" class="figure-img"></p>
+</figure>
+</div>
+</div>
 </div>
 </section>
 <section id="step-3-element-by-element-assembly" class="level2" data-number="8.3">
 <h2 data-number="8.3" class="anchored" data-anchor-id="step-3-element-by-element-assembly"><span class="header-section-number">8.3</span> Step 3: Element-by-element assembly</h2>
 <p>The assembly loop scans through all elements, retrieves element matrices/vectors, and accumulates them into global arrays using the connectivity information.</p>
-<div id="cell-7" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>ndofs <span class="op">=</span> <span class="bu">len</span>(nodes)</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>K_global <span class="op">=</span> np.zeros((ndofs, ndofs))</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>F_global <span class="op">=</span> np.zeros(ndofs)</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>source_value <span class="op">=</span> <span class="fl">1.0</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> eid, conn <span class="kw">in</span> <span class="bu">enumerate</span>(elements):</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    coords <span class="op">=</span> nodes[<span class="bu">list</span>(conn)]</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    x1v, y1v <span class="op">=</span> coords[<span class="dv">0</span>]</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    x2v, y2v <span class="op">=</span> coords[<span class="dv">1</span>]</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    x3v, y3v <span class="op">=</span> coords[<span class="dv">2</span>]</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    K_local <span class="op">=</span> np.asarray(ke_fn(x1v, y1v, x2v, y2v, x3v, y3v), dtype<span class="op">=</span><span class="bu">float</span>)</span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    F_local <span class="op">=</span> np.asarray(fe_fn(x1v, y1v, x2v, y2v, x3v, y3v, source_value), dtype<span class="op">=</span><span class="bu">float</span>).reshape(<span class="op">-</span><span class="dv">1</span>)</span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Element </span><span class="sc">{</span>eid<span class="sc">}</span><span class="ss">, connectivity </span><span class="sc">{</span>conn<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  K_local diagonal: </span><span class="sc">{</span>np<span class="sc">.</span>diag(K_local)<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  F_local: </span><span class="sc">{</span>F_local<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>    assemble_dense_matrix(K_global, K_local, conn)</span>
-<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>    assemble_dense_vector(F_global, F_local, conn)</span>
-<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Assembled K_global:"</span>)</span>
-<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(np.<span class="bu">round</span>(K_global, <span class="dv">4</span>))</span>
-<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Assembled F_global:"</span>)</span>
-<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(np.<span class="bu">round</span>(F_global, <span class="dv">4</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-7" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>ndofs <span class="op">=</span> <span class="bu">len</span>(nodes)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>K_global <span class="op">=</span> np.zeros((ndofs, ndofs))</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>F_global <span class="op">=</span> np.zeros(ndofs)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>source_value <span class="op">=</span> <span class="fl">1.0</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> eid, conn <span class="kw">in</span> <span class="bu">enumerate</span>(elements):</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    coords <span class="op">=</span> nodes[<span class="bu">list</span>(conn)]</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    x1v, y1v <span class="op">=</span> coords[<span class="dv">0</span>]</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    x2v, y2v <span class="op">=</span> coords[<span class="dv">1</span>]</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    x3v, y3v <span class="op">=</span> coords[<span class="dv">2</span>]</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    K_local <span class="op">=</span> np.asarray(ke_fn(x1v, y1v, x2v, y2v, x3v, y3v), dtype<span class="op">=</span><span class="bu">float</span>)</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    F_local <span class="op">=</span> np.asarray(fe_fn(x1v, y1v, x2v, y2v, x3v, y3v, source_value), dtype<span class="op">=</span><span class="bu">float</span>).reshape(<span class="op">-</span><span class="dv">1</span>)</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Element </span><span class="sc">{</span>eid<span class="sc">}</span><span class="ss">, connectivity </span><span class="sc">{</span>conn<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  K_local diagonal: </span><span class="sc">{</span>np<span class="sc">.</span>diag(K_local)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  F_local: </span><span class="sc">{</span>F_local<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>    assemble_dense_matrix(K_global, K_local, conn)</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>    assemble_dense_vector(F_global, F_local, conn)</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Assembled K_global:"</span>)</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(np.<span class="bu">round</span>(K_global, <span class="dv">4</span>))</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Assembled F_global:"</span>)</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(np.<span class="bu">round</span>(F_global, <span class="dv">4</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Element 0, connectivity (0, 1, 4)
+  K_local diagonal: [0.5 0.5 1. ]
+  F_local: [0.08333333 0.08333333 0.08333333]
+Element 1, connectivity (1, 2, 4)
+  K_local diagonal: [0.5 0.5 1. ]
+  F_local: [0.08333333 0.08333333 0.08333333]
+Element 2, connectivity (2, 3, 4)
+  K_local diagonal: [0.5 0.5 1. ]
+  F_local: [0.08333333 0.08333333 0.08333333]
+Element 3, connectivity (3, 0, 4)
+  K_local diagonal: [0.5 0.5 1. ]
+  F_local: [0.08333333 0.08333333 0.08333333]
+
+Assembled K_global:
+[[ 1.  0.  0.  0. -1.]
+ [ 0.  1.  0.  0. -1.]
+ [ 0.  0.  1.  0. -1.]
+ [ 0.  0.  0.  1. -1.]
+ [-1. -1. -1. -1.  4.]]
+
+Assembled F_global:
+[0.1667 0.1667 0.1667 0.1667 0.3333]</code></pre>
+</div>
 </div>
 </section>
 <section id="step-4-apply-dirichlet-bcs-and-solve" class="level2" data-number="8.4">
 <h2 data-number="8.4" class="anchored" data-anchor-id="step-4-apply-dirichlet-bcs-and-solve"><span class="header-section-number">8.4</span> Step 4: Apply Dirichlet BCs and solve</h2>
 <p>Dirichlet boundary conditions are applied by reducing the system: we eliminate rows and columns corresponding to constrained DOFs and solve for the free DOFs, then expand the solution.</p>
-<div id="cell-9" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>constrained <span class="op">=</span> [<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>]  <span class="co"># All boundary nodes</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>K_ff, F_f, free_dofs <span class="op">=</span> apply_dirichlet_by_reduction(K_global, F_global, constrained)</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Free DOFs: </span><span class="sc">{</span>free_dofs<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"K_ff = </span><span class="sc">{</span>K_ff<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"F_f = </span><span class="sc">{</span>F_f<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>u_free <span class="op">=</span> np.linalg.solve(K_ff, F_f)</span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>u <span class="op">=</span> expand_reduced_solution(u_free, ndofs, free_dofs, constrained)</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Solution vector u = </span><span class="sc">{</span>u<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Center node value u[4] = </span><span class="sc">{</span>u[<span class="dv">4</span>]<span class="sc">:.6f}</span><span class="ss">"</span>)</span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Expected (analytical): 1/12 = </span><span class="sc">{</span><span class="dv">1</span><span class="op">/</span><span class="dv">12</span><span class="sc">:.6f}</span><span class="ss">"</span>)</span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Match: </span><span class="sc">{</span>np<span class="sc">.</span>isclose(u[<span class="dv">4</span>], <span class="dv">1</span><span class="op">/</span><span class="dv">12</span>)<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-9" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>constrained <span class="op">=</span> [<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>]  <span class="co"># All boundary nodes</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>K_ff, F_f, free_dofs <span class="op">=</span> apply_dirichlet_by_reduction(K_global, F_global, constrained)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Free DOFs: </span><span class="sc">{</span>free_dofs<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"K_ff = </span><span class="sc">{</span>K_ff<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"F_f = </span><span class="sc">{</span>F_f<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>u_free <span class="op">=</span> np.linalg.solve(K_ff, F_f)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>u <span class="op">=</span> expand_reduced_solution(u_free, ndofs, free_dofs, constrained)</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Solution vector u = </span><span class="sc">{</span>u<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Center node value u[4] = </span><span class="sc">{</span>u[<span class="dv">4</span>]<span class="sc">:.6f}</span><span class="ss">"</span>)</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Expected (analytical): 1/12 = </span><span class="sc">{</span><span class="dv">1</span><span class="op">/</span><span class="dv">12</span><span class="sc">:.6f}</span><span class="ss">"</span>)</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Match: </span><span class="sc">{</span>np<span class="sc">.</span>isclose(u[<span class="dv">4</span>], <span class="dv">1</span><span class="op">/</span><span class="dv">12</span>)<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Free DOFs: [4]
+K_ff = [[4.]]
+F_f = [0.33333333]
+
+Solution vector u = [0.         0.         0.         0.         0.08333333]
+Center node value u[4] = 0.083333
+Expected (analytical): 1/12 = 0.083333
+Match: True</code></pre>
+</div>
 </div>
 </section>
 <section id="step-5-visualize-the-solution" class="level2" data-number="8.5">
 <h2 data-number="8.5" class="anchored" data-anchor-id="step-5-visualize-the-solution"><span class="header-section-number">8.5</span> Step 5: Visualize the solution</h2>
 <p>We plot the FEM solution as a colored patch over the mesh, with annotations showing nodal values.</p>
-<div id="cell-11" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> matplotlib.tri <span class="im">import</span> Triangulation</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>tri_conn <span class="op">=</span> np.array(elements)</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>triang <span class="op">=</span> Triangulation(nodes[:, <span class="dv">0</span>], nodes[:, <span class="dv">1</span>], tri_conn)</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">6</span>, <span class="dv">5</span>))</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>tpc <span class="op">=</span> ax.tripcolor(triang, u, shading<span class="op">=</span><span class="st">"flat"</span>, cmap<span class="op">=</span><span class="st">"viridis"</span>)</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>ax.triplot(triang, <span class="st">"k-"</span>, linewidth<span class="op">=</span><span class="fl">0.5</span>)</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, (x, y) <span class="kw">in</span> <span class="bu">enumerate</span>(nodes):</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    ax.annotate(<span class="ss">f"</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">: u=</span><span class="sc">{</span>u[i]<span class="sc">:.4f}</span><span class="ss">"</span>, (x, y), fontsize<span class="op">=</span><span class="dv">9</span>,</span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>                xytext<span class="op">=</span>(<span class="dv">5</span>, <span class="dv">5</span>), textcoords<span class="op">=</span><span class="st">"offset points"</span>)</span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>plt.colorbar(tpc, label<span class="op">=</span><span class="st">"u"</span>)</span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"FEM Solution: Poisson on 4-Triangle Mesh"</span>)</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>ax.set_aspect(<span class="st">"equal"</span>)</span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-11" class="cell" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> matplotlib.tri <span class="im">import</span> Triangulation</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>tri_conn <span class="op">=</span> np.array(elements)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>triang <span class="op">=</span> Triangulation(nodes[:, <span class="dv">0</span>], nodes[:, <span class="dv">1</span>], tri_conn)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">6</span>, <span class="dv">5</span>))</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>tpc <span class="op">=</span> ax.tripcolor(triang, u, shading<span class="op">=</span><span class="st">"flat"</span>, cmap<span class="op">=</span><span class="st">"viridis"</span>)</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>ax.triplot(triang, <span class="st">"k-"</span>, linewidth<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, (x, y) <span class="kw">in</span> <span class="bu">enumerate</span>(nodes):</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    ax.annotate(<span class="ss">f"</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">: u=</span><span class="sc">{</span>u[i]<span class="sc">:.4f}</span><span class="ss">"</span>, (x, y), fontsize<span class="op">=</span><span class="dv">9</span>,</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>                xytext<span class="op">=</span>(<span class="dv">5</span>, <span class="dv">5</span>), textcoords<span class="op">=</span><span class="st">"offset points"</span>)</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>plt.colorbar(tpc, label<span class="op">=</span><span class="st">"u"</span>)</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"FEM Solution: Poisson on 4-Triangle Mesh"</span>)</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>ax.set_aspect(<span class="st">"equal"</span>)</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="07_manual_assembly_2d_files/figure-html/cell-7-output-1.png" width="513" height="419" class="figure-img"></p>
+</figure>
+</div>
+</div>
 </div>
 </section>
 <section id="exercise" class="level2" data-number="8.6">
 <h2 data-number="8.6" class="anchored" data-anchor-id="exercise"><span class="header-section-number">8.6</span> Exercise</h2>
 <p><strong>Question:</strong> Move the center node from <span class="math inline">\((0.5, 0.5)\)</span> to <span class="math inline">\((0.3, 0.7)\)</span>. How does the solution change? Is the center node value still <span class="math inline">\(1/12\)</span>? Why or why not?</p>
 <p>Hint: The center node is no longer at a symmetric position, so the Jacobians of the four elements are all different. This affects their stiffness matrices.</p>
-<div id="cell-13" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Exercise: Move the center node from (0.5, 0.5) to (0.3, 0.7).</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co"># How does the solution change? Is the center node value still 1/12?</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Why or why not?</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-13" class="cell" data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Exercise: Move the center node from (0.5, 0.5) to (0.3, 0.7).</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="co"># How does the solution change? Is the center node value still 1/12?</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Why or why not?</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 
 

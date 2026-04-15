@@ -355,7 +355,7 @@ window.Quarto = {
 
 
 <p>This notebook explores numerical quadrature on reference elements. In FEM, we often use Gauss quadrature to approximate integrals over reference elements. The choice of quadrature order affects both accuracy and computational cost.</p>
-<div id="cell-1" class="cell">
+<div id="cell-1" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sympy <span class="im">as</span> sp</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Math, display</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> symbolic_fem_workbench.quadrature <span class="im">import</span> (</span>
@@ -369,7 +369,7 @@ window.Quarto = {
 <section id="part-a-quadrilateral-integration" class="level2" data-number="5.1">
 <h2 data-number="5.1" class="anchored" data-anchor-id="part-a-quadrilateral-integration"><span class="header-section-number">5.1</span> Part A: Quadrilateral integration</h2>
 <p>We test Gauss quadrature on the reference square <span class="math inline">\([-1, 1]^2\)</span> against exact symbolic integration. Different Gauss orders provide exact integration for different polynomial degrees.</p>
-<div id="cell-3" class="cell">
+<div id="cell-3" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>xi, eta <span class="op">=</span> sp.symbols(<span class="st">"xi eta"</span>)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># A polynomial integrand</span></span>
@@ -384,68 +384,97 @@ window.Quarto = {
 <span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Gauss order 1:      </span><span class="sc">{</span>gauss1<span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Gauss order 2:      </span><span class="sc">{</span>gauss2<span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Match (order 2)?    </span><span class="sc">{</span>sp<span class="sc">.</span>simplify(exact <span class="op">-</span> gauss2) <span class="op">==</span> <span class="dv">0</span><span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Integrand: eta*xi + eta + xi + 1
+Exact integral:     4
+Gauss order 1:      4
+Gauss order 2:      4
+Match (order 2)?    True</code></pre>
+</div>
 </div>
 </section>
 <section id="part-b-triangle-integration" class="level2" data-number="5.2">
 <h2 data-number="5.2" class="anchored" data-anchor-id="part-b-triangle-integration"><span class="header-section-number">5.2</span> Part B: Triangle integration</h2>
 <p>The reference triangle uses different quadrature rules. We compare the one-point rule (centroid) and three-point rule (edge midpoints) against exact integration.</p>
-<div id="cell-5" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Linear polynomial on triangle</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>f2 <span class="op">=</span> <span class="dv">1</span> <span class="op">+</span> <span class="dv">2</span><span class="op">*</span>xi <span class="op">+</span> <span class="dv">3</span><span class="op">*</span>eta</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>exact_tri <span class="op">=</span> integrate_reference_triangle_exact(f2, xi, eta)</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>one_pt <span class="op">=</span> triangle_one_point_rule(f2, xi, eta)</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>three_pt <span class="op">=</span> triangle_three_point_rule(f2, xi, eta)</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Integrand: </span><span class="sc">{</span>f2<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Exact:      </span><span class="sc">{</span>exact_tri<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"1-point:    </span><span class="sc">{</span>one_pt<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"3-point:    </span><span class="sc">{</span>three_pt<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"1-point matches exact: </span><span class="sc">{</span>sp<span class="sc">.</span>simplify(exact_tri <span class="op">-</span> one_pt) <span class="op">==</span> <span class="dv">0</span><span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"3-point matches exact: </span><span class="sc">{</span>sp<span class="sc">.</span>simplify(exact_tri <span class="op">-</span> three_pt) <span class="op">==</span> <span class="dv">0</span><span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-5" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Linear polynomial on triangle</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>f2 <span class="op">=</span> <span class="dv">1</span> <span class="op">+</span> <span class="dv">2</span><span class="op">*</span>xi <span class="op">+</span> <span class="dv">3</span><span class="op">*</span>eta</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>exact_tri <span class="op">=</span> integrate_reference_triangle_exact(f2, xi, eta)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>one_pt <span class="op">=</span> triangle_one_point_rule(f2, xi, eta)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>three_pt <span class="op">=</span> triangle_three_point_rule(f2, xi, eta)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Integrand: </span><span class="sc">{</span>f2<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Exact:      </span><span class="sc">{</span>exact_tri<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"1-point:    </span><span class="sc">{</span>one_pt<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"3-point:    </span><span class="sc">{</span>three_pt<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"1-point matches exact: </span><span class="sc">{</span>sp<span class="sc">.</span>simplify(exact_tri <span class="op">-</span> one_pt) <span class="op">==</span> <span class="dv">0</span><span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"3-point matches exact: </span><span class="sc">{</span>sp<span class="sc">.</span>simplify(exact_tri <span class="op">-</span> three_pt) <span class="op">==</span> <span class="dv">0</span><span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Integrand: 3*eta + 2*xi + 1
+Exact:      4/3
+1-point:    4/3
+3-point:    4/3
+1-point matches exact: True
+3-point matches exact: True</code></pre>
+</div>
 </div>
 </section>
 <section id="part-c-when-quadrature-fails" class="level2" data-number="5.3">
 <h2 data-number="5.3" class="anchored" data-anchor-id="part-c-when-quadrature-fails"><span class="header-section-number">5.3</span> Part C: When quadrature fails</h2>
 <p>Lower-order quadrature rules cannot exactly integrate higher-degree polynomials. This demonstrates why choosing the correct quadrature order is critical for element accuracy.</p>
-<div id="cell-7" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Higher-degree polynomial</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>f3 <span class="op">=</span> xi<span class="op">**</span><span class="dv">2</span> <span class="op">*</span> eta<span class="op">**</span><span class="dv">2</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>exact_high <span class="op">=</span> integrate_reference_quadrilateral_exact(f3, xi, eta)</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>gauss1_high <span class="op">=</span> quadrilateral_gauss_rule(f3, xi, eta, order<span class="op">=</span><span class="dv">1</span>)</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>gauss2_high <span class="op">=</span> quadrilateral_gauss_rule(f3, xi, eta, order<span class="op">=</span><span class="dv">2</span>)</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>gauss3_high <span class="op">=</span> quadrilateral_gauss_rule(f3, xi, eta, order<span class="op">=</span><span class="dv">3</span>)</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Integrand: </span><span class="sc">{</span>f3<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Exact:      </span><span class="sc">{</span>exact_high<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Gauss 1:    </span><span class="sc">{</span>gauss1_high<span class="sc">}</span><span class="ss">  (error: </span><span class="sc">{</span>sp<span class="sc">.</span>simplify(exact_high <span class="op">-</span> gauss1_high)<span class="sc">}</span><span class="ss">)"</span>)</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Gauss 2:    </span><span class="sc">{</span>gauss2_high<span class="sc">}</span><span class="ss">  (error: </span><span class="sc">{</span>sp<span class="sc">.</span>simplify(exact_high <span class="op">-</span> gauss2_high)<span class="sc">}</span><span class="ss">)"</span>)</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Gauss 3:    </span><span class="sc">{</span>gauss3_high<span class="sc">}</span><span class="ss">  (error: </span><span class="sc">{</span>sp<span class="sc">.</span>simplify(exact_high <span class="op">-</span> gauss3_high)<span class="sc">}</span><span class="ss">)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-7" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Higher-degree polynomial</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>f3 <span class="op">=</span> xi<span class="op">**</span><span class="dv">2</span> <span class="op">*</span> eta<span class="op">**</span><span class="dv">2</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>exact_high <span class="op">=</span> integrate_reference_quadrilateral_exact(f3, xi, eta)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>gauss1_high <span class="op">=</span> quadrilateral_gauss_rule(f3, xi, eta, order<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>gauss2_high <span class="op">=</span> quadrilateral_gauss_rule(f3, xi, eta, order<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>gauss3_high <span class="op">=</span> quadrilateral_gauss_rule(f3, xi, eta, order<span class="op">=</span><span class="dv">3</span>)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Integrand: </span><span class="sc">{</span>f3<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Exact:      </span><span class="sc">{</span>exact_high<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Gauss 1:    </span><span class="sc">{</span>gauss1_high<span class="sc">}</span><span class="ss">  (error: </span><span class="sc">{</span>sp<span class="sc">.</span>simplify(exact_high <span class="op">-</span> gauss1_high)<span class="sc">}</span><span class="ss">)"</span>)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Gauss 2:    </span><span class="sc">{</span>gauss2_high<span class="sc">}</span><span class="ss">  (error: </span><span class="sc">{</span>sp<span class="sc">.</span>simplify(exact_high <span class="op">-</span> gauss2_high)<span class="sc">}</span><span class="ss">)"</span>)</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Gauss 3:    </span><span class="sc">{</span>gauss3_high<span class="sc">}</span><span class="ss">  (error: </span><span class="sc">{</span>sp<span class="sc">.</span>simplify(exact_high <span class="op">-</span> gauss3_high)<span class="sc">}</span><span class="ss">)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Integrand: eta**2*xi**2
+Exact:      4/9
+Gauss 1:    0  (error: 4/9)
+Gauss 2:    4/9  (error: 0)
+Gauss 3:    4/9  (error: 0)</code></pre>
+</div>
 </div>
 </section>
 <section id="part-d-element-stiffness-integration-teaching-insight" class="level2" data-number="5.4">
 <h2 data-number="5.4" class="anchored" data-anchor-id="part-d-element-stiffness-integration-teaching-insight"><span class="header-section-number">5.4</span> Part D: Element stiffness integration (teaching insight)</h2>
 <p>For a P1 triangle element with constant gradients, the stiffness integrand is proportional to <span class="math inline">\(\text{det}(J)\)</span>, which is constant. This means 1-point quadrature is sufficient—no higher-order quadrature is needed!</p>
-<div id="cell-9" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"For P1 triangle stiffness: integrand ~ constant * det(J)"</span>)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Constant polynomial exact integration:"</span>)</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>f_const <span class="op">=</span> sp.Integer(<span class="dv">1</span>)</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>exact_const <span class="op">=</span> integrate_reference_triangle_exact(f_const, xi, eta)</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>one_pt_const <span class="op">=</span> triangle_one_point_rule(f_const, xi, eta)</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Exact: </span><span class="sc">{</span>exact_const<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  1-point: </span><span class="sc">{</span>one_pt_const<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Match: </span><span class="sc">{</span>exact_const <span class="op">==</span> one_pt_const<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-9" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"For P1 triangle stiffness: integrand ~ constant * det(J)"</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Constant polynomial exact integration:"</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>f_const <span class="op">=</span> sp.Integer(<span class="dv">1</span>)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>exact_const <span class="op">=</span> integrate_reference_triangle_exact(f_const, xi, eta)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>one_pt_const <span class="op">=</span> triangle_one_point_rule(f_const, xi, eta)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Exact: </span><span class="sc">{</span>exact_const<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  1-point: </span><span class="sc">{</span>one_pt_const<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Match: </span><span class="sc">{</span>exact_const <span class="op">==</span> one_pt_const<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>For P1 triangle stiffness: integrand ~ constant * det(J)
+Constant polynomial exact integration:
+  Exact: 1/2
+  1-point: 1/2
+  Match: True</code></pre>
+</div>
 </div>
 </section>
 <section id="exercise" class="level2" data-number="5.5">
 <h2 data-number="5.5" class="anchored" data-anchor-id="exercise"><span class="header-section-number">5.5</span> Exercise</h2>
 <p><strong>Question:</strong> For a P1 triangle element, the stiffness integrand involves products of constant gradients times <span class="math inline">\(\text{det}(J)\)</span>. What is the minimum quadrature order needed for exact integration? Test your answer using the workbench.</p>
 <p>Then consider a P2 element: the shape functions are quadratic, so gradients are linear. What quadrature order is needed then?</p>
-<div id="cell-11" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Exercise: For a P1 triangle element, the stiffness integrand involves</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co"># products of constant gradients times det(J). What is the minimum</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="co"># quadrature order needed for exact integration?</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Test your answer using the workbench.</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-11" class="cell" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Exercise: For a P1 triangle element, the stiffness integrand involves</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="co"># products of constant gradients times det(J). What is the minimum</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co"># quadrature order needed for exact integration?</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Test your answer using the workbench.</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 
 

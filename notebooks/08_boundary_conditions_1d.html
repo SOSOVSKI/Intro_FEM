@@ -376,7 +376,7 @@ window.Quarto = {
 <p><strong>Why “natural”?</strong> When flux multiplied by n is prescribed on Gamma_N, the boundary integral becomes a known contribution:</p>
 <p><span class="math display">\[\int_{\Gamma_N} t^* \, v \, ds\]</span></p>
 <p>This term is simply added to the load vector. No special handling of the stiffness matrix is needed—the condition is automatically incorporated when we assemble the system.</p>
-<div id="cell-3" class="cell">
+<div id="cell-3" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sympy <span class="im">as</span> sp</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Math, display</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> symbolic_fem_workbench <span class="im">import</span> (</span>
@@ -405,15 +405,29 @@ window.Quarto = {
 <span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Right boundary (x=L): </span><span class="sc">{</span>right_bc<span class="sc">.</span>evaluate()<span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
 <span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"These boundary terms will be handled by Neumann and Dirichlet BCs."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Boundary terms from integration by parts:
+Left boundary (x=0): -A*E*v(0)*Subs(Derivative(u(x), x), x, 0)
+Right boundary (x=L): -A*E*v(L)*Derivative(u(L), L)
+
+These boundary terms will be handled by Neumann and Dirichlet BCs.</code></pre>
 </div>
-<div id="cell-4" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply Neumann BC at x=L: prescribed force P</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Applying Neumann BC: flux = P at x=L"</span>)</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>neumann_contrib <span class="op">=</span> apply_neumann_flux(right_bc, flux_expr<span class="op">=</span>flux, prescribed_flux<span class="op">=</span>P)</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Neumann contribution to load vector: </span><span class="sc">{</span>neumann_contrib<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Key insight: This term enters F(v) directly—no matrix modification needed."</span>)</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"This is why Neumann BCs are called 'natural': they are built into the weak form."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="cell-4" class="cell" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply Neumann BC at x=L: prescribed force P</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Applying Neumann BC: flux = P at x=L"</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>neumann_contrib <span class="op">=</span> apply_neumann_flux(right_bc, flux_expr<span class="op">=</span>flux, prescribed_flux<span class="op">=</span>P)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Neumann contribution to load vector: </span><span class="sc">{</span>neumann_contrib<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Key insight: This term enters F(v) directly—no matrix modification needed."</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"This is why Neumann BCs are called 'natural': they are built into the weak form."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Applying Neumann BC: flux = P at x=L
+Neumann contribution to load vector: -P*v(L)
+
+Key insight: This term enters F(v) directly—no matrix modification needed.
+This is why Neumann BCs are called 'natural': they are built into the weak form.</code></pre>
+</div>
 </div>
 </section>
 <section id="dirichlet-essential-boundary-conditions" class="level2" data-number="9.3">
@@ -438,65 +452,95 @@ window.Quarto = {
 <p>After these modifications, solving K u = F automatically gives u_i = g_i.</p>
 <p><strong>Pros:</strong> Simple, preserves matrix size, explicit<br>
 <strong>Cons:</strong> Destroys symmetry of K (temporarily), modifies matrix structure</p>
-<div id="cell-7" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> symbolic_fem_workbench <span class="im">import</span> (</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    build_bar_1d_local_problem,</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> symbolic_fem_workbench.assembly <span class="im">import</span> (</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    assemble_dense_matrix,</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    assemble_dense_vector,</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    apply_dirichlet_by_row_substitution,</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Build a 1D bar problem with 3 elements</span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>problem <span class="op">=</span> build_bar_1d_local_problem()</span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>ke_fn <span class="op">=</span> sp.lambdify((problem[<span class="st">"L"</span>], problem[<span class="st">"E"</span>], problem[<span class="st">"A"</span>]), problem[<span class="st">"Ke"</span>], <span class="st">"numpy"</span>)</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>fe_fn <span class="op">=</span> sp.lambdify((problem[<span class="st">"L"</span>], problem[<span class="st">"q"</span>], problem[<span class="st">"P"</span>]), problem[<span class="st">"fe"</span>], <span class="st">"numpy"</span>)</span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>n_elem, L_val, E_val, A_val, q_val <span class="op">=</span> <span class="dv">3</span>, <span class="fl">1.0</span>, <span class="fl">1.0</span>, <span class="fl">1.0</span>, <span class="fl">1.0</span></span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>h <span class="op">=</span> L_val <span class="op">/</span> n_elem</span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>ndofs <span class="op">=</span> n_elem <span class="op">+</span> <span class="dv">1</span></span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>K <span class="op">=</span> np.zeros((ndofs, ndofs))</span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>F <span class="op">=</span> np.zeros(ndofs)</span>
-<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a><span class="co"># Assemble the system</span></span>
-<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> e <span class="kw">in</span> <span class="bu">range</span>(n_elem):</span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>    Ke <span class="op">=</span> np.array(ke_fn(h, E_val, A_val), dtype<span class="op">=</span><span class="bu">float</span>)</span>
-<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    fe <span class="op">=</span> np.array(fe_fn(h, q_val, <span class="fl">0.0</span>), dtype<span class="op">=</span><span class="bu">float</span>).flatten()</span>
-<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>    conn <span class="op">=</span> [e, e <span class="op">+</span> <span class="dv">1</span>]</span>
-<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>    assemble_dense_matrix(K, Ke, conn)</span>
-<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>    assemble_dense_vector(F, fe, conn)</span>
-<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Assembled K (before BC enforcement):"</span>)</span>
-<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(np.<span class="bu">round</span>(K, <span class="dv">4</span>))</span>
-<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
-<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Assembled F (before BC enforcement):"</span>, np.<span class="bu">round</span>(F, <span class="dv">4</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-7" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> symbolic_fem_workbench <span class="im">import</span> (</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    build_bar_1d_local_problem,</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> symbolic_fem_workbench.assembly <span class="im">import</span> (</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    assemble_dense_matrix,</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    assemble_dense_vector,</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    apply_dirichlet_by_row_substitution,</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Build a 1D bar problem with 3 elements</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>problem <span class="op">=</span> build_bar_1d_local_problem()</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>ke_fn <span class="op">=</span> sp.lambdify((problem[<span class="st">"L"</span>], problem[<span class="st">"E"</span>], problem[<span class="st">"A"</span>]), problem[<span class="st">"Ke"</span>], <span class="st">"numpy"</span>)</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>fe_fn <span class="op">=</span> sp.lambdify((problem[<span class="st">"L"</span>], problem[<span class="st">"q"</span>], problem[<span class="st">"P"</span>]), problem[<span class="st">"fe"</span>], <span class="st">"numpy"</span>)</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>n_elem, L_val, E_val, A_val, q_val <span class="op">=</span> <span class="dv">3</span>, <span class="fl">1.0</span>, <span class="fl">1.0</span>, <span class="fl">1.0</span>, <span class="fl">1.0</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>h <span class="op">=</span> L_val <span class="op">/</span> n_elem</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>ndofs <span class="op">=</span> n_elem <span class="op">+</span> <span class="dv">1</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>K <span class="op">=</span> np.zeros((ndofs, ndofs))</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>F <span class="op">=</span> np.zeros(ndofs)</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a><span class="co"># Assemble the system</span></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> e <span class="kw">in</span> <span class="bu">range</span>(n_elem):</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>    Ke <span class="op">=</span> np.array(ke_fn(h, E_val, A_val), dtype<span class="op">=</span><span class="bu">float</span>)</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>    fe <span class="op">=</span> np.array(fe_fn(h, q_val, <span class="fl">0.0</span>), dtype<span class="op">=</span><span class="bu">float</span>).flatten()</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>    conn <span class="op">=</span> [e, e <span class="op">+</span> <span class="dv">1</span>]</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>    assemble_dense_matrix(K, Ke, conn)</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>    assemble_dense_vector(F, fe, conn)</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Assembled K (before BC enforcement):"</span>)</span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(np.<span class="bu">round</span>(K, <span class="dv">4</span>))</span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Assembled F (before BC enforcement):"</span>, np.<span class="bu">round</span>(F, <span class="dv">4</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Assembled K (before BC enforcement):
+[[ 3. -3.  0.  0.]
+ [-3.  6. -3.  0.]
+ [ 0. -3.  6. -3.]
+ [ 0.  0. -3.  3.]]
+
+Assembled F (before BC enforcement): [0.1667 0.3333 0.3333 0.1667]</code></pre>
 </div>
-<div id="cell-8" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply Dirichlet BCs: u(0) = 0 and u(L) = 0 (fixed at both ends)</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>K_mod, F_mod <span class="op">=</span> apply_dirichlet_by_row_substitution(</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    K.copy(), F.copy(), constrained_dofs<span class="op">=</span>[<span class="dv">0</span>, ndofs<span class="op">-</span><span class="dv">1</span>], prescribed_values<span class="op">=</span>[<span class="fl">0.0</span>, <span class="fl">0.0</span>]</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"After row substitution (u(0)=0, u(L)=0):"</span>)</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"K_mod:"</span>)</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(np.<span class="bu">round</span>(K_mod, <span class="dv">4</span>))</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"F_mod:"</span>, np.<span class="bu">round</span>(F_mod, <span class="dv">4</span>))</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Note: Rows/columns 0 and 3 are now identity rows"</span>)</span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"      RHS entries 0 and 3 are now the prescribed values (0)."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<div id="cell-9" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Solve the modified system</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>u <span class="op">=</span> np.linalg.solve(K_mod, F_mod)</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Solution (row substitution):"</span>)</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(np.<span class="bu">round</span>(u, <span class="dv">6</span>))</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Verification: u[0] = </span><span class="sc">{</span>u[<span class="dv">0</span>]<span class="sc">:.6f}</span><span class="ss">, u[3] = </span><span class="sc">{</span>u[<span class="dv">3</span>]<span class="sc">:.6f}</span><span class="ss">"</span>)</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Both are 0.0 as prescribed."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-8" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply Dirichlet BCs: u(0) = 0 and u(L) = 0 (fixed at both ends)</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>K_mod, F_mod <span class="op">=</span> apply_dirichlet_by_row_substitution(</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    K.copy(), F.copy(), constrained_dofs<span class="op">=</span>[<span class="dv">0</span>, ndofs<span class="op">-</span><span class="dv">1</span>], prescribed_values<span class="op">=</span>[<span class="fl">0.0</span>, <span class="fl">0.0</span>]</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"After row substitution (u(0)=0, u(L)=0):"</span>)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"K_mod:"</span>)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(np.<span class="bu">round</span>(K_mod, <span class="dv">4</span>))</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"F_mod:"</span>, np.<span class="bu">round</span>(F_mod, <span class="dv">4</span>))</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Note: Rows/columns 0 and 3 are now identity rows"</span>)</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"      RHS entries 0 and 3 are now the prescribed values (0)."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>After row substitution (u(0)=0, u(L)=0):
+
+K_mod:
+[[ 1.  0.  0.  0.]
+ [ 0.  6. -3.  0.]
+ [ 0. -3.  6.  0.]
+ [ 0.  0.  0.  1.]]
+
+F_mod: [0.     0.3333 0.3333 0.    ]
+
+Note: Rows/columns 0 and 3 are now identity rows
+      RHS entries 0 and 3 are now the prescribed values (0).</code></pre>
+</div>
+</div>
+<div id="cell-9" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Solve the modified system</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>u <span class="op">=</span> np.linalg.solve(K_mod, F_mod)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Solution (row substitution):"</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(np.<span class="bu">round</span>(u, <span class="dv">6</span>))</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Verification: u[0] = </span><span class="sc">{</span>u[<span class="dv">0</span>]<span class="sc">:.6f}</span><span class="ss">, u[3] = </span><span class="sc">{</span>u[<span class="dv">3</span>]<span class="sc">:.6f}</span><span class="ss">"</span>)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Both are 0.0 as prescribed."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Solution (row substitution):
+[0.       0.111111 0.111111 0.      ]
+
+Verification: u[0] = 0.000000, u[3] = 0.000000
+Both are 0.0 as prescribed.</code></pre>
+</div>
 </div>
 </section>
 <section id="approach-2-lifting-modern-fenics-approach" class="level3" data-number="9.3.2">
@@ -507,103 +551,137 @@ window.Quarto = {
 <p>Substituting into the weak form a(u, v) = F(v): a(u_0 + u_D, v) = F(v) a(u_0, v) = F(v) - a(u_D, v)</p>
 <p>In matrix form: K_{ff} u_{0,f} = F_f - K_{fc} g_c</p>
 <p><strong>Why is this better?</strong> 1. The test space has homogeneous BCs—no special handling needed 2. The Dirichlet data enters as a correction to the RHS, not as matrix surgery 3. Generalises naturally to non-homogeneous BCs and higher dimensions 4. This is how modern FEM frameworks (FEniCS, deal.II) handle Dirichlet conditions internally</p>
-<div id="cell-11" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> symbolic_fem_workbench.assembly <span class="im">import</span> apply_dirichlet_by_lifting, expand_reduced_solution</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Re-assemble (since row substitution modified in place)</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>K2 <span class="op">=</span> np.zeros((ndofs, ndofs))</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>F2 <span class="op">=</span> np.zeros(ndofs)</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> e <span class="kw">in</span> <span class="bu">range</span>(n_elem):</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    Ke <span class="op">=</span> np.array(ke_fn(h, E_val, A_val), dtype<span class="op">=</span><span class="bu">float</span>)</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    fe <span class="op">=</span> np.array(fe_fn(h, q_val, <span class="fl">0.0</span>), dtype<span class="op">=</span><span class="bu">float</span>).flatten()</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    assemble_dense_matrix(K2, Ke, [e, e<span class="op">+</span><span class="dv">1</span>])</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    assemble_dense_vector(F2, fe, [e, e<span class="op">+</span><span class="dv">1</span>])</span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply lifting</span></span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>K_ff, F_f, free_dofs, u_lift <span class="op">=</span> apply_dirichlet_by_lifting(</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    K2, F2, constrained_dofs<span class="op">=</span>[<span class="dv">0</span>, ndofs<span class="op">-</span><span class="dv">1</span>], prescribed_values<span class="op">=</span>[<span class="fl">0.0</span>, <span class="fl">0.0</span>]</span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Lifting decomposition:"</span>)</span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Lift vector u_D: </span><span class="sc">{</span>u_lift<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Free DOFs: </span><span class="sc">{</span>free_dofs<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
-<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Modified RHS F_f:"</span>)</span>
-<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(np.<span class="bu">round</span>(F_f, <span class="dv">4</span>))</span>
-<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
-<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Reduced stiffness K_ff (free-free block):"</span>)</span>
-<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(np.<span class="bu">round</span>(K_ff, <span class="dv">4</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-11" class="cell" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> symbolic_fem_workbench.assembly <span class="im">import</span> apply_dirichlet_by_lifting, expand_reduced_solution</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Re-assemble (since row substitution modified in place)</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>K2 <span class="op">=</span> np.zeros((ndofs, ndofs))</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>F2 <span class="op">=</span> np.zeros(ndofs)</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> e <span class="kw">in</span> <span class="bu">range</span>(n_elem):</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    Ke <span class="op">=</span> np.array(ke_fn(h, E_val, A_val), dtype<span class="op">=</span><span class="bu">float</span>)</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>    fe <span class="op">=</span> np.array(fe_fn(h, q_val, <span class="fl">0.0</span>), dtype<span class="op">=</span><span class="bu">float</span>).flatten()</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    assemble_dense_matrix(K2, Ke, [e, e<span class="op">+</span><span class="dv">1</span>])</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    assemble_dense_vector(F2, fe, [e, e<span class="op">+</span><span class="dv">1</span>])</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply lifting</span></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>K_ff, F_f, free_dofs, u_lift <span class="op">=</span> apply_dirichlet_by_lifting(</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>    K2, F2, constrained_dofs<span class="op">=</span>[<span class="dv">0</span>, ndofs<span class="op">-</span><span class="dv">1</span>], prescribed_values<span class="op">=</span>[<span class="fl">0.0</span>, <span class="fl">0.0</span>]</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Lifting decomposition:"</span>)</span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Lift vector u_D: </span><span class="sc">{</span>u_lift<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Free DOFs: </span><span class="sc">{</span>free_dofs<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Modified RHS F_f:"</span>)</span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(np.<span class="bu">round</span>(F_f, <span class="dv">4</span>))</span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Reduced stiffness K_ff (free-free block):"</span>)</span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(np.<span class="bu">round</span>(K_ff, <span class="dv">4</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Lifting decomposition:
+Lift vector u_D: [0. 0. 0. 0.]
+Free DOFs: [1, 2]
+
+Modified RHS F_f:
+[0.3333 0.3333]
+
+Reduced stiffness K_ff (free-free block):
+[[ 6. -3.]
+ [-3.  6.]]</code></pre>
 </div>
-<div id="cell-12" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Solve for the homogeneous part u_0</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>u0_free <span class="op">=</span> np.linalg.solve(K_ff, F_f)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Homogeneous solution u_0 (at free DOFs): </span><span class="sc">{</span>np<span class="sc">.</span><span class="bu">round</span>(u0_free, <span class="dv">6</span>)<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Expand back to full size</span></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>u0_full <span class="op">=</span> expand_reduced_solution(u0_free, ndofs, free_dofs, [<span class="dv">0</span>, ndofs<span class="op">-</span><span class="dv">1</span>], [<span class="fl">0.0</span>, <span class="fl">0.0</span>])</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"u_0 (full size): </span><span class="sc">{</span>np<span class="sc">.</span><span class="bu">round</span>(u0_full, <span class="dv">6</span>)<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Total solution = u_0 + u_D</span></span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>u_total <span class="op">=</span> u0_full <span class="op">+</span> u_lift</span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"u = u_0 + u_D: </span><span class="sc">{</span>np<span class="sc">.</span><span class="bu">round</span>(u_total, <span class="dv">6</span>)<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="cell-12" class="cell" data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Solve for the homogeneous part u_0</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>u0_free <span class="op">=</span> np.linalg.solve(K_ff, F_f)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Homogeneous solution u_0 (at free DOFs): </span><span class="sc">{</span>np<span class="sc">.</span><span class="bu">round</span>(u0_free, <span class="dv">6</span>)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Expand back to full size</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>u0_full <span class="op">=</span> expand_reduced_solution(u0_free, ndofs, free_dofs, [<span class="dv">0</span>, ndofs<span class="op">-</span><span class="dv">1</span>], [<span class="fl">0.0</span>, <span class="fl">0.0</span>])</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"u_0 (full size): </span><span class="sc">{</span>np<span class="sc">.</span><span class="bu">round</span>(u0_full, <span class="dv">6</span>)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Total solution = u_0 + u_D</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>u_total <span class="op">=</span> u0_full <span class="op">+</span> u_lift</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"u = u_0 + u_D: </span><span class="sc">{</span>np<span class="sc">.</span><span class="bu">round</span>(u_total, <span class="dv">6</span>)<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Homogeneous solution u_0 (at free DOFs): [0.111111 0.111111]
+
+u_0 (full size): [0.       0.111111 0.111111 0.      ]
+
+u = u_0 + u_D: [0.       0.111111 0.111111 0.      ]</code></pre>
+</div>
 </div>
 </section>
 </section>
 <section id="comparison-both-approaches-give-the-same-answer" class="level2" data-number="9.4">
 <h2 data-number="9.4" class="anchored" data-anchor-id="comparison-both-approaches-give-the-same-answer"><span class="header-section-number">9.4</span> Comparison: Both Approaches Give the Same Answer</h2>
 <p>The mathematical principle behind both methods is the same—they are just different algebraic implementations. Let us verify:</p>
-<div id="cell-14" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Row substitution result:"</span>, np.<span class="bu">round</span>(u, <span class="dv">6</span>))</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Lifting result:         "</span>, np.<span class="bu">round</span>(u_total, <span class="dv">6</span>))</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Are they equal?"</span>, np.allclose(u, u_total))</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Max difference:"</span>, np.<span class="bu">max</span>(np.<span class="bu">abs</span>(u <span class="op">-</span> u_total)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-14" class="cell" data-execution_count="8">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Row substitution result:"</span>, np.<span class="bu">round</span>(u, <span class="dv">6</span>))</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Lifting result:         "</span>, np.<span class="bu">round</span>(u_total, <span class="dv">6</span>))</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Are they equal?"</span>, np.allclose(u, u_total))</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Max difference:"</span>, np.<span class="bu">max</span>(np.<span class="bu">abs</span>(u <span class="op">-</span> u_total)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Row substitution result: [0.       0.111111 0.111111 0.      ]
+Lifting result:          [0.       0.111111 0.111111 0.      ]
+
+Are they equal? True
+Max difference: 0.0</code></pre>
+</div>
 </div>
 </section>
 <section id="non-homogeneous-dirichlet-example" class="level2" data-number="9.5">
 <h2 data-number="9.5" class="anchored" data-anchor-id="non-homogeneous-dirichlet-example"><span class="header-section-number">9.5</span> Non-Homogeneous Dirichlet Example</h2>
 <p>Now let us try a non-homogeneous case: u(0) = 0 and u(L) = 1</p>
-<div id="cell-16" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Re-assemble</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>K3 <span class="op">=</span> np.zeros((ndofs, ndofs))</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>F3 <span class="op">=</span> np.zeros(ndofs)</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> e <span class="kw">in</span> <span class="bu">range</span>(n_elem):</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    Ke <span class="op">=</span> np.array(ke_fn(h, E_val, A_val), dtype<span class="op">=</span><span class="bu">float</span>)</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    fe <span class="op">=</span> np.array(fe_fn(h, q_val, <span class="fl">0.0</span>), dtype<span class="op">=</span><span class="bu">float</span>).flatten()</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    assemble_dense_matrix(K3, Ke, [e, e<span class="op">+</span><span class="dv">1</span>])</span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    assemble_dense_vector(F3, fe, [e, e<span class="op">+</span><span class="dv">1</span>])</span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Non-homogeneous Dirichlet: u(0)=0, u(L)=1"</span>)</span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Row substitution</span></span>
-<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>K3_mod, F3_mod <span class="op">=</span> apply_dirichlet_by_row_substitution(</span>
-<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>    K3.copy(), F3.copy(), constrained_dofs<span class="op">=</span>[<span class="dv">0</span>, ndofs<span class="op">-</span><span class="dv">1</span>], prescribed_values<span class="op">=</span>[<span class="fl">0.0</span>, <span class="fl">1.0</span>]</span>
-<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>u_row <span class="op">=</span> np.linalg.solve(K3_mod, F3_mod)</span>
-<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Row substitution:"</span>, np.<span class="bu">round</span>(u_row, <span class="dv">6</span>))</span>
-<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Lifting</span></span>
-<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>K3_ff, F3_f, free_dofs, u_lift3 <span class="op">=</span> apply_dirichlet_by_lifting(</span>
-<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>    K3, F3, constrained_dofs<span class="op">=</span>[<span class="dv">0</span>, ndofs<span class="op">-</span><span class="dv">1</span>], prescribed_values<span class="op">=</span>[<span class="fl">0.0</span>, <span class="fl">1.0</span>]</span>
-<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>u0_free <span class="op">=</span> np.linalg.solve(K3_ff, F3_f)</span>
-<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a><span class="co"># IMPORTANT: use zeros here because u_lift already carries the prescribed values</span></span>
-<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>u0_full <span class="op">=</span> expand_reduced_solution(u0_free, ndofs, free_dofs, [<span class="dv">0</span>, ndofs<span class="op">-</span><span class="dv">1</span>], [<span class="fl">0.0</span>, <span class="fl">0.0</span>])</span>
-<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>u_lift_total <span class="op">=</span> u0_full <span class="op">+</span> u_lift3</span>
-<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Lifting:         "</span>, np.<span class="bu">round</span>(u_lift_total, <span class="dv">6</span>))</span>
-<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
-<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Match:"</span>, np.allclose(u_row, u_lift_total))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-16" class="cell" data-execution_count="9">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Re-assemble</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>K3 <span class="op">=</span> np.zeros((ndofs, ndofs))</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>F3 <span class="op">=</span> np.zeros(ndofs)</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> e <span class="kw">in</span> <span class="bu">range</span>(n_elem):</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    Ke <span class="op">=</span> np.array(ke_fn(h, E_val, A_val), dtype<span class="op">=</span><span class="bu">float</span>)</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    fe <span class="op">=</span> np.array(fe_fn(h, q_val, <span class="fl">0.0</span>), dtype<span class="op">=</span><span class="bu">float</span>).flatten()</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>    assemble_dense_matrix(K3, Ke, [e, e<span class="op">+</span><span class="dv">1</span>])</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>    assemble_dense_vector(F3, fe, [e, e<span class="op">+</span><span class="dv">1</span>])</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Non-homogeneous Dirichlet: u(0)=0, u(L)=1"</span>)</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Row substitution</span></span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>K3_mod, F3_mod <span class="op">=</span> apply_dirichlet_by_row_substitution(</span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>    K3.copy(), F3.copy(), constrained_dofs<span class="op">=</span>[<span class="dv">0</span>, ndofs<span class="op">-</span><span class="dv">1</span>], prescribed_values<span class="op">=</span>[<span class="fl">0.0</span>, <span class="fl">1.0</span>]</span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>u_row <span class="op">=</span> np.linalg.solve(K3_mod, F3_mod)</span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Row substitution:"</span>, np.<span class="bu">round</span>(u_row, <span class="dv">6</span>))</span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Lifting</span></span>
+<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a>K3_ff, F3_f, free_dofs, u_lift3 <span class="op">=</span> apply_dirichlet_by_lifting(</span>
+<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a>    K3, F3, constrained_dofs<span class="op">=</span>[<span class="dv">0</span>, ndofs<span class="op">-</span><span class="dv">1</span>], prescribed_values<span class="op">=</span>[<span class="fl">0.0</span>, <span class="fl">1.0</span>]</span>
+<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb17-24"><a href="#cb17-24" aria-hidden="true" tabindex="-1"></a>u0_free <span class="op">=</span> np.linalg.solve(K3_ff, F3_f)</span>
+<span id="cb17-25"><a href="#cb17-25" aria-hidden="true" tabindex="-1"></a><span class="co"># IMPORTANT: use zeros here because u_lift already carries the prescribed values</span></span>
+<span id="cb17-26"><a href="#cb17-26" aria-hidden="true" tabindex="-1"></a>u0_full <span class="op">=</span> expand_reduced_solution(u0_free, ndofs, free_dofs, [<span class="dv">0</span>, ndofs<span class="op">-</span><span class="dv">1</span>], [<span class="fl">0.0</span>, <span class="fl">0.0</span>])</span>
+<span id="cb17-27"><a href="#cb17-27" aria-hidden="true" tabindex="-1"></a>u_lift_total <span class="op">=</span> u0_full <span class="op">+</span> u_lift3</span>
+<span id="cb17-28"><a href="#cb17-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Lifting:         "</span>, np.<span class="bu">round</span>(u_lift_total, <span class="dv">6</span>))</span>
+<span id="cb17-29"><a href="#cb17-29" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb17-30"><a href="#cb17-30" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Match:"</span>, np.allclose(u_row, u_lift_total))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Non-homogeneous Dirichlet: u(0)=0, u(L)=1
+
+Row substitution: [0.       0.444444 0.777778 1.      ]
+Lifting:          [0.       0.444444 0.777778 1.      ]
+
+Match: True</code></pre>
+</div>
 </div>
 </section>
 <section id="exercise" class="level2" data-number="9.6">
 <h2 data-number="9.6" class="anchored" data-anchor-id="exercise"><span class="header-section-number">9.6</span> Exercise</h2>
 <p>Modify the problem above to apply a different boundary condition at the right end: - Try u(L) = 2 - Try u(0) = 1, u(L) = 0 - Try only fixing the left end: u(0) = 0 (what happens at the right?)</p>
 <p>For each case, verify that both approaches still give the same answer.</p>
-<div id="cell-18" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Your exercise code here</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-18" class="cell" data-execution_count="10">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Your exercise code here</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 
 

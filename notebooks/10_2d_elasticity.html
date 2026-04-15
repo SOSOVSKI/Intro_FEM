@@ -368,7 +368,7 @@ window.Quarto = {
 <p>We derive the element stiffness matrix <span class="math inline">\(K_e = t A B^T D B\)</span> where <span class="math inline">\(D\)</span> is the constitutive matrix and <span class="math inline">\(B\)</span> is the strain-displacement matrix.</p>
 <section id="imports" class="level2" data-number="11.1">
 <h2 data-number="11.1" class="anchored" data-anchor-id="imports"><span class="header-section-number">11.1</span> Imports</h2>
-<div id="cell-2" class="cell">
+<div id="cell-2" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sympy <span class="im">as</span> sp</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Math, display</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> symbolic_fem_workbench <span class="im">import</span> (</span>
@@ -394,7 +394,7 @@ window.Quarto = {
 <section id="plane-stress-vs.-plane-strain" class="level2" data-number="11.3">
 <h2 data-number="11.3" class="anchored" data-anchor-id="plane-stress-vs.-plane-strain"><span class="header-section-number">11.3</span> Plane Stress vs.&nbsp;Plane Strain</h2>
 <p>For 2D problems, we make a simplifying assumption about the out-of-plane stress/strain.</p>
-<div id="cell-5" class="cell">
+<div id="cell-5" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>E, nu <span class="op">=</span> sp.symbols(<span class="st">"E nu"</span>, positive<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Plane stress: sigma_zz = 0 (thin plates, no out-of-plane loading)</span></span>
@@ -408,6 +408,24 @@ window.Quarto = {
 <span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n\n</span><span class="st">Plane strain D (thick bodies, constrained):"</span>)</span>
 <span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">D ="</span>)</span>
 <span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>display(Math(sp.latex(D_strain)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Plane stress D (thin plates):
+
+D =</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \left[\begin{matrix}\frac{E}{1 - \nu^{2}} &amp; \frac{E \nu}{1 - \nu^{2}} &amp; 0\\\frac{E \nu}{1 - \nu^{2}} &amp; \frac{E}{1 - \nu^{2}} &amp; 0\\0 &amp; 0 &amp; \frac{E \left(\frac{1}{2} - \frac{\nu}{2}\right)}{1 - \nu^{2}}\end{matrix}\right]\)</span></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+
+Plane strain D (thick bodies, constrained):
+
+D =</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \left[\begin{matrix}\frac{E \left(1 - \nu\right)}{\left(1 - 2 \nu\right) \left(\nu + 1\right)} &amp; \frac{E \nu}{\left(1 - 2 \nu\right) \left(\nu + 1\right)} &amp; 0\\\frac{E \nu}{\left(1 - 2 \nu\right) \left(\nu + 1\right)} &amp; \frac{E \left(1 - \nu\right)}{\left(1 - 2 \nu\right) \left(\nu + 1\right)} &amp; 0\\0 &amp; 0 &amp; \frac{E \left(\frac{1}{2} - \nu\right)}{\left(1 - 2 \nu\right) \left(\nu + 1\right)}\end{matrix}\right]\)</span></p>
+</div>
 </div>
 </section>
 <section id="strain-displacement-matrix-b-from-displacements-to-strains" class="level2" data-number="11.4">
@@ -421,32 +439,41 @@ window.Quarto = {
 0 &amp; \frac{\partial N_1}{\partial y} &amp; 0 &amp; \frac{\partial N_2}{\partial y} &amp; 0 &amp; \frac{\partial N_3}{\partial y} \\
 \frac{\partial N_1}{\partial y} &amp; \frac{\partial N_1}{\partial x} &amp; \frac{\partial N_2}{\partial y} &amp; \frac{\partial N_2}{\partial x} &amp; \frac{\partial N_3}{\partial y} &amp; \frac{\partial N_3}{\partial x}
 \end{bmatrix}\]</span></p>
-<div id="cell-7" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Build B for the unit right triangle</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>xi, eta <span class="op">=</span> sp.symbols(<span class="st">"xi eta"</span>)</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>ref <span class="op">=</span> ReferenceTriangleP1(xi, eta)</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Unit right triangle vertices: (0,0), (1,0), (0,1)</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>x1, y1 <span class="op">=</span> <span class="dv">0</span>, <span class="dv">0</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>x2, y2 <span class="op">=</span> <span class="dv">1</span>, <span class="dv">0</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>x3, y3 <span class="op">=</span> <span class="dv">0</span>, <span class="dv">1</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>geom <span class="op">=</span> AffineTriangleMap2D(xi<span class="op">=</span>xi, eta<span class="op">=</span>eta, x1<span class="op">=</span>x1, y1<span class="op">=</span>y1, x2<span class="op">=</span>x2, y2<span class="op">=</span>y2, x3<span class="op">=</span>x3, y3<span class="op">=</span>y3)</span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Physical-space gradients via J^{-T}</span></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>JinvT <span class="op">=</span> geom.inverse_transpose_jacobian</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>dN_dx <span class="op">=</span> []</span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>dN_dy <span class="op">=</span> []</span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> grad_ref <span class="kw">in</span> ref.shape_gradients_reference:</span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    grad_phys <span class="op">=</span> sp.simplify(JinvT <span class="op">*</span> grad_ref)</span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    dN_dx.append(grad_phys[<span class="dv">0</span>])</span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    dN_dy.append(grad_phys[<span class="dv">1</span>])</span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>B <span class="op">=</span> B_matrix_triangle_2d(dN_dx, dN_dy)</span>
-<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"B matrix for unit right triangle (3×6):"</span>)</span>
-<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"(Each row represents one strain component: ε_xx, ε_yy, γ_xy)"</span>)</span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"(Each pair of columns represents one node's DOF: u_i, v_i)</span><span class="ch">\n</span><span class="st">"</span>)</span>
-<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"B = "</span> <span class="op">+</span> sp.latex(B)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-7" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Build B for the unit right triangle</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>xi, eta <span class="op">=</span> sp.symbols(<span class="st">"xi eta"</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>ref <span class="op">=</span> ReferenceTriangleP1(xi, eta)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Unit right triangle vertices: (0,0), (1,0), (0,1)</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>x1, y1 <span class="op">=</span> <span class="dv">0</span>, <span class="dv">0</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>x2, y2 <span class="op">=</span> <span class="dv">1</span>, <span class="dv">0</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>x3, y3 <span class="op">=</span> <span class="dv">0</span>, <span class="dv">1</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>geom <span class="op">=</span> AffineTriangleMap2D(xi<span class="op">=</span>xi, eta<span class="op">=</span>eta, x1<span class="op">=</span>x1, y1<span class="op">=</span>y1, x2<span class="op">=</span>x2, y2<span class="op">=</span>y2, x3<span class="op">=</span>x3, y3<span class="op">=</span>y3)</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Physical-space gradients via J^{-T}</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>JinvT <span class="op">=</span> geom.inverse_transpose_jacobian</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>dN_dx <span class="op">=</span> []</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>dN_dy <span class="op">=</span> []</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> grad_ref <span class="kw">in</span> ref.shape_gradients_reference:</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>    grad_phys <span class="op">=</span> sp.simplify(JinvT <span class="op">*</span> grad_ref)</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>    dN_dx.append(grad_phys[<span class="dv">0</span>])</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>    dN_dy.append(grad_phys[<span class="dv">1</span>])</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>B <span class="op">=</span> B_matrix_triangle_2d(dN_dx, dN_dy)</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"B matrix for unit right triangle (3×6):"</span>)</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"(Each row represents one strain component: ε_xx, ε_yy, γ_xy)"</span>)</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"(Each pair of columns represents one node's DOF: u_i, v_i)</span><span class="ch">\n</span><span class="st">"</span>)</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"B = "</span> <span class="op">+</span> sp.latex(B)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>B matrix for unit right triangle (3×6):
+(Each row represents one strain component: ε_xx, ε_yy, γ_xy)
+(Each pair of columns represents one node's DOF: u_i, v_i)
+</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle B = \left[\begin{matrix}-1 &amp; 0 &amp; 1 &amp; 0 &amp; 0 &amp; 0\\0 &amp; -1 &amp; 0 &amp; 0 &amp; 0 &amp; 1\\-1 &amp; -1 &amp; 0 &amp; 1 &amp; 1 &amp; 0\end{matrix}\right]\)</span></p>
+</div>
 </div>
 </section>
 <section id="element-stiffness-matrix-k_e-t-a-bt-d-b" class="level2" data-number="11.5">
@@ -454,99 +481,162 @@ window.Quarto = {
 <p>For a constant-strain element (P1 triangle), the strain and D are constant over the element. The weak form integral simplifies to:</p>
 <p><span class="math display">\[K_e = t \cdot A \cdot B^T D B\]</span></p>
 <p>where: - <span class="math inline">\(t\)</span> is the plate thickness (for 2D plane stress problems) - <span class="math inline">\(A\)</span> is the element area - <span class="math inline">\(B\)</span> is the strain-displacement matrix (3×6) - <span class="math inline">\(D\)</span> is the constitutive matrix (3×3) - <span class="math inline">\(K_e\)</span> is the 6×6 element stiffness matrix</p>
-<div id="cell-9" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Use the pre-built workflow to get Ke</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> build_elasticity_triangle_p1_2d(<span class="st">"plane_stress"</span>)</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>Ke <span class="op">=</span> data[<span class="st">"Ke_unit_right_triangle"</span>]</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"6×6 element stiffness matrix for unit right triangle (plane stress):"</span>)</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"(with E=1, ν=1/3, t=1 for readability)</span><span class="ch">\n</span><span class="st">"</span>)</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Substitute specific values for display</span></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>Ke_specific <span class="op">=</span> Ke.subs({data[<span class="st">"E"</span>]: <span class="dv">1</span>, data[<span class="st">"nu"</span>]: sp.Rational(<span class="dv">1</span>, <span class="dv">3</span>), data[<span class="st">"t"</span>]: <span class="dv">1</span>})</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"K_e = "</span> <span class="op">+</span> sp.latex(sp.simplify(Ke_specific))))</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Properties:"</span>)</span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Symmetric: </span><span class="sc">{</span>sp<span class="sc">.</span>simplify(Ke <span class="op">-</span> Ke.T) <span class="op">==</span> sp<span class="sc">.</span>zeros(<span class="dv">6</span>, <span class="dv">6</span>)<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Shape: </span><span class="sc">{</span>Ke<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-9" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Use the pre-built workflow to get Ke</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> build_elasticity_triangle_p1_2d(<span class="st">"plane_stress"</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>Ke <span class="op">=</span> data[<span class="st">"Ke_unit_right_triangle"</span>]</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"6×6 element stiffness matrix for unit right triangle (plane stress):"</span>)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"(with E=1, ν=1/3, t=1 for readability)</span><span class="ch">\n</span><span class="st">"</span>)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Substitute specific values for display</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>Ke_specific <span class="op">=</span> Ke.subs({data[<span class="st">"E"</span>]: <span class="dv">1</span>, data[<span class="st">"nu"</span>]: sp.Rational(<span class="dv">1</span>, <span class="dv">3</span>), data[<span class="st">"t"</span>]: <span class="dv">1</span>})</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"K_e = "</span> <span class="op">+</span> sp.latex(sp.simplify(Ke_specific))))</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Properties:"</span>)</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Symmetric: </span><span class="sc">{</span>sp<span class="sc">.</span>simplify(Ke <span class="op">-</span> Ke.T) <span class="op">==</span> sp<span class="sc">.</span>zeros(<span class="dv">6</span>, <span class="dv">6</span>)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Shape: </span><span class="sc">{</span>Ke<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>6×6 element stiffness matrix for unit right triangle (plane stress):
+(with E=1, ν=1/3, t=1 for readability)
+</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle K_e = \left[\begin{matrix}\frac{3}{4} &amp; \frac{3}{8} &amp; - \frac{9}{16} &amp; - \frac{3}{16} &amp; - \frac{3}{16} &amp; - \frac{3}{16}\\\frac{3}{8} &amp; \frac{3}{4} &amp; - \frac{3}{16} &amp; - \frac{3}{16} &amp; - \frac{3}{16} &amp; - \frac{9}{16}\\- \frac{9}{16} &amp; - \frac{3}{16} &amp; \frac{9}{16} &amp; 0 &amp; 0 &amp; \frac{3}{16}\\- \frac{3}{16} &amp; - \frac{3}{16} &amp; 0 &amp; \frac{3}{16} &amp; \frac{3}{16} &amp; 0\\- \frac{3}{16} &amp; - \frac{3}{16} &amp; 0 &amp; \frac{3}{16} &amp; \frac{3}{16} &amp; 0\\- \frac{3}{16} &amp; - \frac{9}{16} &amp; \frac{3}{16} &amp; 0 &amp; 0 &amp; \frac{9}{16}\end{matrix}\right]\)</span></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Properties:
+  Symmetric: True
+  Shape: (6, 6)</code></pre>
+</div>
 </div>
 </section>
 <section id="plane-stress-vs.-plane-strain-comparison" class="level2" data-number="11.6">
 <h2 data-number="11.6" class="anchored" data-anchor-id="plane-stress-vs.-plane-strain-comparison"><span class="header-section-number">11.6</span> Plane Stress vs.&nbsp;Plane Strain Comparison</h2>
 <p>Let’s compare the two formulations on the same unit right triangle:</p>
-<div id="cell-11" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Build for both formulations</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>data_ps <span class="op">=</span> build_elasticity_triangle_p1_2d(<span class="st">"plane_stress"</span>)</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>data_pe <span class="op">=</span> build_elasticity_triangle_p1_2d(<span class="st">"plane_strain"</span>)</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>Ke_ps <span class="op">=</span> data_ps[<span class="st">"Ke_unit_right_triangle"</span>]</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>Ke_pe <span class="op">=</span> data_pe[<span class="st">"Ke_unit_right_triangle"</span>]</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Compare with E=1, nu=0.3, t=1</span></span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>E_val, nu_val, t_val <span class="op">=</span> <span class="dv">1</span>, sp.Rational(<span class="dv">3</span>, <span class="dv">10</span>), <span class="dv">1</span></span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>Ke_ps_num <span class="op">=</span> Ke_ps.subs({data_ps[<span class="st">"E"</span>]: E_val, data_ps[<span class="st">"nu"</span>]: nu_val, data_ps[<span class="st">"t"</span>]: t_val})</span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>Ke_pe_num <span class="op">=</span> Ke_pe.subs({data_pe[<span class="st">"E"</span>]: E_val, data_pe[<span class="st">"nu"</span>]: nu_val, data_pe[<span class="st">"t"</span>]: t_val})</span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Plane stress K_e (E=1, ν=0.3, t=1):"</span>)</span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>display(Math(sp.latex(Ke_ps_num)))</span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Plane strain K_e (E=1, ν=0.3, t=1):"</span>)</span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>display(Math(sp.latex(Ke_pe_num)))</span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Stiffness ratio (plane strain / plane stress):"</span>)</span>
-<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>ratio <span class="op">=</span> sp.simplify((<span class="dv">1</span> <span class="op">-</span> nu_val) <span class="op">/</span> (<span class="dv">1</span> <span class="op">-</span> <span class="dv">2</span><span class="op">*</span>nu_val))</span>
-<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Factor ≈ </span><span class="sc">{</span><span class="bu">float</span>(ratio)<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
-<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Plane strain is stiffer due to out-of-plane constraint."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-11" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Build for both formulations</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>data_ps <span class="op">=</span> build_elasticity_triangle_p1_2d(<span class="st">"plane_stress"</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>data_pe <span class="op">=</span> build_elasticity_triangle_p1_2d(<span class="st">"plane_strain"</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>Ke_ps <span class="op">=</span> data_ps[<span class="st">"Ke_unit_right_triangle"</span>]</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>Ke_pe <span class="op">=</span> data_pe[<span class="st">"Ke_unit_right_triangle"</span>]</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Compare with E=1, nu=0.3, t=1</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>E_val, nu_val, t_val <span class="op">=</span> <span class="dv">1</span>, sp.Rational(<span class="dv">3</span>, <span class="dv">10</span>), <span class="dv">1</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>Ke_ps_num <span class="op">=</span> Ke_ps.subs({data_ps[<span class="st">"E"</span>]: E_val, data_ps[<span class="st">"nu"</span>]: nu_val, data_ps[<span class="st">"t"</span>]: t_val})</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>Ke_pe_num <span class="op">=</span> Ke_pe.subs({data_pe[<span class="st">"E"</span>]: E_val, data_pe[<span class="st">"nu"</span>]: nu_val, data_pe[<span class="st">"t"</span>]: t_val})</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Plane stress K_e (E=1, ν=0.3, t=1):"</span>)</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>display(Math(sp.latex(Ke_ps_num)))</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Plane strain K_e (E=1, ν=0.3, t=1):"</span>)</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>display(Math(sp.latex(Ke_pe_num)))</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Stiffness ratio (plane strain / plane stress):"</span>)</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>ratio <span class="op">=</span> sp.simplify((<span class="dv">1</span> <span class="op">-</span> nu_val) <span class="op">/</span> (<span class="dv">1</span> <span class="op">-</span> <span class="dv">2</span><span class="op">*</span>nu_val))</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Factor ≈ </span><span class="sc">{</span><span class="bu">float</span>(ratio)<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Plane strain is stiffer due to out-of-plane constraint."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Plane stress K_e (E=1, ν=0.3, t=1):</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \left[\begin{matrix}\frac{135}{182} &amp; \frac{5}{14} &amp; - \frac{50}{91} &amp; - \frac{5}{26} &amp; - \frac{5}{26} &amp; - \frac{15}{91}\\\frac{5}{14} &amp; \frac{135}{182} &amp; - \frac{15}{91} &amp; - \frac{5}{26} &amp; - \frac{5}{26} &amp; - \frac{50}{91}\\- \frac{50}{91} &amp; - \frac{15}{91} &amp; \frac{50}{91} &amp; 0 &amp; 0 &amp; \frac{15}{91}\\- \frac{5}{26} &amp; - \frac{5}{26} &amp; 0 &amp; \frac{5}{26} &amp; \frac{5}{26} &amp; 0\\- \frac{5}{26} &amp; - \frac{5}{26} &amp; 0 &amp; \frac{5}{26} &amp; \frac{5}{26} &amp; 0\\- \frac{15}{91} &amp; - \frac{50}{91} &amp; \frac{15}{91} &amp; 0 &amp; 0 &amp; \frac{50}{91}\end{matrix}\right]\)</span></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Plane strain K_e (E=1, ν=0.3, t=1):</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \left[\begin{matrix}\frac{45}{52} &amp; \frac{25}{52} &amp; - \frac{35}{52} &amp; - \frac{5}{26} &amp; - \frac{5}{26} &amp; - \frac{15}{52}\\\frac{25}{52} &amp; \frac{45}{52} &amp; - \frac{15}{52} &amp; - \frac{5}{26} &amp; - \frac{5}{26} &amp; - \frac{35}{52}\\- \frac{35}{52} &amp; - \frac{15}{52} &amp; \frac{35}{52} &amp; 0 &amp; 0 &amp; \frac{15}{52}\\- \frac{5}{26} &amp; - \frac{5}{26} &amp; 0 &amp; \frac{5}{26} &amp; \frac{5}{26} &amp; 0\\- \frac{5}{26} &amp; - \frac{5}{26} &amp; 0 &amp; \frac{5}{26} &amp; \frac{5}{26} &amp; 0\\- \frac{15}{52} &amp; - \frac{35}{52} &amp; \frac{15}{52} &amp; 0 &amp; 0 &amp; \frac{35}{52}\end{matrix}\right]\)</span></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Stiffness ratio (plane strain / plane stress):
+  Factor ≈ 1.7500
+  Plane strain is stiffer due to out-of-plane constraint.</code></pre>
+</div>
 </div>
 </section>
 <section id="material-parameters-and-their-effect" class="level2" data-number="11.7">
 <h2 data-number="11.7" class="anchored" data-anchor-id="material-parameters-and-their-effect"><span class="header-section-number">11.7</span> Material Parameters and Their Effect</h2>
 <p>The element stiffness depends on: - <strong>E (Young’s modulus)</strong>: Higher E → stiffer material - <strong>ν (Poisson’s ratio)</strong>: Controls how transverse strains relate to axial strains - <strong>t (thickness)</strong>: For plane stress, stiffer with larger t</p>
-<div id="cell-13" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Show how the D matrix changes with Poisson's ratio</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>D_template <span class="op">=</span> plane_stress_D(<span class="dv">1</span>, nu)  <span class="co"># E=1 for simplicity</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Plane stress D for E=1:"</span>)</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>display(Math(sp.latex(D_template)))</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Key observations:"</span>)</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  - Diagonal terms scale with 1/(1-ν²), increasing with ν"</span>)</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  - Off-diagonal coupling (D[0,1], D[1,0]) = ν·E/(1-ν²)"</span>)</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  - Shear modulus D[2,2] = E/(2(1+ν)) decreases with ν"</span>)</span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Numerical examples</span></span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">For E=1, plane stress:"</span>)</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> nu_test <span class="kw">in</span> [<span class="fl">0.0</span>, <span class="fl">0.2</span>, <span class="fl">0.3</span>, <span class="fl">0.49</span>]:</span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    D_val <span class="op">=</span> D_template.subs(nu, nu_test)</span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    diag_00 <span class="op">=</span> <span class="bu">float</span>(D_val[<span class="dv">0</span>, <span class="dv">0</span>])</span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  ν = </span><span class="sc">{</span>nu_test<span class="sc">:5.2f}</span><span class="ss">: D[0,0] = </span><span class="sc">{</span>diag_00<span class="sc">:8.4f}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-13" class="cell" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Show how the D matrix changes with Poisson's ratio</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>D_template <span class="op">=</span> plane_stress_D(<span class="dv">1</span>, nu)  <span class="co"># E=1 for simplicity</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Plane stress D for E=1:"</span>)</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>display(Math(sp.latex(D_template)))</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Key observations:"</span>)</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  - Diagonal terms scale with 1/(1-ν²), increasing with ν"</span>)</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  - Off-diagonal coupling (D[0,1], D[1,0]) = ν·E/(1-ν²)"</span>)</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  - Shear modulus D[2,2] = E/(2(1+ν)) decreases with ν"</span>)</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Numerical examples</span></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">For E=1, plane stress:"</span>)</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> nu_test <span class="kw">in</span> [<span class="fl">0.0</span>, <span class="fl">0.2</span>, <span class="fl">0.3</span>, <span class="fl">0.49</span>]:</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>    D_val <span class="op">=</span> D_template.subs(nu, nu_test)</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>    diag_00 <span class="op">=</span> <span class="bu">float</span>(D_val[<span class="dv">0</span>, <span class="dv">0</span>])</span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  ν = </span><span class="sc">{</span>nu_test<span class="sc">:5.2f}</span><span class="ss">: D[0,0] = </span><span class="sc">{</span>diag_00<span class="sc">:8.4f}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Plane stress D for E=1:</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \left[\begin{matrix}\frac{1}{1 - \nu^{2}} &amp; \frac{\nu}{1 - \nu^{2}} &amp; 0\\\frac{\nu}{1 - \nu^{2}} &amp; \frac{1}{1 - \nu^{2}} &amp; 0\\0 &amp; 0 &amp; \frac{\frac{1}{2} - \frac{\nu}{2}}{1 - \nu^{2}}\end{matrix}\right]\)</span></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Key observations:
+  - Diagonal terms scale with 1/(1-ν²), increasing with ν
+  - Off-diagonal coupling (D[0,1], D[1,0]) = ν·E/(1-ν²)
+  - Shear modulus D[2,2] = E/(2(1+ν)) decreases with ν
+
+For E=1, plane stress:
+  ν =  0.00: D[0,0] =   1.0000
+  ν =  0.20: D[0,0] =   1.0417
+  ν =  0.30: D[0,0] =   1.0989
+  ν =  0.49: D[0,0] =   1.3160</code></pre>
+</div>
 </div>
 </section>
 <section id="worked-example-simple-2-element-cantilever" class="level2" data-number="11.8">
 <h2 data-number="11.8" class="anchored" data-anchor-id="worked-example-simple-2-element-cantilever"><span class="header-section-number">11.8</span> Worked Example: Simple 2-Element Cantilever</h2>
 <p>Consider a small cantilever beam modeled with 2 right triangles. This demonstrates assembly.</p>
-<div id="cell-15" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Two-triangle cantilever:</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Element 1: (0,0) - (1,0) - (0,1)</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Element 2: (1,0) - (1,1) - (0,1)</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Example mesh: Two right triangles forming a square"</span>)</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Nodes: (0,0), (1,0), (0,1), (1,1)"</span>)</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Elem 1: nodes 0-1-2"</span>)</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Elem 2: nodes 1-3-2"</span>)</span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"With plane stress: E=1000, ν=0.3, t=0.1"</span>)</span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Get element stiffness for one element</span></span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> build_elasticity_triangle_p1_2d(<span class="st">"plane_stress"</span>)</span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>Ke_1 <span class="op">=</span> data[<span class="st">"Ke_unit_right_triangle"</span>]</span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>Ke_1_num <span class="op">=</span> Ke_1.subs({data[<span class="st">"E"</span>]: <span class="dv">1000</span>, data[<span class="st">"nu"</span>]: <span class="fl">0.3</span>, data[<span class="st">"t"</span>]: <span class="fl">0.1</span>})</span>
-<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert to float for better display</span></span>
-<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>Ke_1_float <span class="op">=</span> sp.Matrix([[<span class="bu">float</span>(x) <span class="cf">for</span> x <span class="kw">in</span> row] <span class="cf">for</span> row <span class="kw">in</span> Ke_1_num.tolist()])</span>
-<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Element stiffness Ke (unit right triangle):"</span>)</span>
-<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(Ke_1_float.evalf(<span class="dv">3</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-15" class="cell" data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Two-triangle cantilever:</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Element 1: (0,0) - (1,0) - (0,1)</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Element 2: (1,0) - (1,1) - (0,1)</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Example mesh: Two right triangles forming a square"</span>)</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Nodes: (0,0), (1,0), (0,1), (1,1)"</span>)</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Elem 1: nodes 0-1-2"</span>)</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Elem 2: nodes 1-3-2"</span>)</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"With plane stress: E=1000, ν=0.3, t=0.1"</span>)</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Get element stiffness for one element</span></span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> build_elasticity_triangle_p1_2d(<span class="st">"plane_stress"</span>)</span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>Ke_1 <span class="op">=</span> data[<span class="st">"Ke_unit_right_triangle"</span>]</span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>Ke_1_num <span class="op">=</span> Ke_1.subs({data[<span class="st">"E"</span>]: <span class="dv">1000</span>, data[<span class="st">"nu"</span>]: <span class="fl">0.3</span>, data[<span class="st">"t"</span>]: <span class="fl">0.1</span>})</span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert to float for better display</span></span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a>Ke_1_float <span class="op">=</span> sp.Matrix([[<span class="bu">float</span>(x) <span class="cf">for</span> x <span class="kw">in</span> row] <span class="cf">for</span> row <span class="kw">in</span> Ke_1_num.tolist()])</span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Element stiffness Ke (unit right triangle):"</span>)</span>
+<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(Ke_1_float.evalf(<span class="dv">3</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Example mesh: Two right triangles forming a square
+Nodes: (0,0), (1,0), (0,1), (1,1)
+Elem 1: nodes 0-1-2
+Elem 2: nodes 1-3-2
+
+With plane stress: E=1000, ν=0.3, t=0.1
+
+Element stiffness Ke (unit right triangle):
+Matrix([[74.2, 35.7, -54.9, -19.2, -19.2, -16.5], [35.7, 74.2, -16.5, -19.2, -19.2, -54.9], [-54.9, -16.5, 54.9, 0, 0, 16.5], [-19.2, -19.2, 0, 19.2, 19.2, 0], [-19.2, -19.2, 0, 19.2, 19.2, 0], [-16.5, -54.9, 16.5, 0, 0, 54.9]])</code></pre>
+</div>
 </div>
 </section>
 <section id="exercise" class="level2" data-number="11.9">
@@ -557,8 +647,8 @@ window.Quarto = {
 <li><p><strong>3D extension</strong>: The module also provides <code>isotropic_3d_D()</code> and <code>B_matrix_tetra_3d()</code>. Inspect these functions and explain how the Voigt notation extends to 6 components for 3D.</p></li>
 <li><p><strong>Poisson effect</strong>: Fix E and t, and plot the diagonal entries of <span class="math inline">\(K_e\)</span> as functions of <span class="math inline">\(\nu\)</span> for <span class="math inline">\(\nu \in [0, 0.49]\)</span>. Which entries increase or decrease with <span class="math inline">\(\nu\)</span>?</p></li>
 </ol>
-<div id="cell-17" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Exercise workspace</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-17" class="cell" data-execution_count="8">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Exercise workspace</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 
 

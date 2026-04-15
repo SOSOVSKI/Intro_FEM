@@ -367,7 +367,7 @@ window.Quarto = {
 <li><strong>Strain-displacement matrix B</strong> — how nodal displacements map to 6D Voigt strains</li>
 <li><strong>Element stiffness K_e</strong> — the 12×12 matrix (3 DOFs × 4 nodes) from the integration K_e = V B^T D B</li>
 </ol>
-<div id="cell-1" class="cell">
+<div id="cell-2" class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sympy <span class="im">as</span> sp</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
@@ -382,7 +382,7 @@ window.Quarto = {
 <p>In 3D, stress and strain are both 6-component vectors under <strong>Voigt notation</strong>:</p>
 <p><span class="math display">\[\boldsymbol{\sigma} = [\sigma_{xx}, \sigma_{yy}, \sigma_{zz}, \tau_{yz}, \tau_{xz}, \tau_{xy}]^T\]</span> <span class="math display">\[\boldsymbol{\varepsilon} = [\varepsilon_{xx}, \varepsilon_{yy}, \varepsilon_{zz}, \gamma_{yz}, \gamma_{xz}, \gamma_{xy}]^T\]</span></p>
 <p>The <strong>isotropic constitutive matrix</strong> for linear elasticity is:</p>
-<div id="cell-3" class="cell">
+<div id="cell-4" class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>E, nu <span class="op">=</span> sp.symbols(<span class="st">"E nu"</span>, positive<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>D <span class="op">=</span> isotropic_3d_D(E, nu)</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -401,7 +401,7 @@ window.Quarto = {
 <p>The strain-displacement matrix <strong>B</strong> is 6×12 for a tetrahedron with 4 nodes (3 DOFs each). It maps nodal displacements <strong>u</strong> = [u₁, v₁, w₁, u₂, v₂, w₂, u₃, v₃, w₃, u₄, v₄, w₄]^T to Voigt strains:</p>
 <p><span class="math display">\[\boldsymbol{\varepsilon} = \mathbf{B} \mathbf{u}\]</span></p>
 <p>For P1 tetrahedra with constant shape function gradients, <strong>B</strong> is constant over the element.</p>
-<div id="cell-6" class="cell">
+<div id="cell-7" class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Build the complete 3D elasticity problem for a generic tetrahedron</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> build_elasticity_tetra_p1_3d()</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -416,7 +416,7 @@ window.Quarto = {
 <section id="volume-calculation" class="level3" data-number="12.2.1">
 <h3 data-number="12.2.1" class="anchored" data-anchor-id="volume-calculation"><span class="header-section-number">12.2.1</span> Volume Calculation</h3>
 <p>For an affine map, the volume is determined by the Jacobian:</p>
-<div id="cell-8" class="cell">
+<div id="cell-9" class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Volume of tetrahedron:"</span>)</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"V = |det(J)| / 6 = </span><span class="sc">{</span>data[<span class="st">'volume'</span>]<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
@@ -427,7 +427,7 @@ window.Quarto = {
 <p>The element stiffness matrix is computed as:</p>
 <p><span class="math display">\[\mathbf{K}_e = V \mathbf{B}^T \mathbf{D} \mathbf{B}\]</span></p>
 <p>where <strong>V</strong> is the element volume. This is a 12×12 symmetric positive-definite matrix.</p>
-<div id="cell-10" class="cell">
+<div id="cell-11" class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Element stiffness for the unit right tetrahedron</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>Ke <span class="op">=</span> data[<span class="st">"Ke_unit_right_tetra"</span>]</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -447,7 +447,7 @@ window.Quarto = {
 <section id="symbolic-form" class="level2" data-number="12.4">
 <h2 data-number="12.4" class="anchored" data-anchor-id="symbolic-form"><span class="header-section-number">12.4</span> Symbolic Form</h2>
 <p>For the unit right tetrahedron with volume 1/6, the symbolic stiffness is:</p>
-<div id="cell-12" class="cell">
+<div id="cell-13" class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Show a compact form by reducing to essential parameters</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Symbolic K_e (showing structure):"</span>)</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Shape: </span><span class="sc">{</span>Ke<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span>
@@ -459,7 +459,7 @@ window.Quarto = {
 <section id="exercise" class="level2" data-number="12.5">
 <h2 data-number="12.5" class="anchored" data-anchor-id="exercise"><span class="header-section-number">12.5</span> Exercise</h2>
 <p><strong>Compare how Poisson’s ratio affects the stiffness matrix.</strong> Plot the eigenvalues of K_e for different values of ν (say 0.0, 0.25, 0.49) and observe: - How the bulk modulus K = E / (3(1-2ν)) behaves as ν → 0.5 (incompressibility limit) - Which eigenvalues grow largest</p>
-<div id="cell-14" class="cell">
+<div id="cell-15" class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Exercise: Eigenvalue sensitivity to Poisson's ratio</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>nu_values <span class="op">=</span> [<span class="fl">0.0</span>, <span class="fl">0.25</span>, <span class="fl">0.3</span>, <span class="fl">0.49</span>]</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>E_val <span class="op">=</span> <span class="fl">1.0</span>  <span class="co"># Normalize to E = 1 for comparison</span></span>

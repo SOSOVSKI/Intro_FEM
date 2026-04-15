@@ -357,7 +357,7 @@ window.Quarto = {
 
 
 <p>This notebook extends the 1D boundary condition concepts to 2D triangular meshes, showing how Neumann conditions are applied on edge boundaries and how Dirichlet conditions are enforced across a full problem.</p>
-<div id="cell-1" class="cell">
+<div id="cell-1" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sympy <span class="im">as</span> sp</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Math, display</span>
@@ -377,6 +377,9 @@ window.Quarto = {
 <span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Imports successful. Ready for 2D FEM with boundary conditions."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Imports successful. Ready for 2D FEM with boundary conditions.</code></pre>
+</div>
 </div>
 <section id="neumann-bcs-on-triangle-edges" class="level2" data-number="10.1">
 <h2 data-number="10.1" class="anchored" data-anchor-id="neumann-bcs-on-triangle-edges"><span class="header-section-number">10.1</span> Neumann BCs on Triangle Edges</h2>
@@ -385,36 +388,48 @@ window.Quarto = {
 <p>For a straight edge of length |e| in a P1 triangle, if the flux t-star is constant, the contribution to each endpoint node is:</p>
 <p><span class="math display">\[f_i^{\text{edge}} = t^* \cdot \frac{|e|}{2}\]</span></p>
 <p>This comes from integrating the constant flux against the linear shape function over the edge.</p>
-<div id="cell-3" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define reference coordinates first</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>xi, eta <span class="op">=</span> sp.symbols(<span class="st">'xi eta'</span>, real<span class="op">=</span><span class="va">True</span>, positive<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a reference P1 triangle</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>ref_tri <span class="op">=</span> ReferenceTriangleP1(xi, eta)</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Reference triangle shape functions:"</span>)</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> idx, N <span class="kw">in</span> <span class="bu">enumerate</span>(ref_tri.shape_functions):</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  N_</span><span class="sc">{</span>idx<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>N<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Define a constant Neumann flux and edge length</span></span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>t_star <span class="op">=</span> sp.Symbol(<span class="st">'t_star'</span>, real<span class="op">=</span><span class="va">True</span>)  <span class="co"># Prescribed flux</span></span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>edge_len <span class="op">=</span> sp.Symbol(<span class="st">'edge_len'</span>, positive<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute Neumann load contribution for edge 0 (between nodes 0 and 1)</span></span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Nodes 0 and 1 are at (0,0) and (1,0) on the reference triangle</span></span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>f_edge <span class="op">=</span> neumann_load_vector_triangle_edge(</span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    ref_tri,</span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>    edge_local_nodes<span class="op">=</span>(<span class="dv">0</span>, <span class="dv">1</span>),</span>
-<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>    prescribed_flux<span class="op">=</span>t_star,</span>
-<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>    edge_length<span class="op">=</span>edge_len,</span>
-<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>    xi<span class="op">=</span>xi,</span>
-<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>    eta<span class="op">=</span>eta,</span>
-<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Neumann load vector for edge 0-1:"</span>)</span>
-<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"f_edge = </span><span class="sc">{</span>f_edge<span class="sc">.</span>T<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
-<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Each endpoint gets t_star times edge_len divided by 2"</span>)</span>
-<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"The opposite node (node 2) gets 0"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-3" class="cell" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define reference coordinates first</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>xi, eta <span class="op">=</span> sp.symbols(<span class="st">'xi eta'</span>, real<span class="op">=</span><span class="va">True</span>, positive<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a reference P1 triangle</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>ref_tri <span class="op">=</span> ReferenceTriangleP1(xi, eta)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Reference triangle shape functions:"</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> idx, N <span class="kw">in</span> <span class="bu">enumerate</span>(ref_tri.shape_functions):</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  N_</span><span class="sc">{</span>idx<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>N<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Define a constant Neumann flux and edge length</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>t_star <span class="op">=</span> sp.Symbol(<span class="st">'t_star'</span>, real<span class="op">=</span><span class="va">True</span>)  <span class="co"># Prescribed flux</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>edge_len <span class="op">=</span> sp.Symbol(<span class="st">'edge_len'</span>, positive<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute Neumann load contribution for edge 0 (between nodes 0 and 1)</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Nodes 0 and 1 are at (0,0) and (1,0) on the reference triangle</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>f_edge <span class="op">=</span> neumann_load_vector_triangle_edge(</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    ref_tri,</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    edge_local_nodes<span class="op">=</span>(<span class="dv">0</span>, <span class="dv">1</span>),</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    prescribed_flux<span class="op">=</span>t_star,</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    edge_length<span class="op">=</span>edge_len,</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>    xi<span class="op">=</span>xi,</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    eta<span class="op">=</span>eta,</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Neumann load vector for edge 0-1:"</span>)</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"f_edge = </span><span class="sc">{</span>f_edge<span class="sc">.</span>T<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Each endpoint gets t_star times edge_len divided by 2"</span>)</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"The opposite node (node 2) gets 0"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Reference triangle shape functions:
+  N_0: -eta - xi + 1
+  N_1: xi
+  N_2: eta
+
+Neumann load vector for edge 0-1:
+f_edge = Matrix([[edge_len*t_star/2, edge_len*t_star/2, 0]])
+
+Each endpoint gets t_star times edge_len divided by 2
+The opposite node (node 2) gets 0</code></pre>
+</div>
 </div>
 </section>
 <section id="d-problem-setup-4-triangle-mesh-with-mixed-bcs" class="level2" data-number="10.2">
@@ -429,201 +444,287 @@ window.Quarto = {
 |  /      \\|  /      \\|
 0 -------- 1 -------- 2</code></pre>
 <p>Boundary Conditions: - <strong>Bottom (nodes 0, 1, 2)</strong>: Dirichlet u = 0 (fixed) - <strong>Top (nodes 3, 4, 5)</strong>: Neumann t-star = 1.0 (prescribed flux) - <strong>Left &amp; Right</strong>: Natural (homogeneous Neumann, no load)</p>
-<div id="cell-5" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Simple 4-triangle mesh for a 1x1 domain</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Nodes</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>nodes <span class="op">=</span> np.array([</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    [<span class="fl">0.0</span>, <span class="fl">0.0</span>],  <span class="co"># 0: bottom-left</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    [<span class="fl">0.5</span>, <span class="fl">0.0</span>],  <span class="co"># 1: bottom-center</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    [<span class="fl">1.0</span>, <span class="fl">0.0</span>],  <span class="co"># 2: bottom-right</span></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    [<span class="fl">0.0</span>, <span class="fl">1.0</span>],  <span class="co"># 3: top-left</span></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    [<span class="fl">0.5</span>, <span class="fl">1.0</span>],  <span class="co"># 4: top-center</span></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    [<span class="fl">1.0</span>, <span class="fl">1.0</span>],  <span class="co"># 5: top-right</span></span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>])</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>n_nodes <span class="op">=</span> <span class="bu">len</span>(nodes)</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Connectivity (triangles)</span></span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Each row: [node_a, node_b, node_c]</span></span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>connectivity <span class="op">=</span> np.array([</span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    [<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">3</span>],  <span class="co"># triangle 0 (bottom-left)</span></span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    [<span class="dv">1</span>, <span class="dv">4</span>, <span class="dv">3</span>],  <span class="co"># triangle 1 (top-left)</span></span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">4</span>],  <span class="co"># triangle 2 (bottom-right)</span></span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>    [<span class="dv">2</span>, <span class="dv">5</span>, <span class="dv">4</span>],  <span class="co"># triangle 3 (top-right)</span></span>
-<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>])</span>
-<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>n_elem <span class="op">=</span> <span class="bu">len</span>(connectivity)</span>
-<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Mesh: </span><span class="sc">{</span>n_nodes<span class="sc">}</span><span class="ss"> nodes, </span><span class="sc">{</span>n_elem<span class="sc">}</span><span class="ss"> elements"</span>)</span>
-<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Node coordinates:"</span>)</span>
-<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, (x, y) <span class="kw">in</span> <span class="bu">enumerate</span>(nodes):</span>
-<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  Node </span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">: (</span><span class="sc">{</span>x<span class="sc">:.1f}</span><span class="ss">, </span><span class="sc">{</span>y<span class="sc">:.1f}</span><span class="ss">)"</span>)</span>
-<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Element connectivity:"</span>)</span>
-<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> e, (a, b, c) <span class="kw">in</span> <span class="bu">enumerate</span>(connectivity):</span>
-<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  Element </span><span class="sc">{</span>e<span class="sc">}</span><span class="ss">: nodes </span><span class="sc">{</span>a<span class="sc">}</span><span class="ss">, </span><span class="sc">{</span>b<span class="sc">}</span><span class="ss">, </span><span class="sc">{</span>c<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-5" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Simple 4-triangle mesh for a 1x1 domain</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Nodes</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>nodes <span class="op">=</span> np.array([</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    [<span class="fl">0.0</span>, <span class="fl">0.0</span>],  <span class="co"># 0: bottom-left</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    [<span class="fl">0.5</span>, <span class="fl">0.0</span>],  <span class="co"># 1: bottom-center</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    [<span class="fl">1.0</span>, <span class="fl">0.0</span>],  <span class="co"># 2: bottom-right</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    [<span class="fl">0.0</span>, <span class="fl">1.0</span>],  <span class="co"># 3: top-left</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    [<span class="fl">0.5</span>, <span class="fl">1.0</span>],  <span class="co"># 4: top-center</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    [<span class="fl">1.0</span>, <span class="fl">1.0</span>],  <span class="co"># 5: top-right</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>])</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>n_nodes <span class="op">=</span> <span class="bu">len</span>(nodes)</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Connectivity (triangles)</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Each row: [node_a, node_b, node_c]</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>connectivity <span class="op">=</span> np.array([</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    [<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">3</span>],  <span class="co"># triangle 0 (bottom-left)</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    [<span class="dv">1</span>, <span class="dv">4</span>, <span class="dv">3</span>],  <span class="co"># triangle 1 (top-left)</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>    [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">4</span>],  <span class="co"># triangle 2 (bottom-right)</span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>    [<span class="dv">2</span>, <span class="dv">5</span>, <span class="dv">4</span>],  <span class="co"># triangle 3 (top-right)</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>])</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>n_elem <span class="op">=</span> <span class="bu">len</span>(connectivity)</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Mesh: </span><span class="sc">{</span>n_nodes<span class="sc">}</span><span class="ss"> nodes, </span><span class="sc">{</span>n_elem<span class="sc">}</span><span class="ss"> elements"</span>)</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Node coordinates:"</span>)</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, (x, y) <span class="kw">in</span> <span class="bu">enumerate</span>(nodes):</span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  Node </span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">: (</span><span class="sc">{</span>x<span class="sc">:.1f}</span><span class="ss">, </span><span class="sc">{</span>y<span class="sc">:.1f}</span><span class="ss">)"</span>)</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Element connectivity:"</span>)</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> e, (a, b, c) <span class="kw">in</span> <span class="bu">enumerate</span>(connectivity):</span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  Element </span><span class="sc">{</span>e<span class="sc">}</span><span class="ss">: nodes </span><span class="sc">{</span>a<span class="sc">}</span><span class="ss">, </span><span class="sc">{</span>b<span class="sc">}</span><span class="ss">, </span><span class="sc">{</span>c<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Mesh: 6 nodes, 4 elements
+
+Node coordinates:
+  Node 0: (0.0, 0.0)
+  Node 1: (0.5, 0.0)
+  Node 2: (1.0, 0.0)
+  Node 3: (0.0, 1.0)
+  Node 4: (0.5, 1.0)
+  Node 5: (1.0, 1.0)
+
+Element connectivity:
+  Element 0: nodes 0, 1, 3
+  Element 1: nodes 1, 4, 3
+  Element 2: nodes 1, 2, 4
+  Element 3: nodes 2, 5, 4</code></pre>
 </div>
-<div id="cell-6" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># For a teaching example, we use a uniform Poisson problem:</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">#   -nabla u = 0 in Omega</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co">#   u = 0 on Gamma_D (bottom)</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co">#   du/dn = t-star on Gamma_N (top)</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Local stiffness matrix for P1 triangle (standard Poisson)</span></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="co"># For a uniform reference triangle with area 0.5:</span></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>K_ref <span class="op">=</span> np.array([</span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    [<span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span><span class="op">/</span><span class="dv">2</span>, <span class="op">-</span><span class="dv">1</span><span class="op">/</span><span class="dv">2</span>],</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    [<span class="op">-</span><span class="dv">1</span><span class="op">/</span><span class="dv">2</span>, <span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span><span class="op">/</span><span class="dv">2</span>],</span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    [<span class="op">-</span><span class="dv">1</span><span class="op">/</span><span class="dv">2</span>, <span class="op">-</span><span class="dv">1</span><span class="op">/</span><span class="dv">2</span>, <span class="dv">1</span>],</span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>]) <span class="op">/</span> <span class="dv">2</span></span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Assemble global system</span></span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>K_global <span class="op">=</span> np.zeros((n_nodes, n_nodes))</span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>F_global <span class="op">=</span> np.zeros(n_nodes)</span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Assemble element matrices</span></span>
-<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> e, (a, b, c) <span class="kw">in</span> <span class="bu">enumerate</span>(connectivity):</span>
-<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Get physical coordinates</span></span>
-<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>    x_a, y_a <span class="op">=</span> nodes[a]</span>
-<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>    x_b, y_b <span class="op">=</span> nodes[b]</span>
-<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>    x_c, y_c <span class="op">=</span> nodes[c]</span>
-<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Compute physical element area (0.5 times |det(J)|)</span></span>
-<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>    J <span class="op">=</span> np.array([</span>
-<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>        [x_b <span class="op">-</span> x_a, x_c <span class="op">-</span> x_a],</span>
-<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>        [y_b <span class="op">-</span> y_a, y_c <span class="op">-</span> y_a],</span>
-<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>    ])</span>
-<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>    area <span class="op">=</span> <span class="fl">0.5</span> <span class="op">*</span> <span class="bu">abs</span>(np.linalg.det(J))</span>
-<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Scale local stiffness matrix by area</span></span>
-<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>    K_e <span class="op">=</span> K_ref <span class="op">/</span> area</span>
-<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Assemble</span></span>
-<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i, global_i <span class="kw">in</span> <span class="bu">enumerate</span>([a, b, c]):</span>
-<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> j, global_j <span class="kw">in</span> <span class="bu">enumerate</span>([a, b, c]):</span>
-<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>            K_global[global_i, global_j] <span class="op">+=</span> K_e[i, j]</span>
-<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Assembled global K (</span><span class="sc">{</span>n_nodes<span class="sc">}</span><span class="ss">x</span><span class="sc">{</span>n_nodes<span class="sc">}</span><span class="ss">):"</span>)</span>
-<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(np.<span class="bu">round</span>(K_global, <span class="dv">3</span>))</span>
-<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">F_global (before boundary conditions): </span><span class="sc">{</span>F_global<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="cell-6" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># For a teaching example, we use a uniform Poisson problem:</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co">#   -nabla u = 0 in Omega</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co">#   u = 0 on Gamma_D (bottom)</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co">#   du/dn = t-star on Gamma_N (top)</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Local stiffness matrix for P1 triangle (standard Poisson)</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co"># For a uniform reference triangle with area 0.5:</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>K_ref <span class="op">=</span> np.array([</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    [<span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span><span class="op">/</span><span class="dv">2</span>, <span class="op">-</span><span class="dv">1</span><span class="op">/</span><span class="dv">2</span>],</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    [<span class="op">-</span><span class="dv">1</span><span class="op">/</span><span class="dv">2</span>, <span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span><span class="op">/</span><span class="dv">2</span>],</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>    [<span class="op">-</span><span class="dv">1</span><span class="op">/</span><span class="dv">2</span>, <span class="op">-</span><span class="dv">1</span><span class="op">/</span><span class="dv">2</span>, <span class="dv">1</span>],</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>]) <span class="op">/</span> <span class="dv">2</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Assemble global system</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>K_global <span class="op">=</span> np.zeros((n_nodes, n_nodes))</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>F_global <span class="op">=</span> np.zeros(n_nodes)</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Assemble element matrices</span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> e, (a, b, c) <span class="kw">in</span> <span class="bu">enumerate</span>(connectivity):</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Get physical coordinates</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>    x_a, y_a <span class="op">=</span> nodes[a]</span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>    x_b, y_b <span class="op">=</span> nodes[b]</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>    x_c, y_c <span class="op">=</span> nodes[c]</span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Compute physical element area (0.5 times |det(J)|)</span></span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>    J <span class="op">=</span> np.array([</span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>        [x_b <span class="op">-</span> x_a, x_c <span class="op">-</span> x_a],</span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>        [y_b <span class="op">-</span> y_a, y_c <span class="op">-</span> y_a],</span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>    area <span class="op">=</span> <span class="fl">0.5</span> <span class="op">*</span> <span class="bu">abs</span>(np.linalg.det(J))</span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Scale local stiffness matrix by area</span></span>
+<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a>    K_e <span class="op">=</span> K_ref <span class="op">/</span> area</span>
+<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Assemble</span></span>
+<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i, global_i <span class="kw">in</span> <span class="bu">enumerate</span>([a, b, c]):</span>
+<span id="cb8-37"><a href="#cb8-37" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> j, global_j <span class="kw">in</span> <span class="bu">enumerate</span>([a, b, c]):</span>
+<span id="cb8-38"><a href="#cb8-38" aria-hidden="true" tabindex="-1"></a>            K_global[global_i, global_j] <span class="op">+=</span> K_e[i, j]</span>
+<span id="cb8-39"><a href="#cb8-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-40"><a href="#cb8-40" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Assembled global K (</span><span class="sc">{</span>n_nodes<span class="sc">}</span><span class="ss">x</span><span class="sc">{</span>n_nodes<span class="sc">}</span><span class="ss">):"</span>)</span>
+<span id="cb8-41"><a href="#cb8-41" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(np.<span class="bu">round</span>(K_global, <span class="dv">3</span>))</span>
+<span id="cb8-42"><a href="#cb8-42" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">F_global (before boundary conditions): </span><span class="sc">{</span>F_global<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Assembled global K (6x6):
+[[ 2. -1.  0. -1.  0.  0.]
+ [-1.  6. -1. -2. -2.  0.]
+ [ 0. -1.  4.  0. -2. -1.]
+ [-1. -2.  0.  4. -1.  0.]
+ [ 0. -2. -2. -1.  6. -1.]
+ [ 0.  0. -1.  0. -1.  2.]]
+
+F_global (before boundary conditions): [0. 0. 0. 0. 0. 0.]</code></pre>
+</div>
 </div>
 </section>
 <section id="apply-neumann-bc-on-top-edge" class="level2" data-number="10.3">
 <h2 data-number="10.3" class="anchored" data-anchor-id="apply-neumann-bc-on-top-edge"><span class="header-section-number">10.3</span> Apply Neumann BC on Top Edge</h2>
 <p>The top boundary consists of edges between nodes (3,4) and (4,5). Each has length 0.5.</p>
-<div id="cell-8" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply Neumann BC: t-star = 1.0 on top edges</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>t_star_val <span class="op">=</span> <span class="fl">1.0</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>edge_len_val <span class="op">=</span> <span class="fl">0.5</span>  <span class="co"># Length of each top edge</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Top edge 1: nodes 3 and 4</span></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>f_edge_34 <span class="op">=</span> t_star_val <span class="op">*</span> edge_len_val <span class="op">/</span> <span class="dv">2</span></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>F_global[<span class="dv">3</span>] <span class="op">+=</span> f_edge_34</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>F_global[<span class="dv">4</span>] <span class="op">+=</span> f_edge_34</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Top edge 2: nodes 4 and 5</span></span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>f_edge_45 <span class="op">=</span> t_star_val <span class="op">*</span> edge_len_val <span class="op">/</span> <span class="dv">2</span></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>F_global[<span class="dv">4</span>] <span class="op">+=</span> f_edge_45  <span class="co"># Node 4 appears in both edges!</span></span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>F_global[<span class="dv">5</span>] <span class="op">+=</span> f_edge_45</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"After adding Neumann flux (t-star=</span><span class="sc">{</span>t_star_val<span class="sc">}</span><span class="ss">) on top edges:"</span>)</span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"F_global: </span><span class="sc">{</span>np<span class="sc">.</span><span class="bu">round</span>(F_global, <span class="dv">4</span>)<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Note: Node 4 (top-center) receives contributions from both edges."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-8" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply Neumann BC: t-star = 1.0 on top edges</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>t_star_val <span class="op">=</span> <span class="fl">1.0</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>edge_len_val <span class="op">=</span> <span class="fl">0.5</span>  <span class="co"># Length of each top edge</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Top edge 1: nodes 3 and 4</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>f_edge_34 <span class="op">=</span> t_star_val <span class="op">*</span> edge_len_val <span class="op">/</span> <span class="dv">2</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>F_global[<span class="dv">3</span>] <span class="op">+=</span> f_edge_34</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>F_global[<span class="dv">4</span>] <span class="op">+=</span> f_edge_34</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Top edge 2: nodes 4 and 5</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>f_edge_45 <span class="op">=</span> t_star_val <span class="op">*</span> edge_len_val <span class="op">/</span> <span class="dv">2</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>F_global[<span class="dv">4</span>] <span class="op">+=</span> f_edge_45  <span class="co"># Node 4 appears in both edges!</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>F_global[<span class="dv">5</span>] <span class="op">+=</span> f_edge_45</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"After adding Neumann flux (t-star=</span><span class="sc">{</span>t_star_val<span class="sc">}</span><span class="ss">) on top edges:"</span>)</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"F_global: </span><span class="sc">{</span>np<span class="sc">.</span><span class="bu">round</span>(F_global, <span class="dv">4</span>)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Note: Node 4 (top-center) receives contributions from both edges."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>After adding Neumann flux (t-star=1.0) on top edges:
+F_global: [0.   0.   0.   0.25 0.5  0.25]
+
+Note: Node 4 (top-center) receives contributions from both edges.</code></pre>
+</div>
 </div>
 </section>
 <section id="enforce-dirichlet-bc-on-bottom-row-substitution" class="level2" data-number="10.4">
 <h2 data-number="10.4" class="anchored" data-anchor-id="enforce-dirichlet-bc-on-bottom-row-substitution"><span class="header-section-number">10.4</span> Enforce Dirichlet BC on Bottom (Row Substitution)</h2>
-<div id="cell-10" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Enforce Dirichlet: u = 0 on bottom (nodes 0, 1, 2)</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>K_mod, F_mod <span class="op">=</span> apply_dirichlet_by_row_substitution(</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    K_global.copy(), F_global.copy(),</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    constrained_dofs<span class="op">=</span>[<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>],</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    prescribed_values<span class="op">=</span>[<span class="fl">0.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>]</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"After enforcing u=0 on bottom (row substitution):"</span>)</span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Modified K:"</span>)</span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(np.<span class="bu">round</span>(K_mod, <span class="dv">3</span>))</span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Modified F: </span><span class="sc">{</span>np<span class="sc">.</span><span class="bu">round</span>(F_mod, <span class="dv">4</span>)<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-10" class="cell" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Enforce Dirichlet: u = 0 on bottom (nodes 0, 1, 2)</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>K_mod, F_mod <span class="op">=</span> apply_dirichlet_by_row_substitution(</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    K_global.copy(), F_global.copy(),</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    constrained_dofs<span class="op">=</span>[<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>],</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    prescribed_values<span class="op">=</span>[<span class="fl">0.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>]</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"After enforcing u=0 on bottom (row substitution):"</span>)</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Modified K:"</span>)</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(np.<span class="bu">round</span>(K_mod, <span class="dv">3</span>))</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Modified F: </span><span class="sc">{</span>np<span class="sc">.</span><span class="bu">round</span>(F_mod, <span class="dv">4</span>)<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>After enforcing u=0 on bottom (row substitution):
+Modified K:
+[[ 1.  0.  0.  0.  0.  0.]
+ [ 0.  1.  0.  0.  0.  0.]
+ [ 0.  0.  1.  0.  0.  0.]
+ [ 0.  0.  0.  4. -1.  0.]
+ [ 0.  0.  0. -1.  6. -1.]
+ [ 0.  0.  0.  0. -1.  2.]]
+
+Modified F: [0.   0.   0.   0.25 0.5  0.25]</code></pre>
 </div>
-<div id="cell-11" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Solve the system</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>u_row <span class="op">=</span> np.linalg.solve(K_mod, F_mod)</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Solution (row substitution):"</span>)</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(n_nodes):</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    x, y <span class="op">=</span> nodes[i]</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  u[</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">] = </span><span class="sc">{</span>u_row[i]<span class="sc">:.6f}</span><span class="ss">  (at (</span><span class="sc">{</span>x<span class="sc">:.1f}</span><span class="ss">, </span><span class="sc">{</span>y<span class="sc">:.1f}</span><span class="ss">))"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="cell-11" class="cell" data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Solve the system</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>u_row <span class="op">=</span> np.linalg.solve(K_mod, F_mod)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Solution (row substitution):"</span>)</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(n_nodes):</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    x, y <span class="op">=</span> nodes[i]</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  u[</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">] = </span><span class="sc">{</span>u_row[i]<span class="sc">:.6f}</span><span class="ss">  (at (</span><span class="sc">{</span>x<span class="sc">:.1f}</span><span class="ss">, </span><span class="sc">{</span>y<span class="sc">:.1f}</span><span class="ss">))"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Solution (row substitution):
+  u[0] = 0.000000  (at (0.0, 0.0))
+  u[1] = 0.000000  (at (0.5, 0.0))
+  u[2] = 0.000000  (at (1.0, 0.0))
+  u[3] = 0.095238  (at (0.0, 1.0))
+  u[4] = 0.130952  (at (0.5, 1.0))
+  u[5] = 0.190476  (at (1.0, 1.0))</code></pre>
+</div>
 </div>
 </section>
 <section id="enforce-same-bcs-using-lifting" class="level2" data-number="10.5">
 <h2 data-number="10.5" class="anchored" data-anchor-id="enforce-same-bcs-using-lifting"><span class="header-section-number">10.5</span> Enforce Same BCs Using Lifting</h2>
-<div id="cell-13" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Re-assemble (lifting does not modify in place)</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>K_global2 <span class="op">=</span> np.zeros((n_nodes, n_nodes))</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>F_global2 <span class="op">=</span> np.zeros(n_nodes)</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> e, (a, b, c) <span class="kw">in</span> <span class="bu">enumerate</span>(connectivity):</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    x_a, y_a <span class="op">=</span> nodes[a]</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    x_b, y_b <span class="op">=</span> nodes[b]</span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    x_c, y_c <span class="op">=</span> nodes[c]</span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    J <span class="op">=</span> np.array([</span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>        [x_b <span class="op">-</span> x_a, x_c <span class="op">-</span> x_a],</span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>        [y_b <span class="op">-</span> y_a, y_c <span class="op">-</span> y_a],</span>
-<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>    ])</span>
-<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>    area <span class="op">=</span> <span class="fl">0.5</span> <span class="op">*</span> <span class="bu">abs</span>(np.linalg.det(J))</span>
-<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>    K_e <span class="op">=</span> K_ref <span class="op">/</span> area</span>
-<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i, global_i <span class="kw">in</span> <span class="bu">enumerate</span>([a, b, c]):</span>
-<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> j, global_j <span class="kw">in</span> <span class="bu">enumerate</span>([a, b, c]):</span>
-<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>            K_global2[global_i, global_j] <span class="op">+=</span> K_e[i, j]</span>
-<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a><span class="co"># Add Neumann contributions</span></span>
-<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>F_global2[<span class="dv">3</span>] <span class="op">+=</span> f_edge_34</span>
-<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>F_global2[<span class="dv">4</span>] <span class="op">+=</span> f_edge_34 <span class="op">+</span> f_edge_45</span>
-<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>F_global2[<span class="dv">5</span>] <span class="op">+=</span> f_edge_45</span>
-<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Re-assembled global system for lifting approach"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-13" class="cell" data-execution_count="8">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Re-assemble (lifting does not modify in place)</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>K_global2 <span class="op">=</span> np.zeros((n_nodes, n_nodes))</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>F_global2 <span class="op">=</span> np.zeros(n_nodes)</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> e, (a, b, c) <span class="kw">in</span> <span class="bu">enumerate</span>(connectivity):</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    x_a, y_a <span class="op">=</span> nodes[a]</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    x_b, y_b <span class="op">=</span> nodes[b]</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    x_c, y_c <span class="op">=</span> nodes[c]</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>    J <span class="op">=</span> np.array([</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>        [x_b <span class="op">-</span> x_a, x_c <span class="op">-</span> x_a],</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>        [y_b <span class="op">-</span> y_a, y_c <span class="op">-</span> y_a],</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>    area <span class="op">=</span> <span class="fl">0.5</span> <span class="op">*</span> <span class="bu">abs</span>(np.linalg.det(J))</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>    K_e <span class="op">=</span> K_ref <span class="op">/</span> area</span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i, global_i <span class="kw">in</span> <span class="bu">enumerate</span>([a, b, c]):</span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> j, global_j <span class="kw">in</span> <span class="bu">enumerate</span>([a, b, c]):</span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>            K_global2[global_i, global_j] <span class="op">+=</span> K_e[i, j]</span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a><span class="co"># Add Neumann contributions</span></span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a>F_global2[<span class="dv">3</span>] <span class="op">+=</span> f_edge_34</span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a>F_global2[<span class="dv">4</span>] <span class="op">+=</span> f_edge_34 <span class="op">+</span> f_edge_45</span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a>F_global2[<span class="dv">5</span>] <span class="op">+=</span> f_edge_45</span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Re-assembled global system for lifting approach"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Re-assembled global system for lifting approach</code></pre>
 </div>
-<div id="cell-14" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply lifting: decompose u = u_0 + u_D</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>K_ff, F_f, free_dofs, u_lift <span class="op">=</span> apply_dirichlet_by_lifting(</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    K_global2, F_global2,</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    constrained_dofs<span class="op">=</span>[<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>],</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    prescribed_values<span class="op">=</span>[<span class="fl">0.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>]</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Lifting: u = u_0 + u_D where"</span>)</span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  u_D (lift): </span><span class="sc">{</span>u_lift<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Free DOFs: </span><span class="sc">{</span>free_dofs<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Reduced system K_ff (</span><span class="sc">{</span><span class="bu">len</span>(free_dofs)<span class="sc">}</span><span class="ss">x</span><span class="sc">{</span><span class="bu">len</span>(free_dofs)<span class="sc">}</span><span class="ss">):"</span>)</span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(np.<span class="bu">round</span>(K_ff, <span class="dv">3</span>))</span>
-<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Modified RHS F_f: </span><span class="sc">{</span>np<span class="sc">.</span><span class="bu">round</span>(F_f, <span class="dv">4</span>)<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<div id="cell-15" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Solve for the free DOFs</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>u0_free <span class="op">=</span> np.linalg.solve(K_ff, F_f)</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Expand back to full solution</span></span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>u0_full <span class="op">=</span> expand_reduced_solution(u0_free, n_nodes, free_dofs, [<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>], [<span class="fl">0.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>])</span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Total solution</span></span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>u_lifting <span class="op">=</span> u0_full <span class="op">+</span> u_lift</span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Solution (lifting):"</span>)</span>
-<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(n_nodes):</span>
-<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>    x, y <span class="op">=</span> nodes[i]</span>
-<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  u[</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">] = </span><span class="sc">{</span>u_lifting[i]<span class="sc">:.6f}</span><span class="ss">  (at (</span><span class="sc">{</span>x<span class="sc">:.1f}</span><span class="ss">, </span><span class="sc">{</span>y<span class="sc">:.1f}</span><span class="ss">))"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-14" class="cell" data-execution_count="9">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply lifting: decompose u = u_0 + u_D</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>K_ff, F_f, free_dofs, u_lift <span class="op">=</span> apply_dirichlet_by_lifting(</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    K_global2, F_global2,</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    constrained_dofs<span class="op">=</span>[<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>],</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    prescribed_values<span class="op">=</span>[<span class="fl">0.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>]</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Lifting: u = u_0 + u_D where"</span>)</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  u_D (lift): </span><span class="sc">{</span>u_lift<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Free DOFs: </span><span class="sc">{</span>free_dofs<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Reduced system K_ff (</span><span class="sc">{</span><span class="bu">len</span>(free_dofs)<span class="sc">}</span><span class="ss">x</span><span class="sc">{</span><span class="bu">len</span>(free_dofs)<span class="sc">}</span><span class="ss">):"</span>)</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(np.<span class="bu">round</span>(K_ff, <span class="dv">3</span>))</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Modified RHS F_f: </span><span class="sc">{</span>np<span class="sc">.</span><span class="bu">round</span>(F_f, <span class="dv">4</span>)<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Lifting: u = u_0 + u_D where
+  u_D (lift): [0. 0. 0. 0. 0. 0.]
+  Free DOFs: [3, 4, 5]
+
+Reduced system K_ff (3x3):
+[[ 4. -1.  0.]
+ [-1.  6. -1.]
+ [ 0. -1.  2.]]
+
+Modified RHS F_f: [0.25 0.5  0.25]</code></pre>
+</div>
+</div>
+<div id="cell-15" class="cell" data-execution_count="10">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Solve for the free DOFs</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>u0_free <span class="op">=</span> np.linalg.solve(K_ff, F_f)</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Expand back to full solution</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>u0_full <span class="op">=</span> expand_reduced_solution(u0_free, n_nodes, free_dofs, [<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>], [<span class="fl">0.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>])</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Total solution</span></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>u_lifting <span class="op">=</span> u0_full <span class="op">+</span> u_lift</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Solution (lifting):"</span>)</span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(n_nodes):</span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>    x, y <span class="op">=</span> nodes[i]</span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  u[</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">] = </span><span class="sc">{</span>u_lifting[i]<span class="sc">:.6f}</span><span class="ss">  (at (</span><span class="sc">{</span>x<span class="sc">:.1f}</span><span class="ss">, </span><span class="sc">{</span>y<span class="sc">:.1f}</span><span class="ss">))"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Solution (lifting):
+  u[0] = 0.000000  (at (0.0, 0.0))
+  u[1] = 0.000000  (at (0.5, 0.0))
+  u[2] = 0.000000  (at (1.0, 0.0))
+  u[3] = 0.095238  (at (0.0, 1.0))
+  u[4] = 0.130952  (at (0.5, 1.0))
+  u[5] = 0.190476  (at (1.0, 1.0))</code></pre>
+</div>
 </div>
 </section>
 <section id="comparison-of-both-approaches" class="level2" data-number="10.6">
 <h2 data-number="10.6" class="anchored" data-anchor-id="comparison-of-both-approaches"><span class="header-section-number">10.6</span> Comparison of Both Approaches</h2>
-<div id="cell-17" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Row substitution:"</span>, np.<span class="bu">round</span>(u_row, <span class="dv">6</span>))</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Lifting:         "</span>, np.<span class="bu">round</span>(u_lifting, <span class="dv">6</span>))</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Solutions match: </span><span class="sc">{</span>np<span class="sc">.</span>allclose(u_row, u_lifting)<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Max difference: </span><span class="sc">{</span>np<span class="sc">.</span><span class="bu">max</span>(np.<span class="bu">abs</span>(u_row <span class="op">-</span> u_lifting))<span class="sc">:.2e}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-17" class="cell" data-execution_count="11">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Row substitution:"</span>, np.<span class="bu">round</span>(u_row, <span class="dv">6</span>))</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Lifting:         "</span>, np.<span class="bu">round</span>(u_lifting, <span class="dv">6</span>))</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>()</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Solutions match: </span><span class="sc">{</span>np<span class="sc">.</span>allclose(u_row, u_lifting)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Max difference: </span><span class="sc">{</span>np<span class="sc">.</span><span class="bu">max</span>(np.<span class="bu">abs</span>(u_row <span class="op">-</span> u_lifting))<span class="sc">:.2e}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Row substitution: [0.       0.       0.       0.095238 0.130952 0.190476]
+Lifting:          [0.       0.       0.       0.095238 0.130952 0.190476]
+
+Solutions match: True
+Max difference: 0.00e+00</code></pre>
+</div>
 </div>
 </section>
 <section id="exercise" class="level2" data-number="10.7">
@@ -636,8 +737,8 @@ window.Quarto = {
 <li>Visualize the solution by plotting nodal values (e.g., a simple scatter plot at each node with the value as color).</li>
 </ol>
 <p>For each case, verify that both methods still give the same result.</p>
-<div id="cell-19" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Your exercise code here</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-19" class="cell" data-execution_count="12">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Your exercise code here</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 
 

@@ -356,7 +356,7 @@ window.Quarto = {
 
 
 <p>This notebook demonstrates the fundamental transformation from a strong form PDE into a weak form, which is the mathematical foundation of the Finite Element Method. We will convert a 1D bar equilibrium equation into its weak form using the method of weighted residuals and integration by parts.</p>
-<div id="cell-1" class="cell">
+<div id="cell-1" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sympy <span class="im">as</span> sp</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Math, display</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> symbolic_fem_workbench <span class="im">import</span> (</span>
@@ -368,7 +368,7 @@ window.Quarto = {
 <h2 data-number="2.1" class="anchored" data-anchor-id="step-1-define-the-problem"><span class="header-section-number">2.1</span> Step 1: Define the problem</h2>
 <p>We consider a 1D bar under axial loading. The strong form of the equilibrium equation is: <span class="math display">\[\frac{d}{dx}\left(EA\frac{du}{dx}\right) + q = 0\]</span></p>
 <p>where: - <span class="math inline">\(u(x)\)</span> is the axial displacement - <span class="math inline">\(E\)</span> is Young’s modulus - <span class="math inline">\(A\)</span> is the cross-sectional area - <span class="math inline">\(q\)</span> is a distributed load - Domain: <span class="math inline">\(x \in [0, L]\)</span></p>
-<div id="cell-3" class="cell">
+<div id="cell-3" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>x, L <span class="op">=</span> sp.symbols(<span class="st">"x L"</span>, positive<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>E, A <span class="op">=</span> sp.symbols(<span class="st">"E A"</span>, positive<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>q, P <span class="op">=</span> sp.symbols(<span class="st">"q P"</span>, real<span class="op">=</span><span class="va">True</span>)</span>
@@ -380,75 +380,127 @@ window.Quarto = {
 <span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Trial field u(x):"</span>, u)</span>
 <span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Test field v(x):"</span>, v)</span>
 <span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Domain:"</span>, domain)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Trial field u(x): u(x)
+Test field v(x): v(x)
+Domain: (x, 0, L)</code></pre>
+</div>
 </div>
 </section>
 <section id="step-2-build-the-weighted-residual" class="level2" data-number="2.2">
 <h2 data-number="2.2" class="anchored" data-anchor-id="step-2-build-the-weighted-residual"><span class="header-section-number">2.2</span> Step 2: Build the weighted residual</h2>
 <p>We multiply the strong form by a test function <span class="math inline">\(v(x)\)</span> (also called a weight function) and integrate over the domain. This is the method of weighted residuals: <span class="math display">\[\int_0^L \left[\frac{d}{dx}\left(EA\frac{du}{dx}\right) + q\right] v \, dx = 0\]</span></p>
-<div id="cell-5" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>flux <span class="op">=</span> E <span class="op">*</span> A <span class="op">*</span> sp.diff(u, x)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>strong_form_lhs <span class="op">=</span> sp.diff(flux, x) <span class="op">+</span> q</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"</span><span class="ch">\t</span><span class="vs">ext{Strong form: } "</span> <span class="op">+</span> sp.latex(strong_form_lhs) <span class="op">+</span> <span class="st">" = 0"</span>))</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>wr <span class="op">=</span> weighted_residual(strong_form_lhs, <span class="dv">0</span>, v, domain)</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"</span><span class="ch">\t</span><span class="vs">ext{Weighted residual: } "</span> <span class="op">+</span> sp.latex(wr.as_expression()) <span class="op">+</span> <span class="st">" = 0"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-5" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>flux <span class="op">=</span> E <span class="op">*</span> A <span class="op">*</span> sp.diff(u, x)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>strong_form_lhs <span class="op">=</span> sp.diff(flux, x) <span class="op">+</span> q</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"</span><span class="ch">\t</span><span class="vs">ext{Strong form: } "</span> <span class="op">+</span> sp.latex(strong_form_lhs) <span class="op">+</span> <span class="st">" = 0"</span>))</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>wr <span class="op">=</span> weighted_residual(strong_form_lhs, <span class="dv">0</span>, v, domain)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"</span><span class="ch">\t</span><span class="vs">ext{Weighted residual: } "</span> <span class="op">+</span> sp.latex(wr.as_expression()) <span class="op">+</span> <span class="st">" = 0"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \text{Strong form: } A E \frac{d^{2}}{d x^{2}} u{\left(x \right)} + q = 0\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \text{Weighted residual: } \int\limits_{0}^{L} \left(A E v{\left(x \right)} \frac{d^{2}}{d x^{2}} u{\left(x \right)} + q v{\left(x \right)}\right)\, dx = 0\)</span></p>
+</div>
 </div>
 </section>
 <section id="step-3-integration-by-parts" class="level2" data-number="2.3">
 <h2 data-number="2.3" class="anchored" data-anchor-id="step-3-integration-by-parts"><span class="header-section-number">2.3</span> Step 3: Integration by parts</h2>
 <p>We now apply integration by parts to shift one derivative from <span class="math inline">\(u\)</span> to <span class="math inline">\(v\)</span>. This lowers the regularity requirement on <span class="math inline">\(u\)</span> and introduces natural boundary conditions: <span class="math display">\[\int_0^L \frac{d}{dx}\left(EA\frac{du}{dx}\right) v \, dx = \left[EA\frac{du}{dx}v\right]_0^L - \int_0^L EA\frac{du}{dx}\frac{dv}{dx} \, dx\]</span></p>
-<div id="cell-7" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>domain_term, (left_bc, right_bc) <span class="op">=</span> integrate_divergence_1d(flux, v, x, domain)</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Domain integral (after IBP):"</span>)</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>display(Math(sp.latex(domain_term.as_integral())))</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Left boundary term:"</span>)</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>display(Math(sp.latex(left_bc.evaluate())))</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Right boundary term:"</span>)</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>display(Math(sp.latex(right_bc.evaluate())))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-7" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>domain_term, (left_bc, right_bc) <span class="op">=</span> integrate_divergence_1d(flux, v, x, domain)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Domain integral (after IBP):"</span>)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>display(Math(sp.latex(domain_term.as_integral())))</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Left boundary term:"</span>)</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>display(Math(sp.latex(left_bc.evaluate())))</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Right boundary term:"</span>)</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>display(Math(sp.latex(right_bc.evaluate())))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Domain integral (after IBP):</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \int\limits_{0}^{L} A E \frac{d}{d x} u{\left(x \right)} \frac{d}{d x} v{\left(x \right)}\, dx\)</span></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Left boundary term:</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle - A E v{\left(0 \right)} \left. \frac{d}{d x} u{\left(x \right)} \right|_{\substack{ x=0 }}\)</span></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Right boundary term:</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle - A E v{\left(L \right)} \frac{d}{d L} u{\left(L \right)}\)</span></p>
+</div>
 </div>
 </section>
 <section id="step-4-apply-boundary-conditions" class="level2" data-number="2.4">
 <h2 data-number="2.4" class="anchored" data-anchor-id="step-4-apply-boundary-conditions"><span class="header-section-number">2.4</span> Step 4: Apply boundary conditions</h2>
 <p><strong>Dirichlet BC (Essential):</strong> The test function must vanish where displacement is prescribed. At <span class="math inline">\(x=0\)</span>: <span class="math inline">\(u(0) = 0\)</span> (homogeneous Dirichlet) <span class="math inline">\(\Rightarrow\)</span> <span class="math inline">\(v(0) = 0\)</span></p>
 <p><strong>Neumann BC (Natural):</strong> The prescribed flux/traction appears as a source term. At <span class="math inline">\(x=L\)</span>: Prescribed force <span class="math inline">\(P\)</span> <span class="math inline">\(\Rightarrow\)</span> <span class="math inline">\(EA\frac{du}{dx}\big|_x=L = P\)</span></p>
-<div id="cell-9" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Homogeneous Dirichlet at x=0: test function vanishes</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>left_val <span class="op">=</span> drop_dirichlet_boundary(left_bc, v)</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Left BC (Dirichlet, v=0 at x=0):"</span>, left_val)</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Neumann at x=L: prescribed traction P</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>right_val <span class="op">=</span> apply_neumann_flux(right_bc, flux_expr<span class="op">=</span>flux, prescribed_flux<span class="op">=</span>P)</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Right BC (Neumann, flux=P at x=L):"</span>, right_val)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-9" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Homogeneous Dirichlet at x=0: test function vanishes</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>left_val <span class="op">=</span> drop_dirichlet_boundary(left_bc, v)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Left BC (Dirichlet, v=0 at x=0):"</span>, left_val)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Neumann at x=L: prescribed traction P</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>right_val <span class="op">=</span> apply_neumann_flux(right_bc, flux_expr<span class="op">=</span>flux, prescribed_flux<span class="op">=</span>P)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Right BC (Neumann, flux=P at x=L):"</span>, right_val)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Left BC (Dirichlet, v=0 at x=0): 0
+Right BC (Neumann, flux=P at x=L): -P*v(L)</code></pre>
+</div>
 </div>
 </section>
 <section id="step-5-assemble-and-split-the-weak-form" class="level2" data-number="2.5">
 <h2 data-number="2.5" class="anchored" data-anchor-id="step-5-assemble-and-split-the-weak-form"><span class="header-section-number">2.5</span> Step 5: Assemble and split the weak form</h2>
 <p>We now assemble all terms into a single weak form and decompose it into bilinear and linear parts: <span class="math display">\[a(u, v) + F(v) = 0\]</span> where <span class="math inline">\(a(u,v)\)</span> is bilinear in <span class="math inline">\(u\)</span> and <span class="math inline">\(v\)</span>, and <span class="math inline">\(F(v)\)</span> is linear in <span class="math inline">\(v\)</span>.</p>
-<div id="cell-11" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>source_integral <span class="op">=</span> sp.Integral(q <span class="op">*</span> v, domain)</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>weak_expr <span class="op">=</span> domain_term.as_integral() <span class="op">-</span> source_integral <span class="op">+</span> left_val <span class="op">+</span> right_val</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"</span><span class="ch">\t</span><span class="vs">ext{Full weak form expression: } "</span> <span class="op">+</span> sp.latex(weak_expr) <span class="op">+</span> <span class="st">" = 0"</span>))</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>weak_form <span class="op">=</span> split_linear_weak_form(weak_expr, u, v)</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Bilinear form a(u,v):"</span>)</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>display(Math(sp.latex(weak_form.bilinear)))</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Linear form F(v):"</span>)</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>display(Math(sp.latex(weak_form.linear)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-11" class="cell" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>source_integral <span class="op">=</span> sp.Integral(q <span class="op">*</span> v, domain)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>weak_expr <span class="op">=</span> domain_term.as_integral() <span class="op">-</span> source_integral <span class="op">+</span> left_val <span class="op">+</span> right_val</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"</span><span class="ch">\t</span><span class="vs">ext{Full weak form expression: } "</span> <span class="op">+</span> sp.latex(weak_expr) <span class="op">+</span> <span class="st">" = 0"</span>))</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>weak_form <span class="op">=</span> split_linear_weak_form(weak_expr, u, v)</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Bilinear form a(u,v):"</span>)</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>display(Math(sp.latex(weak_form.bilinear)))</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Linear form F(v):"</span>)</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>display(Math(sp.latex(weak_form.linear)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \text{Full weak form expression: } - P v{\left(L \right)} - \int\limits_{0}^{L} q v{\left(x \right)}\, dx + \int\limits_{0}^{L} A E \frac{d}{d x} u{\left(x \right)} \frac{d}{d x} v{\left(x \right)}\, dx = 0\)</span></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Bilinear form a(u,v):</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle A E \int\limits_{0}^{L} \frac{d}{d x} u{\left(x \right)} \frac{d}{d x} v{\left(x \right)}\, dx\)</span></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Linear form F(v):</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle q \int\limits_{0}^{L} v{\left(x \right)}\, dx\)</span></p>
+</div>
 </div>
 </section>
 <section id="exercise" class="level2" data-number="2.6">
 <h2 data-number="2.6" class="anchored" data-anchor-id="exercise"><span class="header-section-number">2.6</span> Exercise</h2>
 <p><strong>Question:</strong> Modify the problem to have Dirichlet conditions on both ends (<span class="math inline">\(u(0) = 0\)</span>, <span class="math inline">\(u(L) = 0\)</span>) with a distributed source term <span class="math inline">\(q\)</span>. How does the boundary condition handling change? What happens to the natural boundary term contributions?</p>
-<div id="cell-13" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Exercise: Modify the problem to have Dirichlet conditions on both ends:</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co"># u(0) = 0, u(L) = 0, with source term q.</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co"># What changes in the boundary condition handling?</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-13" class="cell" data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Exercise: Modify the problem to have Dirichlet conditions on both ends:</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="co"># u(0) = 0, u(L) = 0, with source term q.</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="co"># What changes in the boundary condition handling?</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 
 

@@ -364,7 +364,7 @@ window.Quarto = {
 <li>Observe the effect of mesh refinement on solution quality.</li>
 <li>Introduce a posteriori error estimation via the element residual.</li>
 </ol>
-<div id="cell-1" class="cell">
+<div id="cell-1" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys, os</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, os.path.join(os.pardir, <span class="st">'src'</span>))</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -384,7 +384,7 @@ window.Quarto = {
 <p>We solve <span class="math inline">\(-u''(x) = f(x)\)</span> on <span class="math inline">\([0, 1]\)</span> with <span class="math inline">\(u(0) = 0\)</span>, <span class="math inline">\(u(1) = 0\)</span>.</p>
 <p>Choose <span class="math inline">\(u_{\text{exact}}(x) = \sin(\pi x)\)</span>, which gives <span class="math inline">\(f(x) = \pi^2 \sin(\pi x)\)</span>.</p>
 <p>This is a <strong>manufactured solution</strong> approach: we pick the answer first and derive the source term.</p>
-<div id="cell-3" class="cell">
+<div id="cell-3" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> u_exact(x):</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Exact solution."""</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.sin(np.pi <span class="op">*</span> x)</span>
@@ -401,7 +401,7 @@ window.Quarto = {
 <section id="fem-solver-for-varying-mesh-sizes" class="level2" data-number="15.2">
 <h2 data-number="15.2" class="anchored" data-anchor-id="fem-solver-for-varying-mesh-sizes"><span class="header-section-number">15.2</span> 2. FEM Solver for Varying Mesh Sizes</h2>
 <p>We solve the problem on uniform meshes with <span class="math inline">\(n = 2, 4, 8, 16, 32, 64\)</span> elements and measure the error in each case.</p>
-<div id="cell-5" class="cell">
+<div id="cell-5" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> solve_poisson_1d(n_elem):</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Solve -u'' = f on [0,1] with u(0)=u(1)=0 using n_elem linear elements.</span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co">    </span></span>
@@ -453,6 +453,9 @@ window.Quarto = {
 <span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a><span class="co"># Quick test</span></span>
 <span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a>x_test, u_test <span class="op">=</span> solve_poisson_1d(<span class="dv">8</span>)</span>
 <span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Max nodal error with 8 elements: </span><span class="sc">{</span>np<span class="sc">.</span><span class="bu">max</span>(np.<span class="bu">abs</span>(u_test <span class="op">-</span> u_exact(x_test)))<span class="sc">:.6e}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Max nodal error with 8 elements: 1.665047e-05</code></pre>
+</div>
 </div>
 </section>
 <section id="computing-error-norms" class="level2" data-number="15.3">
@@ -468,154 +471,192 @@ window.Quarto = {
 <li><span class="math inline">\(\|e\|_{L^2} \leq C_1 h^2 |u|_{H^2}\)</span></li>
 <li><span class="math inline">\(|e|_{H^1} \leq C_2 h |u|_{H^2}\)</span></li>
 </ul>
-<div id="cell-7" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> compute_errors(x_nodes, u_fem):</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Compute L2 and H1 errors using 3-point Gauss quadrature per element."""</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    n_elem <span class="op">=</span> <span class="bu">len</span>(x_nodes) <span class="op">-</span> <span class="dv">1</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    L2_sq <span class="op">=</span> <span class="fl">0.0</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    H1_sq <span class="op">=</span> <span class="fl">0.0</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 3-point Gauss on [-1,1]</span></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    gp3 <span class="op">=</span> np.array([<span class="op">-</span>np.sqrt(<span class="dv">3</span><span class="op">/</span><span class="dv">5</span>), <span class="fl">0.0</span>, np.sqrt(<span class="dv">3</span><span class="op">/</span><span class="dv">5</span>)])</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    gw3 <span class="op">=</span> np.array([<span class="dv">5</span><span class="op">/</span><span class="dv">9</span>, <span class="dv">8</span><span class="op">/</span><span class="dv">9</span>, <span class="dv">5</span><span class="op">/</span><span class="dv">9</span>])</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> e <span class="kw">in</span> <span class="bu">range</span>(n_elem):</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>        x0, x1 <span class="op">=</span> x_nodes[e], x_nodes[e<span class="op">+</span><span class="dv">1</span>]</span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>        h <span class="op">=</span> x1 <span class="op">-</span> x0</span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>        u0, u1 <span class="op">=</span> u_fem[e], u_fem[e<span class="op">+</span><span class="dv">1</span>]</span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> xi_g, w_g <span class="kw">in</span> <span class="bu">zip</span>(gp3, gw3):</span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Physical coordinate</span></span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>            x_g <span class="op">=</span> <span class="fl">0.5</span><span class="op">*</span>(x0 <span class="op">+</span> x1) <span class="op">+</span> <span class="fl">0.5</span><span class="op">*</span>h<span class="op">*</span>xi_g</span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>            </span>
-<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>            <span class="co"># FEM interpolation at Gauss point</span></span>
-<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>            N1 <span class="op">=</span> <span class="fl">0.5</span><span class="op">*</span>(<span class="dv">1</span> <span class="op">-</span> xi_g)</span>
-<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>            N2 <span class="op">=</span> <span class="fl">0.5</span><span class="op">*</span>(<span class="dv">1</span> <span class="op">+</span> xi_g)</span>
-<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>            uh <span class="op">=</span> N1<span class="op">*</span>u0 <span class="op">+</span> N2<span class="op">*</span>u1</span>
-<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>            </span>
-<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>            <span class="co"># FEM derivative (constant per element)</span></span>
-<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>            duh <span class="op">=</span> (u1 <span class="op">-</span> u0) <span class="op">/</span> h</span>
-<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>            </span>
-<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Errors</span></span>
-<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>            L2_sq <span class="op">+=</span> w_g <span class="op">*</span> (uh <span class="op">-</span> u_exact(x_g))<span class="op">**</span><span class="dv">2</span> <span class="op">*</span> (h<span class="op">/</span><span class="dv">2</span>)</span>
-<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>            H1_sq <span class="op">+=</span> w_g <span class="op">*</span> (duh <span class="op">-</span> du_exact(x_g))<span class="op">**</span><span class="dv">2</span> <span class="op">*</span> (h<span class="op">/</span><span class="dv">2</span>)</span>
-<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.sqrt(L2_sq), np.sqrt(H1_sq)</span>
-<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- Convergence study ----</span></span>
-<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>n_elems <span class="op">=</span> [<span class="dv">2</span>, <span class="dv">4</span>, <span class="dv">8</span>, <span class="dv">16</span>, <span class="dv">32</span>, <span class="dv">64</span>, <span class="dv">128</span>]</span>
-<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a>h_vals <span class="op">=</span> [<span class="fl">1.0</span><span class="op">/</span>n <span class="cf">for</span> n <span class="kw">in</span> n_elems]</span>
-<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a>L2_errors <span class="op">=</span> []</span>
-<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>H1_errors <span class="op">=</span> []</span>
-<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>nodal_errors <span class="op">=</span> []</span>
-<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> n <span class="kw">in</span> n_elems:</span>
-<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a>    x_n, u_n <span class="op">=</span> solve_poisson_1d(n)</span>
-<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a>    e_L2, e_H1 <span class="op">=</span> compute_errors(x_n, u_n)</span>
-<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a>    e_nodal <span class="op">=</span> np.<span class="bu">max</span>(np.<span class="bu">abs</span>(u_n <span class="op">-</span> u_exact(x_n)))</span>
-<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a>    L2_errors.append(e_L2)</span>
-<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a>    H1_errors.append(e_H1)</span>
-<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a>    nodal_errors.append(e_nodal)</span>
-<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a>L2_errors <span class="op">=</span> np.array(L2_errors)</span>
-<span id="cb4-50"><a href="#cb4-50" aria-hidden="true" tabindex="-1"></a>H1_errors <span class="op">=</span> np.array(H1_errors)</span>
-<span id="cb4-51"><a href="#cb4-51" aria-hidden="true" tabindex="-1"></a>nodal_errors <span class="op">=</span> np.array(nodal_errors)</span>
-<span id="cb4-52"><a href="#cb4-52" aria-hidden="true" tabindex="-1"></a>h_vals <span class="op">=</span> np.array(h_vals)</span>
-<span id="cb4-53"><a href="#cb4-53" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-54"><a href="#cb4-54" aria-hidden="true" tabindex="-1"></a><span class="co"># Print table</span></span>
-<span id="cb4-55"><a href="#cb4-55" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'n_elem'</span><span class="sc">:&gt;8}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'h'</span><span class="sc">:&gt;10}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'L2 error'</span><span class="sc">:&gt;12}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'H1 error'</span><span class="sc">:&gt;12}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'nodal max'</span><span class="sc">:&gt;12}</span><span class="ss">"</span>)</span>
-<span id="cb4-56"><a href="#cb4-56" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'-'</span> <span class="op">*</span> <span class="dv">56</span>)</span>
-<span id="cb4-57"><a href="#cb4-57" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, n <span class="kw">in</span> <span class="bu">enumerate</span>(n_elems):</span>
-<span id="cb4-58"><a href="#cb4-58" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>n<span class="sc">:&gt;8d}</span><span class="ss"> </span><span class="sc">{</span>h_vals[i]<span class="sc">:&gt;10.4f}</span><span class="ss"> </span><span class="sc">{</span>L2_errors[i]<span class="sc">:&gt;12.4e}</span><span class="ss"> </span><span class="sc">{</span>H1_errors[i]<span class="sc">:&gt;12.4e}</span><span class="ss"> </span><span class="sc">{</span>nodal_errors[i]<span class="sc">:&gt;12.4e}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-7" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> compute_errors(x_nodes, u_fem):</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Compute L2 and H1 errors using 3-point Gauss quadrature per element."""</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    n_elem <span class="op">=</span> <span class="bu">len</span>(x_nodes) <span class="op">-</span> <span class="dv">1</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    L2_sq <span class="op">=</span> <span class="fl">0.0</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    H1_sq <span class="op">=</span> <span class="fl">0.0</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 3-point Gauss on [-1,1]</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    gp3 <span class="op">=</span> np.array([<span class="op">-</span>np.sqrt(<span class="dv">3</span><span class="op">/</span><span class="dv">5</span>), <span class="fl">0.0</span>, np.sqrt(<span class="dv">3</span><span class="op">/</span><span class="dv">5</span>)])</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    gw3 <span class="op">=</span> np.array([<span class="dv">5</span><span class="op">/</span><span class="dv">9</span>, <span class="dv">8</span><span class="op">/</span><span class="dv">9</span>, <span class="dv">5</span><span class="op">/</span><span class="dv">9</span>])</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> e <span class="kw">in</span> <span class="bu">range</span>(n_elem):</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>        x0, x1 <span class="op">=</span> x_nodes[e], x_nodes[e<span class="op">+</span><span class="dv">1</span>]</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>        h <span class="op">=</span> x1 <span class="op">-</span> x0</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>        u0, u1 <span class="op">=</span> u_fem[e], u_fem[e<span class="op">+</span><span class="dv">1</span>]</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> xi_g, w_g <span class="kw">in</span> <span class="bu">zip</span>(gp3, gw3):</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Physical coordinate</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>            x_g <span class="op">=</span> <span class="fl">0.5</span><span class="op">*</span>(x0 <span class="op">+</span> x1) <span class="op">+</span> <span class="fl">0.5</span><span class="op">*</span>h<span class="op">*</span>xi_g</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>            <span class="co"># FEM interpolation at Gauss point</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>            N1 <span class="op">=</span> <span class="fl">0.5</span><span class="op">*</span>(<span class="dv">1</span> <span class="op">-</span> xi_g)</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>            N2 <span class="op">=</span> <span class="fl">0.5</span><span class="op">*</span>(<span class="dv">1</span> <span class="op">+</span> xi_g)</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>            uh <span class="op">=</span> N1<span class="op">*</span>u0 <span class="op">+</span> N2<span class="op">*</span>u1</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>            <span class="co"># FEM derivative (constant per element)</span></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>            duh <span class="op">=</span> (u1 <span class="op">-</span> u0) <span class="op">/</span> h</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Errors</span></span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>            L2_sq <span class="op">+=</span> w_g <span class="op">*</span> (uh <span class="op">-</span> u_exact(x_g))<span class="op">**</span><span class="dv">2</span> <span class="op">*</span> (h<span class="op">/</span><span class="dv">2</span>)</span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>            H1_sq <span class="op">+=</span> w_g <span class="op">*</span> (duh <span class="op">-</span> du_exact(x_g))<span class="op">**</span><span class="dv">2</span> <span class="op">*</span> (h<span class="op">/</span><span class="dv">2</span>)</span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.sqrt(L2_sq), np.sqrt(H1_sq)</span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- Convergence study ----</span></span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>n_elems <span class="op">=</span> [<span class="dv">2</span>, <span class="dv">4</span>, <span class="dv">8</span>, <span class="dv">16</span>, <span class="dv">32</span>, <span class="dv">64</span>, <span class="dv">128</span>]</span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>h_vals <span class="op">=</span> [<span class="fl">1.0</span><span class="op">/</span>n <span class="cf">for</span> n <span class="kw">in</span> n_elems]</span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>L2_errors <span class="op">=</span> []</span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>H1_errors <span class="op">=</span> []</span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>nodal_errors <span class="op">=</span> []</span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> n <span class="kw">in</span> n_elems:</span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a>    x_n, u_n <span class="op">=</span> solve_poisson_1d(n)</span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a>    e_L2, e_H1 <span class="op">=</span> compute_errors(x_n, u_n)</span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a>    e_nodal <span class="op">=</span> np.<span class="bu">max</span>(np.<span class="bu">abs</span>(u_n <span class="op">-</span> u_exact(x_n)))</span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a>    L2_errors.append(e_L2)</span>
+<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a>    H1_errors.append(e_H1)</span>
+<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a>    nodal_errors.append(e_nodal)</span>
+<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a>L2_errors <span class="op">=</span> np.array(L2_errors)</span>
+<span id="cb5-50"><a href="#cb5-50" aria-hidden="true" tabindex="-1"></a>H1_errors <span class="op">=</span> np.array(H1_errors)</span>
+<span id="cb5-51"><a href="#cb5-51" aria-hidden="true" tabindex="-1"></a>nodal_errors <span class="op">=</span> np.array(nodal_errors)</span>
+<span id="cb5-52"><a href="#cb5-52" aria-hidden="true" tabindex="-1"></a>h_vals <span class="op">=</span> np.array(h_vals)</span>
+<span id="cb5-53"><a href="#cb5-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-54"><a href="#cb5-54" aria-hidden="true" tabindex="-1"></a><span class="co"># Print table</span></span>
+<span id="cb5-55"><a href="#cb5-55" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'n_elem'</span><span class="sc">:&gt;8}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'h'</span><span class="sc">:&gt;10}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'L2 error'</span><span class="sc">:&gt;12}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'H1 error'</span><span class="sc">:&gt;12}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'nodal max'</span><span class="sc">:&gt;12}</span><span class="ss">"</span>)</span>
+<span id="cb5-56"><a href="#cb5-56" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'-'</span> <span class="op">*</span> <span class="dv">56</span>)</span>
+<span id="cb5-57"><a href="#cb5-57" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, n <span class="kw">in</span> <span class="bu">enumerate</span>(n_elems):</span>
+<span id="cb5-58"><a href="#cb5-58" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>n<span class="sc">:&gt;8d}</span><span class="ss"> </span><span class="sc">{</span>h_vals[i]<span class="sc">:&gt;10.4f}</span><span class="ss"> </span><span class="sc">{</span>L2_errors[i]<span class="sc">:&gt;12.4e}</span><span class="ss"> </span><span class="sc">{</span>H1_errors[i]<span class="sc">:&gt;12.4e}</span><span class="ss"> </span><span class="sc">{</span>nodal_errors[i]<span class="sc">:&gt;12.4e}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  n_elem          h     L2 error     H1 error    nodal max
+--------------------------------------------------------
+       2     0.5000   1.4869e-01   9.6687e-01   4.8349e-03
+       4     0.2500   3.9127e-02   4.9851e-01   2.7307e-04
+       8     0.1250   9.9108e-03   2.5118e-01   1.6650e-05
+      16     0.0625   2.4859e-03   1.2583e-01   1.0343e-06
+      32     0.0312   6.2198e-04   6.2947e-02   6.4544e-08
+      64     0.0156   1.5553e-04   3.1477e-02   4.0325e-09
+     128     0.0078   3.8884e-05   1.5739e-02   2.5200e-10</code></pre>
+</div>
 </div>
 </section>
 <section id="convergence-rates" class="level2" data-number="15.4">
 <h2 data-number="15.4" class="anchored" data-anchor-id="convergence-rates"><span class="header-section-number">15.4</span> 4. Convergence Rates</h2>
-<div id="cell-9" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute convergence rates</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>L2_rates <span class="op">=</span> np.log(L2_errors[:<span class="op">-</span><span class="dv">1</span>] <span class="op">/</span> L2_errors[<span class="dv">1</span>:]) <span class="op">/</span> np.log(h_vals[:<span class="op">-</span><span class="dv">1</span>] <span class="op">/</span> h_vals[<span class="dv">1</span>:])</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>H1_rates <span class="op">=</span> np.log(H1_errors[:<span class="op">-</span><span class="dv">1</span>] <span class="op">/</span> H1_errors[<span class="dv">1</span>:]) <span class="op">/</span> np.log(h_vals[:<span class="op">-</span><span class="dv">1</span>] <span class="op">/</span> h_vals[<span class="dv">1</span>:])</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>nodal_rates <span class="op">=</span> np.log(nodal_errors[:<span class="op">-</span><span class="dv">1</span>] <span class="op">/</span> nodal_errors[<span class="dv">1</span>:]) <span class="op">/</span> np.log(h_vals[:<span class="op">-</span><span class="dv">1</span>] <span class="op">/</span> h_vals[<span class="dv">1</span>:])</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'refinement'</span><span class="sc">:&gt;12}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'L2 rate'</span><span class="sc">:&gt;10}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'H1 rate'</span><span class="sc">:&gt;10}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'nodal rate'</span><span class="sc">:&gt;12}</span><span class="ss">"</span>)</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'-'</span> <span class="op">*</span> <span class="dv">46</span>)</span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(L2_rates)):</span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>n_elems[i]<span class="sc">:&gt;4d}</span><span class="ss">-&gt;</span><span class="sc">{</span>n_elems[i<span class="op">+</span><span class="dv">1</span>]<span class="sc">:&gt;4d}</span><span class="ss">  </span><span class="sc">{</span>L2_rates[i]<span class="sc">:&gt;10.2f}</span><span class="ss"> </span><span class="sc">{</span>H1_rates[i]<span class="sc">:&gt;10.2f}</span><span class="ss"> </span><span class="sc">{</span>nodal_rates[i]<span class="sc">:&gt;12.2f}</span><span class="ss">"</span>)</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Expected: L2 rate -&gt; 2.0, H1 rate -&gt; 1.0"</span>)</span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Nodal superconvergence for uniform meshes: rate -&gt; 2.0"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-9" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute convergence rates</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>L2_rates <span class="op">=</span> np.log(L2_errors[:<span class="op">-</span><span class="dv">1</span>] <span class="op">/</span> L2_errors[<span class="dv">1</span>:]) <span class="op">/</span> np.log(h_vals[:<span class="op">-</span><span class="dv">1</span>] <span class="op">/</span> h_vals[<span class="dv">1</span>:])</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>H1_rates <span class="op">=</span> np.log(H1_errors[:<span class="op">-</span><span class="dv">1</span>] <span class="op">/</span> H1_errors[<span class="dv">1</span>:]) <span class="op">/</span> np.log(h_vals[:<span class="op">-</span><span class="dv">1</span>] <span class="op">/</span> h_vals[<span class="dv">1</span>:])</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>nodal_rates <span class="op">=</span> np.log(nodal_errors[:<span class="op">-</span><span class="dv">1</span>] <span class="op">/</span> nodal_errors[<span class="dv">1</span>:]) <span class="op">/</span> np.log(h_vals[:<span class="op">-</span><span class="dv">1</span>] <span class="op">/</span> h_vals[<span class="dv">1</span>:])</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'refinement'</span><span class="sc">:&gt;12}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'L2 rate'</span><span class="sc">:&gt;10}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'H1 rate'</span><span class="sc">:&gt;10}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'nodal rate'</span><span class="sc">:&gt;12}</span><span class="ss">"</span>)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'-'</span> <span class="op">*</span> <span class="dv">46</span>)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(L2_rates)):</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>n_elems[i]<span class="sc">:&gt;4d}</span><span class="ss">-&gt;</span><span class="sc">{</span>n_elems[i<span class="op">+</span><span class="dv">1</span>]<span class="sc">:&gt;4d}</span><span class="ss">  </span><span class="sc">{</span>L2_rates[i]<span class="sc">:&gt;10.2f}</span><span class="ss"> </span><span class="sc">{</span>H1_rates[i]<span class="sc">:&gt;10.2f}</span><span class="ss"> </span><span class="sc">{</span>nodal_rates[i]<span class="sc">:&gt;12.2f}</span><span class="ss">"</span>)</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Expected: L2 rate -&gt; 2.0, H1 rate -&gt; 1.0"</span>)</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Nodal superconvergence for uniform meshes: rate -&gt; 2.0"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  refinement    L2 rate    H1 rate   nodal rate
+----------------------------------------------
+   2-&gt;   4        1.93       0.96         4.15
+   4-&gt;   8        1.98       0.99         4.04
+   8-&gt;  16        2.00       1.00         4.01
+  16-&gt;  32        2.00       1.00         4.00
+  32-&gt;  64        2.00       1.00         4.00
+  64-&gt; 128        2.00       1.00         4.00
+
+Expected: L2 rate -&gt; 2.0, H1 rate -&gt; 1.0
+Nodal superconvergence for uniform meshes: rate -&gt; 2.0</code></pre>
 </div>
-<div id="cell-10" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">6</span>))</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>ax.loglog(h_vals, L2_errors, <span class="st">'bo-'</span>, lw<span class="op">=</span><span class="dv">2</span>, ms<span class="op">=</span><span class="dv">6</span>, label<span class="op">=</span><span class="vs">r'</span><span class="dv">$</span><span class="ch">\|</span><span class="vs">e</span><span class="ch">\|</span><span class="vs">_{L</span><span class="dv">^</span><span class="vs">2}</span><span class="dv">$</span><span class="vs">'</span>)</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>ax.loglog(h_vals, H1_errors, <span class="st">'rs-'</span>, lw<span class="op">=</span><span class="dv">2</span>, ms<span class="op">=</span><span class="dv">6</span>, label<span class="op">=</span><span class="vs">r'</span><span class="dv">$</span><span class="cf">|</span><span class="vs">e</span><span class="cf">|</span><span class="vs">_{H</span><span class="dv">^</span><span class="vs">1}</span><span class="dv">$</span><span class="vs">'</span>)</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>ax.loglog(h_vals, nodal_errors, <span class="st">'g^-'</span>, lw<span class="op">=</span><span class="dv">2</span>, ms<span class="op">=</span><span class="dv">6</span>, label<span class="op">=</span><span class="st">'Nodal max'</span>)</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Reference slopes</span></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>h_ref <span class="op">=</span> np.array([h_vals[<span class="dv">0</span>], h_vals[<span class="op">-</span><span class="dv">1</span>]])</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>ax.loglog(h_ref, L2_errors[<span class="dv">0</span>] <span class="op">*</span> (h_ref<span class="op">/</span>h_ref[<span class="dv">0</span>])<span class="op">**</span><span class="dv">2</span>, <span class="st">'b--'</span>, alpha<span class="op">=</span><span class="fl">0.4</span>, label<span class="op">=</span><span class="vs">r'</span><span class="dv">$</span><span class="vs">O</span><span class="kw">(</span><span class="vs">h</span><span class="dv">^</span><span class="vs">2</span><span class="kw">)</span><span class="dv">$</span><span class="vs">'</span>)</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>ax.loglog(h_ref, H1_errors[<span class="dv">0</span>] <span class="op">*</span> (h_ref<span class="op">/</span>h_ref[<span class="dv">0</span>])<span class="op">**</span><span class="dv">1</span>, <span class="st">'r--'</span>, alpha<span class="op">=</span><span class="fl">0.4</span>, label<span class="op">=</span><span class="vs">r'</span><span class="dv">$</span><span class="vs">O</span><span class="kw">(</span><span class="vs">h</span><span class="dv">^</span><span class="vs">1</span><span class="kw">)</span><span class="dv">$</span><span class="vs">'</span>)</span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">'Element size h'</span>)</span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">'Error'</span>)</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">'FEM Convergence: P1 Elements on 1D Poisson'</span>)</span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>ax.legend()</span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>ax.grid(<span class="va">True</span>, which<span class="op">=</span><span class="st">'both'</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="cell-10" class="cell" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">6</span>))</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>ax.loglog(h_vals, L2_errors, <span class="st">'bo-'</span>, lw<span class="op">=</span><span class="dv">2</span>, ms<span class="op">=</span><span class="dv">6</span>, label<span class="op">=</span><span class="vs">r'</span><span class="dv">$</span><span class="ch">\|</span><span class="vs">e</span><span class="ch">\|</span><span class="vs">_{L</span><span class="dv">^</span><span class="vs">2}</span><span class="dv">$</span><span class="vs">'</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>ax.loglog(h_vals, H1_errors, <span class="st">'rs-'</span>, lw<span class="op">=</span><span class="dv">2</span>, ms<span class="op">=</span><span class="dv">6</span>, label<span class="op">=</span><span class="vs">r'</span><span class="dv">$</span><span class="cf">|</span><span class="vs">e</span><span class="cf">|</span><span class="vs">_{H</span><span class="dv">^</span><span class="vs">1}</span><span class="dv">$</span><span class="vs">'</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>ax.loglog(h_vals, nodal_errors, <span class="st">'g^-'</span>, lw<span class="op">=</span><span class="dv">2</span>, ms<span class="op">=</span><span class="dv">6</span>, label<span class="op">=</span><span class="st">'Nodal max'</span>)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Reference slopes</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>h_ref <span class="op">=</span> np.array([h_vals[<span class="dv">0</span>], h_vals[<span class="op">-</span><span class="dv">1</span>]])</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>ax.loglog(h_ref, L2_errors[<span class="dv">0</span>] <span class="op">*</span> (h_ref<span class="op">/</span>h_ref[<span class="dv">0</span>])<span class="op">**</span><span class="dv">2</span>, <span class="st">'b--'</span>, alpha<span class="op">=</span><span class="fl">0.4</span>, label<span class="op">=</span><span class="vs">r'</span><span class="dv">$</span><span class="vs">O</span><span class="kw">(</span><span class="vs">h</span><span class="dv">^</span><span class="vs">2</span><span class="kw">)</span><span class="dv">$</span><span class="vs">'</span>)</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>ax.loglog(h_ref, H1_errors[<span class="dv">0</span>] <span class="op">*</span> (h_ref<span class="op">/</span>h_ref[<span class="dv">0</span>])<span class="op">**</span><span class="dv">1</span>, <span class="st">'r--'</span>, alpha<span class="op">=</span><span class="fl">0.4</span>, label<span class="op">=</span><span class="vs">r'</span><span class="dv">$</span><span class="vs">O</span><span class="kw">(</span><span class="vs">h</span><span class="dv">^</span><span class="vs">1</span><span class="kw">)</span><span class="dv">$</span><span class="vs">'</span>)</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">'Element size h'</span>)</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">'Error'</span>)</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">'FEM Convergence: P1 Elements on 1D Poisson'</span>)</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>ax.legend()</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>ax.grid(<span class="va">True</span>, which<span class="op">=</span><span class="st">'both'</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="14_error_analysis_files/figure-html/cell-7-output-1.png" width="757" height="564" class="figure-img"></p>
+</figure>
+</div>
+</div>
 </div>
 </section>
 <section id="visualising-the-error-distribution" class="level2" data-number="15.5">
 <h2 data-number="15.5" class="anchored" data-anchor-id="visualising-the-error-distribution"><span class="header-section-number">15.5</span> 5. Visualising the Error Distribution</h2>
 <p>Where is the error largest? For linear elements, the derivative error is constant per element, so the <span class="math inline">\(H^1\)</span> error is element-wise.</p>
-<div id="cell-12" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>n_show <span class="op">=</span> <span class="dv">8</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>x_n, u_n <span class="op">=</span> solve_poisson_1d(n_show)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>x_fine <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">500</span>)</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="dv">4</span>))</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Solution comparison</span></span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].plot(x_fine, u_exact(x_fine), <span class="st">'k-'</span>, lw<span class="op">=</span><span class="dv">2</span>, label<span class="op">=</span><span class="st">'Exact'</span>)</span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].plot(x_n, u_n, <span class="st">'bo-'</span>, ms<span class="op">=</span><span class="dv">6</span>, label<span class="op">=</span><span class="ss">f'FEM (</span><span class="sc">{</span>n_show<span class="sc">}</span><span class="ss"> elem)'</span>)</span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_title(<span class="st">'Solution'</span>)</span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].legend()</span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Pointwise error</span></span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Interpolate FEM solution on fine grid</span></span>
-<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>u_fem_fine <span class="op">=</span> np.interp(x_fine, x_n, u_n)</span>
-<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].plot(x_fine, np.<span class="bu">abs</span>(u_fem_fine <span class="op">-</span> u_exact(x_fine)), <span class="st">'b-'</span>, lw<span class="op">=</span><span class="fl">1.5</span>)</span>
-<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_title(<span class="st">'Pointwise error |u_h - u|'</span>)</span>
-<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_ylabel(<span class="st">'|error|'</span>)</span>
-<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
-<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a><span class="co"># Element-wise H1 error</span></span>
-<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>elem_H1_err <span class="op">=</span> []</span>
-<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>elem_centers <span class="op">=</span> []</span>
-<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> e <span class="kw">in</span> <span class="bu">range</span>(n_show):</span>
-<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>    x0, x1 <span class="op">=</span> x_n[e], x_n[e<span class="op">+</span><span class="dv">1</span>]</span>
-<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>    h <span class="op">=</span> x1 <span class="op">-</span> x0</span>
-<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>    xc <span class="op">=</span> <span class="fl">0.5</span><span class="op">*</span>(x0 <span class="op">+</span> x1)</span>
-<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>    duh <span class="op">=</span> (u_n[e<span class="op">+</span><span class="dv">1</span>] <span class="op">-</span> u_n[e]) <span class="op">/</span> h</span>
-<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Integrate (du_h' - u')^2 with 3-point Gauss</span></span>
-<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>    gp3 <span class="op">=</span> [<span class="op">-</span>np.sqrt(<span class="dv">3</span><span class="op">/</span><span class="dv">5</span>), <span class="fl">0.0</span>, np.sqrt(<span class="dv">3</span><span class="op">/</span><span class="dv">5</span>)]</span>
-<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a>    gw3 <span class="op">=</span> [<span class="dv">5</span><span class="op">/</span><span class="dv">9</span>, <span class="dv">8</span><span class="op">/</span><span class="dv">9</span>, <span class="dv">5</span><span class="op">/</span><span class="dv">9</span>]</span>
-<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>    err_sq <span class="op">=</span> <span class="fl">0.0</span></span>
-<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> xi_g, w_g <span class="kw">in</span> <span class="bu">zip</span>(gp3, gw3):</span>
-<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a>        x_g <span class="op">=</span> <span class="fl">0.5</span><span class="op">*</span>(x0<span class="op">+</span>x1) <span class="op">+</span> <span class="fl">0.5</span><span class="op">*</span>h<span class="op">*</span>xi_g</span>
-<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a>        err_sq <span class="op">+=</span> w_g <span class="op">*</span> (duh <span class="op">-</span> du_exact(x_g))<span class="op">**</span><span class="dv">2</span> <span class="op">*</span> (h<span class="op">/</span><span class="dv">2</span>)</span>
-<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a>    elem_H1_err.append(np.sqrt(err_sq))</span>
-<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a>    elem_centers.append(xc)</span>
-<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">2</span>].bar(elem_centers, elem_H1_err, width<span class="op">=</span><span class="fl">1.0</span><span class="op">/</span>n_show<span class="op">*</span><span class="fl">0.8</span>, color<span class="op">=</span><span class="st">'salmon'</span>, edgecolor<span class="op">=</span><span class="st">'darkred'</span>)</span>
-<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">2</span>].set_title(<span class="vs">r'Element </span><span class="dv">$</span><span class="vs">H</span><span class="dv">^</span><span class="vs">1</span><span class="dv">$</span><span class="vs"> semi-norm error'</span>)</span>
-<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">2</span>].set_xlabel(<span class="st">'x'</span>)</span>
-<span id="cb7-43"><a href="#cb7-43" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">2</span>].grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
-<span id="cb7-44"><a href="#cb7-44" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-45"><a href="#cb7-45" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
-<span id="cb7-46"><a href="#cb7-46" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-12" class="cell" data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>n_show <span class="op">=</span> <span class="dv">8</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>x_n, u_n <span class="op">=</span> solve_poisson_1d(n_show)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>x_fine <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">500</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="dv">4</span>))</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Solution comparison</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].plot(x_fine, u_exact(x_fine), <span class="st">'k-'</span>, lw<span class="op">=</span><span class="dv">2</span>, label<span class="op">=</span><span class="st">'Exact'</span>)</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].plot(x_n, u_n, <span class="st">'bo-'</span>, ms<span class="op">=</span><span class="dv">6</span>, label<span class="op">=</span><span class="ss">f'FEM (</span><span class="sc">{</span>n_show<span class="sc">}</span><span class="ss"> elem)'</span>)</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_title(<span class="st">'Solution'</span>)</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].legend()</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Pointwise error</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Interpolate FEM solution on fine grid</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>u_fem_fine <span class="op">=</span> np.interp(x_fine, x_n, u_n)</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].plot(x_fine, np.<span class="bu">abs</span>(u_fem_fine <span class="op">-</span> u_exact(x_fine)), <span class="st">'b-'</span>, lw<span class="op">=</span><span class="fl">1.5</span>)</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_title(<span class="st">'Pointwise error |u_h - u|'</span>)</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_ylabel(<span class="st">'|error|'</span>)</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a><span class="co"># Element-wise H1 error</span></span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>elem_H1_err <span class="op">=</span> []</span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>elem_centers <span class="op">=</span> []</span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> e <span class="kw">in</span> <span class="bu">range</span>(n_show):</span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>    x0, x1 <span class="op">=</span> x_n[e], x_n[e<span class="op">+</span><span class="dv">1</span>]</span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>    h <span class="op">=</span> x1 <span class="op">-</span> x0</span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>    xc <span class="op">=</span> <span class="fl">0.5</span><span class="op">*</span>(x0 <span class="op">+</span> x1)</span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a>    duh <span class="op">=</span> (u_n[e<span class="op">+</span><span class="dv">1</span>] <span class="op">-</span> u_n[e]) <span class="op">/</span> h</span>
+<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Integrate (du_h' - u')^2 with 3-point Gauss</span></span>
+<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a>    gp3 <span class="op">=</span> [<span class="op">-</span>np.sqrt(<span class="dv">3</span><span class="op">/</span><span class="dv">5</span>), <span class="fl">0.0</span>, np.sqrt(<span class="dv">3</span><span class="op">/</span><span class="dv">5</span>)]</span>
+<span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a>    gw3 <span class="op">=</span> [<span class="dv">5</span><span class="op">/</span><span class="dv">9</span>, <span class="dv">8</span><span class="op">/</span><span class="dv">9</span>, <span class="dv">5</span><span class="op">/</span><span class="dv">9</span>]</span>
+<span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a>    err_sq <span class="op">=</span> <span class="fl">0.0</span></span>
+<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> xi_g, w_g <span class="kw">in</span> <span class="bu">zip</span>(gp3, gw3):</span>
+<span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a>        x_g <span class="op">=</span> <span class="fl">0.5</span><span class="op">*</span>(x0<span class="op">+</span>x1) <span class="op">+</span> <span class="fl">0.5</span><span class="op">*</span>h<span class="op">*</span>xi_g</span>
+<span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a>        err_sq <span class="op">+=</span> w_g <span class="op">*</span> (duh <span class="op">-</span> du_exact(x_g))<span class="op">**</span><span class="dv">2</span> <span class="op">*</span> (h<span class="op">/</span><span class="dv">2</span>)</span>
+<span id="cb10-37"><a href="#cb10-37" aria-hidden="true" tabindex="-1"></a>    elem_H1_err.append(np.sqrt(err_sq))</span>
+<span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a>    elem_centers.append(xc)</span>
+<span id="cb10-39"><a href="#cb10-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-40"><a href="#cb10-40" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">2</span>].bar(elem_centers, elem_H1_err, width<span class="op">=</span><span class="fl">1.0</span><span class="op">/</span>n_show<span class="op">*</span><span class="fl">0.8</span>, color<span class="op">=</span><span class="st">'salmon'</span>, edgecolor<span class="op">=</span><span class="st">'darkred'</span>)</span>
+<span id="cb10-41"><a href="#cb10-41" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">2</span>].set_title(<span class="vs">r'Element </span><span class="dv">$</span><span class="vs">H</span><span class="dv">^</span><span class="vs">1</span><span class="dv">$</span><span class="vs"> semi-norm error'</span>)</span>
+<span id="cb10-42"><a href="#cb10-42" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">2</span>].set_xlabel(<span class="st">'x'</span>)</span>
+<span id="cb10-43"><a href="#cb10-43" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">2</span>].grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb10-44"><a href="#cb10-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-45"><a href="#cb10-45" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb10-46"><a href="#cb10-46" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="14_error_analysis_files/figure-html/cell-8-output-1.png" width="1334" height="372" class="figure-img"></p>
+</figure>
+</div>
+</div>
 </div>
 </section>
 <section id="a-posteriori-error-estimation-element-residual" class="level2" data-number="15.6">
@@ -623,62 +664,74 @@ window.Quarto = {
 <p>In practice, we don’t know the exact solution. The <strong>element residual indicator</strong> provides an error estimate from the computed solution alone:</p>
 <p><span class="math display">\[\eta_e^2 = h_e^2 \int_{\Omega_e} r_h^2 \, dx + h_e \sum_{\text{edges}} \int_{\partial \Omega_e} [\![\nabla u_h \cdot n]\!]^2 \, ds\]</span></p>
 <p>In 1D, the interior residual is <span class="math inline">\(r_h = f + u_h'' = f\)</span> (since <span class="math inline">\(u_h''=0\)</span> for linear elements), and the jump term at each interior node is <span class="math inline">\([\![u_h'\!]] = u_h'|_{\text{right}} - u_h'|_{\text{left}}\)</span>.</p>
-<div id="cell-14" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> element_residual_indicators(x_nodes, u_fem):</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Compute element residual error indicators in 1D."""</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    n_elem <span class="op">=</span> <span class="bu">len</span>(x_nodes) <span class="op">-</span> <span class="dv">1</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    eta <span class="op">=</span> np.zeros(n_elem)</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Element derivatives</span></span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    du_elem <span class="op">=</span> np.diff(u_fem) <span class="op">/</span> np.diff(x_nodes)</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> e <span class="kw">in</span> <span class="bu">range</span>(n_elem):</span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>        x0, x1 <span class="op">=</span> x_nodes[e], x_nodes[e<span class="op">+</span><span class="dv">1</span>]</span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>        h <span class="op">=</span> x1 <span class="op">-</span> x0</span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>        xc <span class="op">=</span> <span class="fl">0.5</span><span class="op">*</span>(x0 <span class="op">+</span> x1)</span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Interior residual: h^2 * integral of f^2 over element</span></span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>        <span class="co"># (since u_h'' = 0 for linear elements, residual r = f + u_h'' = f)</span></span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Use midpoint rule for simplicity</span></span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>        r_int <span class="op">=</span> h<span class="op">**</span><span class="dv">2</span> <span class="op">*</span> h <span class="op">*</span> f_source(xc)<span class="op">**</span><span class="dv">2</span></span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Jump terms at element boundaries</span></span>
-<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>        jump_sq <span class="op">=</span> <span class="fl">0.0</span></span>
-<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> e <span class="op">&gt;</span> <span class="dv">0</span>:  <span class="co"># left interior node</span></span>
-<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>            jump <span class="op">=</span> du_elem[e] <span class="op">-</span> du_elem[e<span class="op">-</span><span class="dv">1</span>]</span>
-<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>            jump_sq <span class="op">+=</span> <span class="fl">0.5</span> <span class="op">*</span> h <span class="op">*</span> jump<span class="op">**</span><span class="dv">2</span>  <span class="co"># half goes to each element</span></span>
-<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> e <span class="op">&lt;</span> n_elem <span class="op">-</span> <span class="dv">1</span>:  <span class="co"># right interior node</span></span>
-<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>            jump <span class="op">=</span> du_elem[e<span class="op">+</span><span class="dv">1</span>] <span class="op">-</span> du_elem[e]</span>
-<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>            jump_sq <span class="op">+=</span> <span class="fl">0.5</span> <span class="op">*</span> h <span class="op">*</span> jump<span class="op">**</span><span class="dv">2</span></span>
-<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>        eta[e] <span class="op">=</span> np.sqrt(r_int <span class="op">+</span> jump_sq)</span>
-<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> eta</span>
-<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a><span class="co"># Compare true error vs indicator</span></span>
-<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a>eta <span class="op">=</span> element_residual_indicators(x_n, u_n)</span>
-<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">4</span>))</span>
-<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a>width <span class="op">=</span> <span class="fl">0.35</span> <span class="op">/</span> n_show</span>
-<span id="cb8-37"><a href="#cb8-37" aria-hidden="true" tabindex="-1"></a>centers <span class="op">=</span> np.array(elem_centers)</span>
-<span id="cb8-38"><a href="#cb8-38" aria-hidden="true" tabindex="-1"></a>ax.bar(centers <span class="op">-</span> width, elem_H1_err, width<span class="op">=</span><span class="dv">2</span><span class="op">*</span>width, color<span class="op">=</span><span class="st">'steelblue'</span>, </span>
-<span id="cb8-39"><a href="#cb8-39" aria-hidden="true" tabindex="-1"></a>       alpha<span class="op">=</span><span class="fl">0.7</span>, label<span class="op">=</span><span class="vs">r'True </span><span class="dv">$</span><span class="cf">|</span><span class="vs">e</span><span class="cf">|</span><span class="vs">_{H</span><span class="dv">^</span><span class="vs">1,e}</span><span class="dv">$</span><span class="vs">'</span>)</span>
-<span id="cb8-40"><a href="#cb8-40" aria-hidden="true" tabindex="-1"></a>ax.bar(centers <span class="op">+</span> width, eta, width<span class="op">=</span><span class="dv">2</span><span class="op">*</span>width, color<span class="op">=</span><span class="st">'salmon'</span>, </span>
-<span id="cb8-41"><a href="#cb8-41" aria-hidden="true" tabindex="-1"></a>       alpha<span class="op">=</span><span class="fl">0.7</span>, label<span class="op">=</span><span class="vs">r'Indicator </span><span class="dv">$</span><span class="er">\</span><span class="vs">eta_e</span><span class="dv">$</span><span class="vs">'</span>)</span>
-<span id="cb8-42"><a href="#cb8-42" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">'x'</span>)</span>
-<span id="cb8-43"><a href="#cb8-43" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">'Error / Indicator'</span>)</span>
-<span id="cb8-44"><a href="#cb8-44" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">'True Error vs. A Posteriori Indicator'</span>)</span>
-<span id="cb8-45"><a href="#cb8-45" aria-hidden="true" tabindex="-1"></a>ax.legend()</span>
-<span id="cb8-46"><a href="#cb8-46" aria-hidden="true" tabindex="-1"></a>ax.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
-<span id="cb8-47"><a href="#cb8-47" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
-<span id="cb8-48"><a href="#cb8-48" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
-<span id="cb8-49"><a href="#cb8-49" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-50"><a href="#cb8-50" aria-hidden="true" tabindex="-1"></a><span class="co"># Effectivity index</span></span>
-<span id="cb8-51"><a href="#cb8-51" aria-hidden="true" tabindex="-1"></a>total_true <span class="op">=</span> np.sqrt(<span class="bu">sum</span>(e<span class="op">**</span><span class="dv">2</span> <span class="cf">for</span> e <span class="kw">in</span> elem_H1_err))</span>
-<span id="cb8-52"><a href="#cb8-52" aria-hidden="true" tabindex="-1"></a>total_eta <span class="op">=</span> np.sqrt(<span class="bu">sum</span>(e<span class="op">**</span><span class="dv">2</span> <span class="cf">for</span> e <span class="kw">in</span> eta))</span>
-<span id="cb8-53"><a href="#cb8-53" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Global true H1 error: </span><span class="sc">{</span>total_true<span class="sc">:.6e}</span><span class="ss">"</span>)</span>
-<span id="cb8-54"><a href="#cb8-54" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Global indicator:     </span><span class="sc">{</span>total_eta<span class="sc">:.6e}</span><span class="ss">"</span>)</span>
-<span id="cb8-55"><a href="#cb8-55" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Effectivity index:    </span><span class="sc">{</span>total_eta<span class="op">/</span>total_true<span class="sc">:.3f}</span><span class="ss"> (should be O(1))"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-14" class="cell" data-execution_count="8">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> element_residual_indicators(x_nodes, u_fem):</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Compute element residual error indicators in 1D."""</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    n_elem <span class="op">=</span> <span class="bu">len</span>(x_nodes) <span class="op">-</span> <span class="dv">1</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    eta <span class="op">=</span> np.zeros(n_elem)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Element derivatives</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    du_elem <span class="op">=</span> np.diff(u_fem) <span class="op">/</span> np.diff(x_nodes)</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> e <span class="kw">in</span> <span class="bu">range</span>(n_elem):</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>        x0, x1 <span class="op">=</span> x_nodes[e], x_nodes[e<span class="op">+</span><span class="dv">1</span>]</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>        h <span class="op">=</span> x1 <span class="op">-</span> x0</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>        xc <span class="op">=</span> <span class="fl">0.5</span><span class="op">*</span>(x0 <span class="op">+</span> x1)</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Interior residual: h^2 * integral of f^2 over element</span></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>        <span class="co"># (since u_h'' = 0 for linear elements, residual r = f + u_h'' = f)</span></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Use midpoint rule for simplicity</span></span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>        r_int <span class="op">=</span> h<span class="op">**</span><span class="dv">2</span> <span class="op">*</span> h <span class="op">*</span> f_source(xc)<span class="op">**</span><span class="dv">2</span></span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Jump terms at element boundaries</span></span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>        jump_sq <span class="op">=</span> <span class="fl">0.0</span></span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> e <span class="op">&gt;</span> <span class="dv">0</span>:  <span class="co"># left interior node</span></span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>            jump <span class="op">=</span> du_elem[e] <span class="op">-</span> du_elem[e<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>            jump_sq <span class="op">+=</span> <span class="fl">0.5</span> <span class="op">*</span> h <span class="op">*</span> jump<span class="op">**</span><span class="dv">2</span>  <span class="co"># half goes to each element</span></span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> e <span class="op">&lt;</span> n_elem <span class="op">-</span> <span class="dv">1</span>:  <span class="co"># right interior node</span></span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a>            jump <span class="op">=</span> du_elem[e<span class="op">+</span><span class="dv">1</span>] <span class="op">-</span> du_elem[e]</span>
+<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a>            jump_sq <span class="op">+=</span> <span class="fl">0.5</span> <span class="op">*</span> h <span class="op">*</span> jump<span class="op">**</span><span class="dv">2</span></span>
+<span id="cb11-27"><a href="#cb11-27" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a>        eta[e] <span class="op">=</span> np.sqrt(r_int <span class="op">+</span> jump_sq)</span>
+<span id="cb11-29"><a href="#cb11-29" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb11-30"><a href="#cb11-30" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> eta</span>
+<span id="cb11-31"><a href="#cb11-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-32"><a href="#cb11-32" aria-hidden="true" tabindex="-1"></a><span class="co"># Compare true error vs indicator</span></span>
+<span id="cb11-33"><a href="#cb11-33" aria-hidden="true" tabindex="-1"></a>eta <span class="op">=</span> element_residual_indicators(x_n, u_n)</span>
+<span id="cb11-34"><a href="#cb11-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-35"><a href="#cb11-35" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">4</span>))</span>
+<span id="cb11-36"><a href="#cb11-36" aria-hidden="true" tabindex="-1"></a>width <span class="op">=</span> <span class="fl">0.35</span> <span class="op">/</span> n_show</span>
+<span id="cb11-37"><a href="#cb11-37" aria-hidden="true" tabindex="-1"></a>centers <span class="op">=</span> np.array(elem_centers)</span>
+<span id="cb11-38"><a href="#cb11-38" aria-hidden="true" tabindex="-1"></a>ax.bar(centers <span class="op">-</span> width, elem_H1_err, width<span class="op">=</span><span class="dv">2</span><span class="op">*</span>width, color<span class="op">=</span><span class="st">'steelblue'</span>, </span>
+<span id="cb11-39"><a href="#cb11-39" aria-hidden="true" tabindex="-1"></a>       alpha<span class="op">=</span><span class="fl">0.7</span>, label<span class="op">=</span><span class="vs">r'True </span><span class="dv">$</span><span class="cf">|</span><span class="vs">e</span><span class="cf">|</span><span class="vs">_{H</span><span class="dv">^</span><span class="vs">1,e}</span><span class="dv">$</span><span class="vs">'</span>)</span>
+<span id="cb11-40"><a href="#cb11-40" aria-hidden="true" tabindex="-1"></a>ax.bar(centers <span class="op">+</span> width, eta, width<span class="op">=</span><span class="dv">2</span><span class="op">*</span>width, color<span class="op">=</span><span class="st">'salmon'</span>, </span>
+<span id="cb11-41"><a href="#cb11-41" aria-hidden="true" tabindex="-1"></a>       alpha<span class="op">=</span><span class="fl">0.7</span>, label<span class="op">=</span><span class="vs">r'Indicator </span><span class="dv">$</span><span class="er">\</span><span class="vs">eta_e</span><span class="dv">$</span><span class="vs">'</span>)</span>
+<span id="cb11-42"><a href="#cb11-42" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">'x'</span>)</span>
+<span id="cb11-43"><a href="#cb11-43" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">'Error / Indicator'</span>)</span>
+<span id="cb11-44"><a href="#cb11-44" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">'True Error vs. A Posteriori Indicator'</span>)</span>
+<span id="cb11-45"><a href="#cb11-45" aria-hidden="true" tabindex="-1"></a>ax.legend()</span>
+<span id="cb11-46"><a href="#cb11-46" aria-hidden="true" tabindex="-1"></a>ax.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb11-47"><a href="#cb11-47" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb11-48"><a href="#cb11-48" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb11-49"><a href="#cb11-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-50"><a href="#cb11-50" aria-hidden="true" tabindex="-1"></a><span class="co"># Effectivity index</span></span>
+<span id="cb11-51"><a href="#cb11-51" aria-hidden="true" tabindex="-1"></a>total_true <span class="op">=</span> np.sqrt(<span class="bu">sum</span>(e<span class="op">**</span><span class="dv">2</span> <span class="cf">for</span> e <span class="kw">in</span> elem_H1_err))</span>
+<span id="cb11-52"><a href="#cb11-52" aria-hidden="true" tabindex="-1"></a>total_eta <span class="op">=</span> np.sqrt(<span class="bu">sum</span>(e<span class="op">**</span><span class="dv">2</span> <span class="cf">for</span> e <span class="kw">in</span> eta))</span>
+<span id="cb11-53"><a href="#cb11-53" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Global true H1 error: </span><span class="sc">{</span>total_true<span class="sc">:.6e}</span><span class="ss">"</span>)</span>
+<span id="cb11-54"><a href="#cb11-54" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Global indicator:     </span><span class="sc">{</span>total_eta<span class="sc">:.6e}</span><span class="ss">"</span>)</span>
+<span id="cb11-55"><a href="#cb11-55" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Effectivity index:    </span><span class="sc">{</span>total_eta<span class="op">/</span>total_true<span class="sc">:.3f}</span><span class="ss"> (should be O(1))"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="14_error_analysis_files/figure-html/cell-9-output-1.png" width="758" height="374" class="figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Global true H1 error: 2.511817e-01
+Global indicator:     1.225849e+00
+Effectivity index:    4.880 (should be O(1))</code></pre>
+</div>
 </div>
 </section>
 <section id="summary" class="level2" data-number="15.7">

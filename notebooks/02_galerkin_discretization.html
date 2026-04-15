@@ -357,7 +357,7 @@ window.Quarto = {
 
 
 <p>This notebook demonstrates the Galerkin discretization process, where we substitute finite element shape functions into the weak form to derive the element stiffness matrix and load vector. This is where abstract weak forms become concrete linear algebra.</p>
-<div id="cell-1" class="cell">
+<div id="cell-1" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sympy <span class="im">as</span> sp</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Math, display</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> symbolic_fem_workbench <span class="im">import</span> (</span>
@@ -371,7 +371,7 @@ window.Quarto = {
 <h2 data-number="3.1" class="anchored" data-anchor-id="step-1-recall-the-weak-form"><span class="header-section-number">3.1</span> Step 1: Recall the weak form</h2>
 <p>From the previous notebook, the weak form for the 1D bar is: <span class="math display">\[a(u, v) = \int_0^L EA \frac{du}{dx} \frac{dv}{dx} \, dx\]</span> <span class="math display">\[F(v) = -\int_0^L q v \, dx + P \cdot v(L)\]</span></p>
 <p>In the Galerkin method, we substitute <span class="math inline">\(u \approx u_h = \sum_i N_i d_i\)</span> and <span class="math inline">\(v = N_j\)</span> to get a finite-dimensional problem.</p>
-<div id="cell-3" class="cell">
+<div id="cell-3" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>problem <span class="op">=</span> build_bar_1d_local_problem()</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>x, L <span class="op">=</span> problem[<span class="st">"x"</span>], problem[<span class="st">"L"</span>]</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>u, v <span class="op">=</span> problem[<span class="st">"u"</span>], problem[<span class="st">"v"</span>]</span>
@@ -381,83 +381,141 @@ window.Quarto = {
 <span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>display(Math(sp.latex(problem[<span class="st">"weak_bilinear"</span>])))</span>
 <span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Linear form F(v):"</span>)</span>
 <span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>display(Math(sp.latex(problem[<span class="st">"weak_linear"</span>])))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Bilinear form a(u,v):</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle A E \int\limits_{0}^{L} \frac{d}{d x} u{\left(x \right)} \frac{d}{d x} v{\left(x \right)}\, dx\)</span></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Linear form F(v):</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle q \int\limits_{0}^{L} v{\left(x \right)}\, dx\)</span></p>
+</div>
 </div>
 </section>
 <section id="step-2-define-shape-functions-on-an-element" class="level2" data-number="3.2">
 <h2 data-number="3.2" class="anchored" data-anchor-id="step-2-define-shape-functions-on-an-element"><span class="header-section-number">3.2</span> Step 2: Define shape functions on an element</h2>
 <p>For a linear 1D element on the interval <span class="math inline">\([0, L]\)</span>, we use two linear shape functions (P1 element): <span class="math display">\[N_1(x) = 1 - \frac{x}{L}, \quad N_2(x) = \frac{x}{L}\]</span></p>
 <p>These form a partition of unity: <span class="math inline">\(N_1 + N_2 = 1\)</span></p>
-<div id="cell-5" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>element <span class="op">=</span> LinearElement1D(x<span class="op">=</span>x, x0<span class="op">=</span><span class="dv">0</span>, x1<span class="op">=</span>L)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>N <span class="op">=</span> element.shape_functions</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Element length: </span><span class="sc">{</span>element<span class="sc">.</span>length<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Shape function N1 = </span><span class="sc">{</span>N[<span class="dv">0</span>]<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Shape function N2 = </span><span class="sc">{</span>N[<span class="dv">1</span>]<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Sum (partition of unity): </span><span class="sc">{</span>sp<span class="sc">.</span>simplify(N[<span class="dv">0</span>] <span class="op">+</span> N[<span class="dv">1</span>])<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-5" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>element <span class="op">=</span> LinearElement1D(x<span class="op">=</span>x, x0<span class="op">=</span><span class="dv">0</span>, x1<span class="op">=</span>L)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>N <span class="op">=</span> element.shape_functions</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Element length: </span><span class="sc">{</span>element<span class="sc">.</span>length<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Shape function N1 = </span><span class="sc">{</span>N[<span class="dv">0</span>]<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Shape function N2 = </span><span class="sc">{</span>N[<span class="dv">1</span>]<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Sum (partition of unity): </span><span class="sc">{</span>sp<span class="sc">.</span>simplify(N[<span class="dv">0</span>] <span class="op">+</span> N[<span class="dv">1</span>])<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Element length: L
+Shape function N1 = (L - x)/L
+Shape function N2 = x/L
+Sum (partition of unity): 1</code></pre>
+</div>
 </div>
 </section>
 <section id="step-3-build-trial-and-test-expansions" class="level2" data-number="3.3">
 <h2 data-number="3.3" class="anchored" data-anchor-id="step-3-build-trial-and-test-expansions"><span class="header-section-number">3.3</span> Step 3: Build trial and test expansions</h2>
 <p>The Galerkin discretization replaces the infinite-dimensional spaces with finite-dimensional ones: <span class="math display">\[u_h(x) = N_1(x) d_0 + N_2(x) d_1\]</span> <span class="math display">\[v_h(x) = N_1(x) w_0 + N_2(x) w_1\]</span></p>
 <p>where <span class="math inline">\(d_0, d_1\)</span> are nodal values and <span class="math inline">\(w_0, w_1\)</span> are test function coefficients.</p>
-<div id="cell-7" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>d0, d1 <span class="op">=</span> sp.symbols(<span class="st">"d0 d1"</span>, real<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>w0, w1 <span class="op">=</span> sp.symbols(<span class="st">"w0 w1"</span>, real<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>uh <span class="op">=</span> local_trial_expansion(N, [d0, d1])</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>vh <span class="op">=</span> local_test_expansion(N, [w0, w1])</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"u_h ="</span>, uh)</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"v_h ="</span>, vh)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-7" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>d0, d1 <span class="op">=</span> sp.symbols(<span class="st">"d0 d1"</span>, real<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>w0, w1 <span class="op">=</span> sp.symbols(<span class="st">"w0 w1"</span>, real<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>uh <span class="op">=</span> local_trial_expansion(N, [d0, d1])</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>vh <span class="op">=</span> local_test_expansion(N, [w0, w1])</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"u_h ="</span>, uh)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"v_h ="</span>, vh)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>u_h = d0 - d0*x/L + d1*x/L
+v_h = w0 - w0*x/L + w1*x/L</code></pre>
+</div>
 </div>
 </section>
 <section id="step-4-substitute-into-the-weak-form" class="level2" data-number="3.4">
 <h2 data-number="3.4" class="anchored" data-anchor-id="step-4-substitute-into-the-weak-form"><span class="header-section-number">3.4</span> Step 4: Substitute into the weak form</h2>
 <p>The Galerkin discretization consists of substituting <span class="math inline">\(u \to u_h\)</span> and <span class="math inline">\(v \to v_h\)</span> into the weak form integrals. This produces a bilinear form that depends on coefficients <span class="math inline">\(d_i\)</span> and <span class="math inline">\(w_j\)</span>.</p>
-<div id="cell-9" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>a_disc <span class="op">=</span> substitute_fe(problem[<span class="st">"weak_bilinear"</span>], {u: uh, v: vh}, x)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>l_disc <span class="op">=</span> substitute_fe(problem[<span class="st">"weak_linear"</span>], {v: vh}, x)</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Discretized bilinear form:"</span>)</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>display(Math(sp.latex(a_disc)))</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Discretized linear form:"</span>)</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>display(Math(sp.latex(l_disc)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-9" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>a_disc <span class="op">=</span> substitute_fe(problem[<span class="st">"weak_bilinear"</span>], {u: uh, v: vh}, x)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>l_disc <span class="op">=</span> substitute_fe(problem[<span class="st">"weak_linear"</span>], {v: vh}, x)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Discretized bilinear form:"</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>display(Math(sp.latex(a_disc)))</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Discretized linear form:"</span>)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>display(Math(sp.latex(l_disc)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Discretized bilinear form:</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \frac{A E d_{0} w_{0}}{L} - \frac{A E d_{0} w_{1}}{L} - \frac{A E d_{1} w_{0}}{L} + \frac{A E d_{1} w_{1}}{L}\)</span></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Discretized linear form:</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle \frac{L q w_{0}}{2} + \frac{L q w_{1}}{2}\)</span></p>
+</div>
 </div>
 </section>
 <section id="step-5-extract-element-matrices" class="level2" data-number="3.5">
 <h2 data-number="3.5" class="anchored" data-anchor-id="step-5-extract-element-matrices"><span class="header-section-number">3.5</span> Step 5: Extract element matrices</h2>
 <p>The key insight: The discretized bilinear form is quadratic in coefficients. By comparing coefficients of <span class="math inline">\(d_i w_j\)</span>, we extract the element stiffness matrix <span class="math inline">\(K_e\)</span>. Similarly, coefficients of <span class="math inline">\(w_j\)</span> give the element load vector <span class="math inline">\(f_e\)</span>.</p>
-<div id="cell-11" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>Ke <span class="op">=</span> extract_coefficient_matrix(a_disc, [d0, d1], [w0, w1])</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>fe <span class="op">=</span> extract_coefficient_vector(l_disc, [w0, w1])</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Element stiffness matrix Ke:"</span>)</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"K_e = "</span> <span class="op">+</span> sp.latex(sp.simplify(Ke))))</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Element load vector fe:"</span>)</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"f_e = "</span> <span class="op">+</span> sp.latex(sp.simplify(fe))))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-11" class="cell" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>Ke <span class="op">=</span> extract_coefficient_matrix(a_disc, [d0, d1], [w0, w1])</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>fe <span class="op">=</span> extract_coefficient_vector(l_disc, [w0, w1])</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Element stiffness matrix Ke:"</span>)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"K_e = "</span> <span class="op">+</span> sp.latex(sp.simplify(Ke))))</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Element load vector fe:"</span>)</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"f_e = "</span> <span class="op">+</span> sp.latex(sp.simplify(fe))))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Element stiffness matrix Ke:</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle K_e = \left[\begin{matrix}\frac{A E}{L} &amp; - \frac{A E}{L}\\- \frac{A E}{L} &amp; \frac{A E}{L}\end{matrix}\right]\)</span></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Element load vector fe:</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle f_e = \left[\begin{matrix}\frac{L q}{2}\\\frac{L q}{2}\end{matrix}\right]\)</span></p>
+</div>
 </div>
 </section>
 <section id="verify-use-the-pre-built-workflow" class="level2" data-number="3.6">
 <h2 data-number="3.6" class="anchored" data-anchor-id="verify-use-the-pre-built-workflow"><span class="header-section-number">3.6</span> Verify: Use the pre-built workflow</h2>
 <p>The symbolic_fem_workbench provides pre-built workflows that perform all these steps at once. Let’s verify our manual derivation matches the library.</p>
-<div id="cell-13" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Pre-built workflow gives the same result:"</span>)</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"K_e = "</span> <span class="op">+</span> sp.latex(problem[<span class="st">"Ke"</span>])))</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"f_e = "</span> <span class="op">+</span> sp.latex(problem[<span class="st">"fe"</span>])))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-13" class="cell" data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Pre-built workflow gives the same result:"</span>)</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"K_e = "</span> <span class="op">+</span> sp.latex(problem[<span class="st">"Ke"</span>])))</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"f_e = "</span> <span class="op">+</span> sp.latex(problem[<span class="st">"fe"</span>])))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Pre-built workflow gives the same result:</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle K_e = \left[\begin{matrix}\frac{A E}{L} &amp; - \frac{A E}{L}\\- \frac{A E}{L} &amp; \frac{A E}{L}\end{matrix}\right]\)</span></p>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle f_e = \left[\begin{matrix}\frac{L q}{2}\\\frac{L q}{2}\end{matrix}\right]\)</span></p>
+</div>
 </div>
 </section>
 <section id="exercise" class="level2" data-number="3.7">
 <h2 data-number="3.7" class="anchored" data-anchor-id="exercise"><span class="header-section-number">3.7</span> Exercise</h2>
 <p><strong>Question:</strong> What happens if you use a 3-node (P2) element instead? Define shape functions for a quadratic element on <span class="math inline">\([0, L]\)</span>: <span class="math display">\[N_1 = (1 - \xi)(1 - 2\xi), \quad N_2 = 4\xi(1-\xi), \quad N_3 = \xi(2\xi - 1)\]</span> where <span class="math inline">\(\xi = x/L\)</span>.</p>
 <p>Substitute and extract the <span class="math inline">\(3 \times 3\)</span> element stiffness matrix. How do the entries compare to the P1 case?</p>
-<div id="cell-15" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Exercise: What happens if you use a 3-node (P2) element instead?</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Define shape functions for a quadratic element on [0, L]:</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co">#   N1 = (1 - xi)(1 - 2*xi),  N2 = 4*xi*(1-xi),  N3 = xi*(2*xi - 1)</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co"># where xi = x/L.</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Substitute and extract the 3x3 element stiffness matrix.</span></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-15" class="cell" data-execution_count="8">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Exercise: What happens if you use a 3-node (P2) element instead?</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Define shape functions for a quadratic element on [0, L]:</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="co">#   N1 = (1 - xi)(1 - 2*xi),  N2 = 4*xi*(1-xi),  N3 = xi*(2*xi - 1)</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="co"># where xi = x/L.</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Substitute and extract the 3x3 element stiffness matrix.</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 
 

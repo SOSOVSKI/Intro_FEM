@@ -355,7 +355,7 @@ window.Quarto = {
 
 
 <p>This notebook demonstrates how to convert symbolic element matrices into efficient numerical kernels using SymPy’s <code>lambdify</code>. We’ll examine the numerical behavior of the 1D bar element and perform parameter studies.</p>
-<div id="cell-1" class="cell">
+<div id="cell-1" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sympy <span class="im">as</span> sp</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Math, display</span>
@@ -364,7 +364,7 @@ window.Quarto = {
 <section id="step-1-symbolic-derivation" class="level2" data-number="4.1">
 <h2 data-number="4.1" class="anchored" data-anchor-id="step-1-symbolic-derivation"><span class="header-section-number">4.1</span> Step 1: Symbolic derivation</h2>
 <p>We start with the symbolic element stiffness matrix and load vector derived in the previous notebooks. These are expressed in terms of material parameters (<span class="math inline">\(E\)</span>, <span class="math inline">\(A\)</span>) and geometric parameters (<span class="math inline">\(L\)</span>).</p>
-<div id="cell-3" class="cell">
+<div id="cell-3" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>problem <span class="op">=</span> build_bar_1d_local_problem()</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>Ke <span class="op">=</span> problem[<span class="st">"Ke"</span>]</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>fe <span class="op">=</span> problem[<span class="st">"fe"</span>]</span>
@@ -376,66 +376,109 @@ window.Quarto = {
 <span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"K_e = "</span> <span class="op">+</span> sp.latex(Ke)))</span>
 <span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Symbolic fe:"</span>)</span>
 <span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>display(Math(<span class="vs">r"f_e = "</span> <span class="op">+</span> sp.latex(fe)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Symbolic Ke:</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle K_e = \left[\begin{matrix}\frac{A E}{L} &amp; - \frac{A E}{L}\\- \frac{A E}{L} &amp; \frac{A E}{L}\end{matrix}\right]\)</span></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Symbolic fe:</code></pre>
+</div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<p><span class="math inline">\(\displaystyle f_e = \left[\begin{matrix}\frac{L q}{2}\\\frac{L q}{2}\end{matrix}\right]\)</span></p>
+</div>
 </div>
 </section>
 <section id="step-2-convert-to-numerical-functions-using-lambdify" class="level2" data-number="4.2">
 <h2 data-number="4.2" class="anchored" data-anchor-id="step-2-convert-to-numerical-functions-using-lambdify"><span class="header-section-number">4.2</span> Step 2: Convert to numerical functions using lambdify</h2>
 <p>SymPy’s <code>lambdify</code> converts symbolic expressions into NumPy-compatible functions. This allows us to rapidly evaluate matrices for different parameter values without recompiling.</p>
-<div id="cell-5" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>ke_fn <span class="op">=</span> sp.lambdify((L_sym, E_sym, A_sym), Ke, <span class="st">"numpy"</span>)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>fe_fn <span class="op">=</span> sp.lambdify((L_sym, q_sym, P_sym), fe, <span class="st">"numpy"</span>)</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Example: steel bar element, L=0.5m, E=200e9 Pa, A=1e-4 m^2</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>L_val, E_val, A_val <span class="op">=</span> <span class="fl">0.5</span>, <span class="fl">200e9</span>, <span class="fl">1e-4</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>Ke_num <span class="op">=</span> np.array(ke_fn(L_val, E_val, A_val), dtype<span class="op">=</span><span class="bu">float</span>)</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Numerical Ke for L=</span><span class="sc">{</span>L_val<span class="sc">}</span><span class="ss">, E=</span><span class="sc">{</span>E_val<span class="sc">:.0e}</span><span class="ss">, A=</span><span class="sc">{</span>A_val<span class="sc">}</span><span class="ss">:"</span>)</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(Ke_num)</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>q_val, P_val <span class="op">=</span> <span class="fl">1000.0</span>, <span class="fl">500.0</span></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>fe_num <span class="op">=</span> np.array(fe_fn(L_val, q_val, P_val), dtype<span class="op">=</span><span class="bu">float</span>).flatten()</span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Numerical fe for q=</span><span class="sc">{</span>q_val<span class="sc">}</span><span class="ss">, P=</span><span class="sc">{</span>P_val<span class="sc">}</span><span class="ss">:"</span>)</span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(fe_num)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-5" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>ke_fn <span class="op">=</span> sp.lambdify((L_sym, E_sym, A_sym), Ke, <span class="st">"numpy"</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>fe_fn <span class="op">=</span> sp.lambdify((L_sym, q_sym, P_sym), fe, <span class="st">"numpy"</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Example: steel bar element, L=0.5m, E=200e9 Pa, A=1e-4 m^2</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>L_val, E_val, A_val <span class="op">=</span> <span class="fl">0.5</span>, <span class="fl">200e9</span>, <span class="fl">1e-4</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>Ke_num <span class="op">=</span> np.array(ke_fn(L_val, E_val, A_val), dtype<span class="op">=</span><span class="bu">float</span>)</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Numerical Ke for L=</span><span class="sc">{</span>L_val<span class="sc">}</span><span class="ss">, E=</span><span class="sc">{</span>E_val<span class="sc">:.0e}</span><span class="ss">, A=</span><span class="sc">{</span>A_val<span class="sc">}</span><span class="ss">:"</span>)</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(Ke_num)</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>q_val, P_val <span class="op">=</span> <span class="fl">1000.0</span>, <span class="fl">500.0</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>fe_num <span class="op">=</span> np.array(fe_fn(L_val, q_val, P_val), dtype<span class="op">=</span><span class="bu">float</span>).flatten()</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Numerical fe for q=</span><span class="sc">{</span>q_val<span class="sc">}</span><span class="ss">, P=</span><span class="sc">{</span>P_val<span class="sc">}</span><span class="ss">:"</span>)</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(fe_num)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Numerical Ke for L=0.5, E=2e+11, A=0.0001:
+[[ 40000000. -40000000.]
+ [-40000000.  40000000.]]
+
+Numerical fe for q=1000.0, P=500.0:
+[250. 250.]</code></pre>
+</div>
 </div>
 </section>
 <section id="step-3-verify-properties" class="level2" data-number="4.3">
 <h2 data-number="4.3" class="anchored" data-anchor-id="step-3-verify-properties"><span class="header-section-number">4.3</span> Step 3: Verify properties</h2>
 <p>The element stiffness matrix should satisfy important mathematical properties: - <strong>Symmetry:</strong> <span class="math inline">\(K_e = K_e^T\)</span> (from the symmetry of the bilinear form) - <strong>Positive semi-definiteness:</strong> All eigenvalues <span class="math inline">\(\geq 0\)</span> - <strong>Singular:</strong> One null eigenvector (rigid body translation)</p>
-<div id="cell-7" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Symmetry check: Ke == Ke.T?"</span>, np.allclose(Ke_num, Ke_num.T))</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Row sums (should be zero for homogeneous problem):"</span>, Ke_num.<span class="bu">sum</span>(axis<span class="op">=</span><span class="dv">1</span>))</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Positive diagonal entries?"</span>, np.<span class="bu">all</span>(np.diag(Ke_num) <span class="op">&gt;</span> <span class="dv">0</span>))</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Eigenvalue analysis</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>eigvals <span class="op">=</span> np.linalg.eigvalsh(Ke_num)</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Eigenvalues: </span><span class="sc">{</span>eigvals<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Smallest eigenvalue (should be ~0): </span><span class="sc">{</span>eigvals[<span class="dv">0</span>]<span class="sc">:.2e}</span><span class="ss">"</span>)</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Positive semi-definite: </span><span class="sc">{</span>np<span class="sc">.</span><span class="bu">all</span>(eigvals <span class="op">&gt;=</span> <span class="op">-</span><span class="fl">1e-10</span>)<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-7" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Symmetry check: Ke == Ke.T?"</span>, np.allclose(Ke_num, Ke_num.T))</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Row sums (should be zero for homogeneous problem):"</span>, Ke_num.<span class="bu">sum</span>(axis<span class="op">=</span><span class="dv">1</span>))</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Positive diagonal entries?"</span>, np.<span class="bu">all</span>(np.diag(Ke_num) <span class="op">&gt;</span> <span class="dv">0</span>))</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Eigenvalue analysis</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>eigvals <span class="op">=</span> np.linalg.eigvalsh(Ke_num)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Eigenvalues: </span><span class="sc">{</span>eigvals<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Smallest eigenvalue (should be ~0): </span><span class="sc">{</span>eigvals[<span class="dv">0</span>]<span class="sc">:.2e}</span><span class="ss">"</span>)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Positive semi-definite: </span><span class="sc">{</span>np<span class="sc">.</span><span class="bu">all</span>(eigvals <span class="op">&gt;=</span> <span class="op">-</span><span class="fl">1e-10</span>)<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Symmetry check: Ke == Ke.T? True
+Row sums (should be zero for homogeneous problem): [0. 0.]
+Positive diagonal entries? True
+
+Eigenvalues: [       0. 80000000.]
+Smallest eigenvalue (should be ~0): 0.00e+00
+Positive semi-definite: True</code></pre>
+</div>
 </div>
 </section>
 <section id="step-4-parameter-study" class="level2" data-number="4.4">
 <h2 data-number="4.4" class="anchored" data-anchor-id="step-4-parameter-study"><span class="header-section-number">4.4</span> Step 4: Parameter study</h2>
 <p>The stiffness scales with the ratio <span class="math inline">\(EA/L\)</span>. Let’s verify this behavior numerically.</p>
-<div id="cell-9" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Effect of element length on stiffness:"</span>)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> L_test <span class="kw">in</span> [<span class="fl">0.1</span>, <span class="fl">0.5</span>, <span class="fl">1.0</span>, <span class="fl">2.0</span>]:</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    K <span class="op">=</span> np.array(ke_fn(L_test, E_val, A_val), dtype<span class="op">=</span><span class="bu">float</span>)</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  L = </span><span class="sc">{</span>L_test<span class="sc">:4.1f}</span><span class="ss"> -&gt; K[0,0] = </span><span class="sc">{</span>K[<span class="dv">0</span>,<span class="dv">0</span>]<span class="sc">:.2e}</span><span class="ss">  (EA/L = </span><span class="sc">{</span>E_val<span class="op">*</span>A_val<span class="op">/</span>L_test<span class="sc">:.2e}</span><span class="ss">)"</span>)</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Effect of cross-section on stiffness:"</span>)</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> A_test <span class="kw">in</span> [<span class="fl">1e-5</span>, <span class="fl">1e-4</span>, <span class="fl">5e-4</span>, <span class="fl">1e-3</span>]:</span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    K <span class="op">=</span> np.array(ke_fn(L_val, E_val, A_test), dtype<span class="op">=</span><span class="bu">float</span>)</span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  A = </span><span class="sc">{</span>A_test<span class="sc">:.0e}</span><span class="ss"> -&gt; K[0,0] = </span><span class="sc">{</span>K[<span class="dv">0</span>,<span class="dv">0</span>]<span class="sc">:.2e}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-9" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Effect of element length on stiffness:"</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> L_test <span class="kw">in</span> [<span class="fl">0.1</span>, <span class="fl">0.5</span>, <span class="fl">1.0</span>, <span class="fl">2.0</span>]:</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    K <span class="op">=</span> np.array(ke_fn(L_test, E_val, A_val), dtype<span class="op">=</span><span class="bu">float</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  L = </span><span class="sc">{</span>L_test<span class="sc">:4.1f}</span><span class="ss"> -&gt; K[0,0] = </span><span class="sc">{</span>K[<span class="dv">0</span>,<span class="dv">0</span>]<span class="sc">:.2e}</span><span class="ss">  (EA/L = </span><span class="sc">{</span>E_val<span class="op">*</span>A_val<span class="op">/</span>L_test<span class="sc">:.2e}</span><span class="ss">)"</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Effect of cross-section on stiffness:"</span>)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> A_test <span class="kw">in</span> [<span class="fl">1e-5</span>, <span class="fl">1e-4</span>, <span class="fl">5e-4</span>, <span class="fl">1e-3</span>]:</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    K <span class="op">=</span> np.array(ke_fn(L_val, E_val, A_test), dtype<span class="op">=</span><span class="bu">float</span>)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  A = </span><span class="sc">{</span>A_test<span class="sc">:.0e}</span><span class="ss"> -&gt; K[0,0] = </span><span class="sc">{</span>K[<span class="dv">0</span>,<span class="dv">0</span>]<span class="sc">:.2e}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Effect of element length on stiffness:
+  L =  0.1 -&gt; K[0,0] = 2.00e+08  (EA/L = 2.00e+08)
+  L =  0.5 -&gt; K[0,0] = 4.00e+07  (EA/L = 4.00e+07)
+  L =  1.0 -&gt; K[0,0] = 2.00e+07  (EA/L = 2.00e+07)
+  L =  2.0 -&gt; K[0,0] = 1.00e+07  (EA/L = 1.00e+07)
+
+Effect of cross-section on stiffness:
+  A = 1e-05 -&gt; K[0,0] = 4.00e+06
+  A = 1e-04 -&gt; K[0,0] = 4.00e+07
+  A = 5e-04 -&gt; K[0,0] = 2.00e+08
+  A = 1e-03 -&gt; K[0,0] = 4.00e+08</code></pre>
+</div>
 </div>
 </section>
 <section id="exercise" class="level2" data-number="4.5">
 <h2 data-number="4.5" class="anchored" data-anchor-id="exercise"><span class="header-section-number">4.5</span> Exercise</h2>
 <p><strong>Question:</strong> Assemble a 3-element bar manually using the numerical kernels: 1. Create 3 elements of equal length <span class="math inline">\(L_{\text{total}}/3\)</span> 2. Assemble the global <span class="math inline">\(4 \times 4\)</span> stiffness matrix 3. Apply boundary condition <span class="math inline">\(u(0) = 0\)</span> and a prescribed force <span class="math inline">\(P\)</span> at <span class="math inline">\(x=L_{\text{total}}\)</span> 4. Solve for displacements and plot the solution</p>
 <p>Hint: Use <code>np.zeros</code> to initialize the global matrix and an assembly loop with connectivity information.</p>
-<div id="cell-11" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Exercise: Assemble a 3-element bar manually.</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Create 3 elements of equal length L_total/3, assemble K_global (4x4),</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="co"># apply u(0) = 0 and P at x=L_total, solve, and plot the solution.</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-11" class="cell" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Exercise: Assemble a 3-element bar manually.</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Create 3 elements of equal length L_total/3, assemble K_global (4x4),</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="co"># apply u(0) = 0 and P at x=L_total, solve, and plot the solution.</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 
 
