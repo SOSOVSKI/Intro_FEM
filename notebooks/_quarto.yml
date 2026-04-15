@@ -5,7 +5,7 @@ project:
 book:
   title: "FEM Companion Notebooks"
   author: "Shmuel Osovski"
-  date: "2025"
+  date: "2026-03-15"
   repo-url: https://github.com/SOSOVSKI/Intro_FEM
   repo-branch: main
   repo-subdir: notebooks
@@ -102,6 +102,7 @@ format:
         \newunicodechar{️}{}
 
 execute:
+  enabled: true
   echo: true
   warning: false
   freeze: auto
