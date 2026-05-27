@@ -2,6 +2,9 @@
 
 A teaching-first symbolic FEM helper package.
 """
+from importlib.metadata import version
+
+__version__ = version("symbolic-fem-workbench")
 
 from .symbols import Domain1D, Domain2D, make_field_1d, make_field_2d
 from .forms import DomainIntegral, BoundaryContribution, WeightedResidual, WeakForm
