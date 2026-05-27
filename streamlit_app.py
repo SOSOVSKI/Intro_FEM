@@ -19,6 +19,12 @@ from symbolic_fem_workbench.reference import (
     ReferenceTetrahedronP1,
     ReferenceTriangleP1,
 )
+from symbolic_fem_workbench.ui import (
+    matrix_full_precision_csv_bytes,
+    matrix_preview_text,
+    symbolic_text,
+    visualization_hint,
+)
 
 
 WORKFLOW_STEPS = [
@@ -63,6 +69,46 @@ def _render_expr(title: str, expr: object) -> None:
         st.write(expr)
     st.caption("Raw symbolic")
     st.code(repr(expr), language="python")
+
+
+def _inspection_panel(problem: dict[str, object]) -> None:
+    if not problem:
+        st.info("No assembled problem is available yet.")
+        return
+
+    math_tab, table_tab, export_tab = st.tabs(["Math View", "Table View", "Codegen/Export"])
+
+    with math_tab:
+        with st.expander("Symbolic form text", expanded=True):
+            st.code(symbolic_text(problem, pretty=False), language="python")
+        with st.expander("Reference or mesh hints", expanded=True):
+            st.text(visualization_hint(problem))
+
+    with table_tab:
+        truncate = st.toggle("Truncate numeric preview", value=True)
+        digits = st.number_input("Preview digits", min_value=2, max_value=16, value=4, step=1)
+        if "Ke" in problem:
+            st.subheader("Assembled matrix preview")
+            st.code(matrix_preview_text(problem["Ke"], truncate=truncate, digits=digits), language="text")
+        if "fe" in problem:
+            st.subheader("Assembled vector preview")
+            st.code(matrix_preview_text(problem["fe"], truncate=truncate, digits=digits), language="text")
+
+    with export_tab:
+        if "Ke" in problem:
+            st.download_button(
+                "Download Ke CSV",
+                data=matrix_full_precision_csv_bytes(problem["Ke"]),
+                file_name="Ke.csv",
+                mime="text/csv",
+            )
+        if "fe" in problem:
+            st.download_button(
+                "Download fe CSV",
+                data=matrix_full_precision_csv_bytes(problem["fe"]),
+                file_name="fe.csv",
+                mime="text/csv",
+            )
 
 
 def _reference_from_setup() -> object:
@@ -131,11 +177,13 @@ def _render_preset_output(config: dict[str, object]) -> None:
         st.session_state.assembly = {"assembled": problem, "Ke": problem["Ke"], "fe": problem["fe"]}
         _render_expr("Element stiffness Ke", problem["Ke"])
         _render_expr("Element load fe", problem["fe"])
+        _inspection_panel(problem)
     elif problem_type == "triangle_p1_poisson":
         problem = workflow.build_poisson_triangle_p1_local_problem()
         st.session_state.assembly = {"assembled": problem, "Ke": problem["Ke"], "fe": problem["fe"]}
         _render_expr("Unit triangle stiffness Ke", problem["Ke_unit_right_triangle"])
         _render_expr("Unit triangle load fe", problem["fe_unit_right_triangle"])
+        _inspection_panel(problem)
     elif problem_type == "manual_assembly_square_4tri":
         problem = workflow.build_poisson_triangle_p1_local_problem()
         st.session_state.assembly = {
@@ -147,6 +195,7 @@ def _render_preset_output(config: dict[str, object]) -> None:
         st.json(config)
         _render_expr("Reusable local triangle Ke", problem["Ke"])
         _render_expr("Reusable local triangle fe", problem["fe"])
+        _inspection_panel(problem)
     else:
         st.warning("Unknown preset configuration.")
 
@@ -279,6 +328,9 @@ def _assembly_step() -> None:
 
 def _results_step() -> None:
     st.header("5. Results / Export")
+    assembled = st.session_state.get("assembly", {}).get("assembled", {})
+    if assembled:
+        _inspection_panel(assembled)
     for key in ["setup", "fe_space", "form", "assembly"]:
         with st.expander(key.replace("_", " ").title(), expanded=key in {"setup", "assembly"}):
             data = st.session_state.get(key, {})
