@@ -137,11 +137,11 @@ This repository can be paired with a small Streamlit UI so students can run symb
 
 ```bash
 # from repository root
-uv pip install streamlit
-streamlit run apps/streamlit/app.py
+uv pip install -e ".[lectures,dev]"
+streamlit run streamlit_app.py
 ```
 
-If you do not use `uv`, a plain `pip install streamlit` is also fine.
+If you do not use `uv`, install the package in editable mode with pip and then run the same Streamlit command.
 
 ### Expected environment
 
@@ -157,9 +157,9 @@ If you do not use `uv`, a plain `pip install streamlit` is also fine.
   - Reinstall editable package: `uv pip install -e ".[lectures,dev]"`
   - Confirm you are running Streamlit from the project root.
 - **`streamlit: command not found`**
-  - Install Streamlit in the active environment: `uv pip install streamlit`.
+  - Install the project dependencies in the active environment: `uv pip install -e ".[lectures,dev]"`.
 - **Port already in use (default 8501)**
-  - Run: `streamlit run apps/streamlit/app.py --server.port 8502`.
+  - Run: `streamlit run streamlit_app.py --server.port 8502`.
 - **Slow first run / stale cache**
   - Clear Streamlit cache: `streamlit cache clear`, then restart.
 
@@ -172,12 +172,13 @@ If you do not use `uv`, a plain `pip install streamlit` is also fine.
     - `build_elasticity_triangle_p1_2d()`
     - `build_elasticity_tetra_p1_3d()`
 - **UI adapters live in Streamlit app modules**
-  - Keep adapter code in `apps/streamlit/` (for example, `app.py`, `pages/*.py`, `adapters/*.py`).
+  - The runnable app is `streamlit_app.py`.
+  - Reusable preset adapters live in `apps/presets.py`; keep new adapter code thin and colocated under `apps/` unless it belongs in the core package.
   - Adapters transform UI inputs (dropdowns, sliders, checkboxes) into arguments for `workflow.py` functions, then format outputs for display.
 - **Presets map to course examples**
   - A preset should correspond to one teaching workflow/example file:
     - `bar_1d` → `examples/bar_1d_workflow.py`
-    - `triangle_poisson_p1` → `examples/triangle_p1_poisson_workflow.py`
+    - `triangle_p1_poisson` → `examples/triangle_p1_poisson_workflow.py`
     - `manual_assembly_square_4tri` → `examples/manual_assembly_square_4tri.py`
   - Keep preset definitions declarative (e.g., one dict/list) so UI pages remain thin.
 - **Adding new PDE workflows**
@@ -190,10 +191,9 @@ If you do not use `uv`, a plain `pip install streamlit` is also fine.
 
 When adding a new Streamlit UI module:
 
-- [ ] Create/update UI files under `apps/streamlit/` only.
+- [ ] Keep runnable Streamlit behavior in `streamlit_app.py` and reusable adapters under `apps/`.
 - [ ] Use existing public API from `symbolic_fem_workbench` (avoid reaching into private internals).
 - [ ] Do **not** move symbolic derivations, transformations, or extraction logic into UI code.
 - [ ] Add/update a preset-to-example mapping entry.
 - [ ] Add/extend tests for any new adapter logic (pure functions preferred).
 - [ ] Keep outputs reproducible with a matching `examples/*.py` script.
-
