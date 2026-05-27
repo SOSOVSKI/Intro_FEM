@@ -52,6 +52,14 @@ from .elasticity import (
 )
 from .workflow import build_elasticity_triangle_p1_2d
 from . import viz
+from .ui import (
+    NumericViewOptions,
+    symbolic_text,
+    matrix_preview_text,
+    matrix_full_precision_csv_bytes,
+    visualization_hint,
+    build_main_panel,
+)
 
 __all__ = [
     "Domain1D",
@@ -105,4 +113,10 @@ __all__ = [
     "element_stiffness_BtDB",
     "build_elasticity_triangle_p1_2d",
     "viz",
+    "NumericViewOptions",
+    "symbolic_text",
+    "matrix_preview_text",
+    "matrix_full_precision_csv_bytes",
+    "visualization_hint",
+    "build_main_panel",
 ]
