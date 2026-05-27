@@ -13,6 +13,16 @@ import streamlit as st
 
 from apps.presets import Preset, load_all_presets
 from symbolic_fem_workbench import assembly, elasticity, fe_spaces, forms, reference, viz, workflow
+from symbolic_fem_workbench.apps import (
+    RunConfig,
+    RunState,
+    export_codegen_snippets,
+    export_config_json,
+    export_config_yaml,
+    export_run_metadata_markdown,
+    export_symbolic_markdown,
+    export_symbolic_text,
+)
 from symbolic_fem_workbench.elasticity import plane_stress_D, plane_strain_D
 from symbolic_fem_workbench.reference import (
     ReferenceIntervalP1,
@@ -95,6 +105,31 @@ def _inspection_panel(problem: dict[str, object]) -> None:
             st.code(matrix_preview_text(problem["fe"], truncate=truncate, digits=digits), language="text")
 
     with export_tab:
+        run_state = _current_run_state(problem)
+        st.download_button(
+            "Download config JSON",
+            data=export_config_json(run_state),
+            file_name="symbolic_fem_config.json",
+            mime="application/json",
+        )
+        st.download_button(
+            "Download config YAML",
+            data=export_config_yaml(run_state),
+            file_name="symbolic_fem_config.yaml",
+            mime="text/yaml",
+        )
+        st.download_button(
+            "Download symbolic Markdown",
+            data=export_symbolic_markdown(run_state),
+            file_name="symbolic_outputs.md",
+            mime="text/markdown",
+        )
+        st.download_button(
+            "Download symbolic text",
+            data=export_symbolic_text(run_state),
+            file_name="symbolic_outputs.txt",
+            mime="text/plain",
+        )
         if "Ke" in problem:
             st.download_button(
                 "Download Ke CSV",
@@ -109,6 +144,13 @@ def _inspection_panel(problem: dict[str, object]) -> None:
                 file_name="fe.csv",
                 mime="text/csv",
             )
+        st.download_button(
+            "Download codegen snippets",
+            data=export_codegen_snippets(run_state),
+            file_name="codegen_snippets.md",
+            mime="text/markdown",
+        )
+        st.markdown(export_run_metadata_markdown(run_state))
 
 
 def _reference_from_setup() -> object:
@@ -132,6 +174,35 @@ def _build_current_problem() -> dict[str, object]:
         formulation = setup.get("elasticity_formulation", "plane_stress")
         return workflow.build_elasticity_triangle_p1_2d(formulation=formulation)
     return workflow.build_poisson_triangle_p1_local_problem()
+
+
+def _current_run_state(problem: dict[str, object]) -> RunState:
+    symbolic_outputs = {
+        key: value
+        for key, value in problem.items()
+        if key
+        in {
+            "Ke",
+            "fe",
+            "Ke_unit_right_triangle",
+            "fe_unit_right_triangle",
+            "weak_bilinear",
+            "weak_linear",
+            "bilinear_integrand_reference",
+            "linear_integrand_reference",
+            "D",
+            "B",
+        }
+    }
+    config = RunConfig(
+        preset=st.session_state.get("selected_preset", "custom"),
+        parameters=copy.deepcopy(
+            st.session_state.get("active_config") or st.session_state.get("setup", {})
+        ),
+        symbolic_targets=sorted(symbolic_outputs),
+        include_codegen=False,
+    )
+    return RunState(config=config, symbolic_outputs=symbolic_outputs)
 
 
 def _setup_from_preset(preset: Preset) -> dict[str, object]:
