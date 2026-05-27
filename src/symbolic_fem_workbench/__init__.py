@@ -52,6 +52,12 @@ from .elasticity import (
 )
 from .workflow import build_elasticity_triangle_p1_2d
 from . import viz
+from .validate import (
+    validate_symbolic_inputs,
+    run_compute_step,
+    sanity_checks_panel_data,
+    downstream_enabled,
+)
 
 __all__ = [
     "Domain1D",
@@ -105,4 +111,8 @@ __all__ = [
     "element_stiffness_BtDB",
     "build_elasticity_triangle_p1_2d",
     "viz",
+    "validate_symbolic_inputs",
+    "run_compute_step",
+    "sanity_checks_panel_data",
+    "downstream_enabled",
 ]

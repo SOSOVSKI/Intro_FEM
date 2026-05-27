@@ -13,6 +13,10 @@ from symbolic_fem_workbench import (
     extract_coefficient_matrix,
     extract_coefficient_vector,
     make_field_1d,
+    validate_symbolic_inputs,
+    run_compute_step,
+    sanity_checks_panel_data,
+    downstream_enabled,
 )
 from symbolic_fem_workbench.reference import ReferenceIntervalP1
 
@@ -97,3 +101,48 @@ def test_extract_coefficient_matrix_requires_nonempty():
 def test_extract_coefficient_vector_requires_nonempty():
     with pytest.raises(ValueError, match="non-empty"):
         extract_coefficient_vector(sp.Integer(0), [])
+
+
+def test_validate_symbolic_inputs_dimension_mismatch():
+    d0, w0, w1 = sp.symbols("d0 w0 w1")
+    with pytest.raises(ValueError, match="order mismatch"):
+        validate_symbolic_inputs(
+            trial_dofs=[d0],
+            test_dofs=[w0, w1],
+            coefficients={"E": 1},
+            required_coefficients=("E",),
+            selected_boundaries=("right",),
+        )
+
+
+def test_validate_symbolic_inputs_missing_coefficient():
+    d0, w0 = sp.symbols("d0 w0")
+    with pytest.raises(ValueError, match="Missing required coefficient"):
+        validate_symbolic_inputs(
+            trial_dofs=[d0],
+            test_dofs=[w0],
+            coefficients={"E": None},
+            required_coefficients=("E",),
+            selected_boundaries=("right",),
+        )
+
+
+def test_run_compute_step_reports_error_and_traceback():
+    result = run_compute_step("assemble Ke", lambda: 1 / 0)
+    assert result["ok"] is False
+    assert "assemble Ke failed" in result["error"]
+    assert "ZeroDivisionError" in result["traceback"]
+
+
+def test_sanity_checks_panel_data_and_downstream_enabled():
+    d0, w0 = sp.symbols("d0 w0")
+    panel = sanity_checks_panel_data(
+        trial_dofs=[d0],
+        test_dofs=[w0],
+        coefficients={"E": 200},
+        required_coefficients=("E",),
+        selected_boundaries=("left",),
+    )
+    assert panel["ready"] is True
+    assert downstream_enabled({"Ke": sp.eye(2), "fe": sp.zeros(2, 1)}, ("Ke", "fe")) is True
+    assert downstream_enabled({"Ke": sp.eye(2)}, ("Ke", "fe")) is False
