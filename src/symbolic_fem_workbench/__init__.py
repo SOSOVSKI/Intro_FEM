@@ -66,6 +66,12 @@ from .ui import (
     visualization_hint,
     build_main_panel,
 )
+from .validate import (
+    validate_symbolic_inputs,
+    run_compute_step,
+    sanity_checks_panel_data,
+    downstream_enabled,
+)
 
 __all__ = [
     "Domain1D",
@@ -126,4 +132,8 @@ __all__ = [
     "matrix_full_precision_csv_bytes",
     "visualization_hint",
     "build_main_panel",
+    "validate_symbolic_inputs",
+    "run_compute_step",
+    "sanity_checks_panel_data",
+    "downstream_enabled",
 ]

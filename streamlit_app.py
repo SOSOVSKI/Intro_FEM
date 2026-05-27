@@ -35,6 +35,11 @@ from symbolic_fem_workbench.ui import (
     symbolic_text,
     visualization_hint,
 )
+from symbolic_fem_workbench.validate import (
+    downstream_enabled,
+    run_compute_step,
+    sanity_checks_panel_data,
+)
 
 
 WORKFLOW_STEPS = [
@@ -79,6 +84,48 @@ def _render_expr(title: str, expr: object) -> None:
         st.write(expr)
     st.caption("Raw symbolic")
     st.code(repr(expr), language="python")
+
+
+def _compute_problem_safely(step_name: str) -> dict[str, object] | None:
+    outcome = run_compute_step(step_name, _build_current_problem)
+    if outcome["ok"]:
+        return outcome["result"]
+    st.error(outcome["error"])
+    with st.expander("Traceback details"):
+        st.code(outcome["traceback"], language="text")
+    return None
+
+
+def _sanity_panel(required_keys: tuple[str, ...] = ()) -> bool:
+    fe_space = st.session_state.get("fe_space", {})
+    trial_dofs = list(fe_space.get("trial_dofs", ()))
+    test_dofs = list(fe_space.get("test_dofs", ()))
+    if not trial_dofs and not test_dofs and not required_keys:
+        return True
+
+    selected_boundaries = tuple(st.session_state.get("active_config", {}).get("boundary_nodes", ()))
+    if not selected_boundaries:
+        selected_boundaries = ("domain",)
+    checks = sanity_checks_panel_data(
+        trial_dofs=trial_dofs,
+        test_dofs=test_dofs,
+        coefficients=st.session_state.get("active_config", {}),
+        required_coefficients=(),
+        selected_boundaries=selected_boundaries,
+    )
+    artifacts_exist = all(bool(st.session_state.get(key)) for key in required_keys)
+    ready = checks["ready"] and downstream_enabled(st.session_state, required_keys) and artifacts_exist
+    with st.expander("Sanity checks", expanded=not ready):
+        st.json(checks)
+        if required_keys:
+            st.write(
+                {
+                    "required_session_keys": required_keys,
+                    "artifacts_exist": artifacts_exist,
+                    "downstream_enabled": ready,
+                }
+            )
+    return ready
 
 
 def _inspection_panel(problem: dict[str, object]) -> None:
@@ -244,19 +291,43 @@ def _clone_preset_to_editable() -> None:
 def _render_preset_output(config: dict[str, object]) -> None:
     problem_type = config.get("problem_type")
     if problem_type == "bar_1d":
-        problem = workflow.build_bar_1d_local_problem()
+        outcome = run_compute_step("Bar preset render", workflow.build_bar_1d_local_problem)
+        if not outcome["ok"]:
+            st.error(outcome["error"])
+            with st.expander("Traceback details"):
+                st.code(outcome["traceback"], language="text")
+            return
+        problem = outcome["result"]
         st.session_state.assembly = {"assembled": problem, "Ke": problem["Ke"], "fe": problem["fe"]}
         _render_expr("Element stiffness Ke", problem["Ke"])
         _render_expr("Element load fe", problem["fe"])
         _inspection_panel(problem)
     elif problem_type == "triangle_p1_poisson":
-        problem = workflow.build_poisson_triangle_p1_local_problem()
+        outcome = run_compute_step(
+            "Triangle P1 Poisson preset render",
+            workflow.build_poisson_triangle_p1_local_problem,
+        )
+        if not outcome["ok"]:
+            st.error(outcome["error"])
+            with st.expander("Traceback details"):
+                st.code(outcome["traceback"], language="text")
+            return
+        problem = outcome["result"]
         st.session_state.assembly = {"assembled": problem, "Ke": problem["Ke"], "fe": problem["fe"]}
         _render_expr("Unit triangle stiffness Ke", problem["Ke_unit_right_triangle"])
         _render_expr("Unit triangle load fe", problem["fe_unit_right_triangle"])
         _inspection_panel(problem)
     elif problem_type == "manual_assembly_square_4tri":
-        problem = workflow.build_poisson_triangle_p1_local_problem()
+        outcome = run_compute_step(
+            "Manual assembly preset render",
+            workflow.build_poisson_triangle_p1_local_problem,
+        )
+        if not outcome["ok"]:
+            st.error(outcome["error"])
+            with st.expander("Traceback details"):
+                st.code(outcome["traceback"], language="text")
+            return
+        problem = outcome["result"]
         st.session_state.assembly = {
             "assembled": problem,
             "Ke": problem["Ke"],
@@ -322,6 +393,8 @@ def _fe_space_step() -> None:
         "nodes": ref.nodes,
         "shape_functions": ref.shape_functions,
         "shape_gradients_reference": ref.shape_gradients_reference,
+        "trial_dofs": dofs,
+        "test_dofs": weights,
         "trial_expansion": fe_spaces.local_trial_expansion(ref.shape_functions, dofs),
         "test_expansion": fe_spaces.local_test_expansion(ref.shape_functions, weights),
     }
@@ -341,7 +414,11 @@ def _fe_space_step() -> None:
 
 def _form_step() -> None:
     st.header("3. Form Definition")
-    problem = _build_current_problem()
+    if not _sanity_panel(("setup", "fe_space")):
+        st.stop()
+    problem = _compute_problem_safely("Form definition")
+    if problem is None:
+        return
     pde_flavor = st.session_state.setup.get("pde_flavor", "Poisson")
 
     if st.session_state.setup.get("element_type") == "Interval P1":
@@ -381,7 +458,11 @@ def _form_step() -> None:
 
 def _assembly_step() -> None:
     st.header("4. Assembly")
-    assembled = _build_current_problem()
+    if not _sanity_panel(("setup", "fe_space", "form")):
+        st.stop()
+    assembled = _compute_problem_safely("Assembly")
+    if assembled is None:
+        return
     Ke = assembled["Ke"]
     fe = assembled.get("fe", sp.zeros(Ke.shape[0], 1))
 
@@ -399,6 +480,8 @@ def _assembly_step() -> None:
 
 def _results_step() -> None:
     st.header("5. Results / Export")
+    if not _sanity_panel(("setup", "fe_space", "form", "assembly")):
+        st.stop()
     assembled = st.session_state.get("assembly", {}).get("assembled", {})
     if assembled:
         _inspection_panel(assembled)
