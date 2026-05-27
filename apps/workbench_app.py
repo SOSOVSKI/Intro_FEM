@@ -4,7 +4,10 @@ import copy
 
 import streamlit as st
 
-from presets import load_all_presets
+try:
+    from apps.presets import load_all_presets
+except ModuleNotFoundError:
+    from presets import load_all_presets
 from symbolic_fem_workbench.workflow import (
     build_bar_1d_local_problem,
     build_poisson_triangle_p1_local_problem,

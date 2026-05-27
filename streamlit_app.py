@@ -6,9 +6,12 @@ interactive state, rendering, and inspection.
 
 from __future__ import annotations
 
+import copy
+
 import sympy as sp
 import streamlit as st
 
+from apps.presets import Preset, load_all_presets
 from symbolic_fem_workbench import assembly, elasticity, fe_spaces, forms, reference, viz, workflow
 from symbolic_fem_workbench.elasticity import plane_stress_D, plane_strain_D
 from symbolic_fem_workbench.reference import (
@@ -28,6 +31,7 @@ WORKFLOW_STEPS = [
 
 PAGES = [
     "Guided Workflow",
+    "Load Preset",
     "Example Demos",
     "Module Surface",
 ]
@@ -45,6 +49,9 @@ def _init_state() -> None:
     st.session_state.setdefault("fe_space", {})
     st.session_state.setdefault("form", {})
     st.session_state.setdefault("assembly", {})
+    st.session_state.setdefault("selected_preset", "triangle_p1_poisson")
+    st.session_state.setdefault("active_config", {})
+    st.session_state.setdefault("editable_config", {})
 
 
 def _render_expr(title: str, expr: object) -> None:
@@ -79,6 +86,69 @@ def _build_current_problem() -> dict[str, object]:
         formulation = setup.get("elasticity_formulation", "plane_stress")
         return workflow.build_elasticity_triangle_p1_2d(formulation=formulation)
     return workflow.build_poisson_triangle_p1_local_problem()
+
+
+def _setup_from_preset(preset: Preset) -> dict[str, object]:
+    problem_type = preset.parameters.get("problem_type")
+    if problem_type == "bar_1d":
+        return {"element_type": "Interval P1", "dimension": 1, "pde_flavor": "Poisson"}
+    return {"element_type": "Triangle P1", "dimension": 2, "pde_flavor": "Poisson"}
+
+
+def _apply_preset(preset_key: str, presets: dict[str, Preset]) -> None:
+    preset = presets[preset_key]
+    st.session_state.selected_preset = preset_key
+    st.session_state.active_config = copy.deepcopy(preset.parameters)
+    st.session_state.editable_config = {}
+    st.session_state.setup = _setup_from_preset(preset)
+    st.session_state.fe_space = {}
+    st.session_state.form = {}
+    st.session_state.assembly = {}
+
+
+def _reset_preset_state() -> None:
+    st.session_state.selected_preset = "triangle_p1_poisson"
+    st.session_state.active_config = {}
+    st.session_state.editable_config = {}
+    st.session_state.setup = {
+        "element_type": "Triangle P1",
+        "dimension": 2,
+        "pde_flavor": "Poisson",
+    }
+    st.session_state.fe_space = {}
+    st.session_state.form = {}
+    st.session_state.assembly = {}
+
+
+def _clone_preset_to_editable() -> None:
+    st.session_state.editable_config = copy.deepcopy(st.session_state.active_config)
+
+
+def _render_preset_output(config: dict[str, object]) -> None:
+    problem_type = config.get("problem_type")
+    if problem_type == "bar_1d":
+        problem = workflow.build_bar_1d_local_problem()
+        st.session_state.assembly = {"assembled": problem, "Ke": problem["Ke"], "fe": problem["fe"]}
+        _render_expr("Element stiffness Ke", problem["Ke"])
+        _render_expr("Element load fe", problem["fe"])
+    elif problem_type == "triangle_p1_poisson":
+        problem = workflow.build_poisson_triangle_p1_local_problem()
+        st.session_state.assembly = {"assembled": problem, "Ke": problem["Ke"], "fe": problem["fe"]}
+        _render_expr("Unit triangle stiffness Ke", problem["Ke_unit_right_triangle"])
+        _render_expr("Unit triangle load fe", problem["fe_unit_right_triangle"])
+    elif problem_type == "manual_assembly_square_4tri":
+        problem = workflow.build_poisson_triangle_p1_local_problem()
+        st.session_state.assembly = {
+            "assembled": problem,
+            "Ke": problem["Ke"],
+            "fe": problem["fe"],
+            "mesh_config": config,
+        }
+        st.json(config)
+        _render_expr("Reusable local triangle Ke", problem["Ke"])
+        _render_expr("Reusable local triangle fe", problem["fe"])
+    else:
+        st.warning("Unknown preset configuration.")
 
 
 def _setup_step() -> None:
@@ -232,6 +302,45 @@ def page_guided_workflow() -> None:
         _results_step()
 
 
+def page_load_preset() -> None:
+    st.title("Load Preset")
+    _init_state()
+    presets = load_all_presets()
+    preset_keys = list(presets)
+
+    if not st.session_state.active_config:
+        _apply_preset(st.session_state.selected_preset, presets)
+
+    selected = st.selectbox(
+        "Repository example preset",
+        options=preset_keys,
+        index=preset_keys.index(st.session_state.selected_preset),
+        format_func=lambda key: presets[key].title,
+    )
+    st.caption(presets[selected].description)
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        if st.button("Load preset", use_container_width=True):
+            _apply_preset(selected, presets)
+    with col2:
+        if st.button("Reset to default", use_container_width=True):
+            _reset_preset_state()
+            _apply_preset(st.session_state.selected_preset, presets)
+    with col3:
+        if st.button("Clone preset to editable config", use_container_width=True):
+            _clone_preset_to_editable()
+
+    st.subheader("Active Preset Config")
+    st.json(st.session_state.active_config)
+
+    st.subheader("Rendered Output")
+    _render_preset_output(st.session_state.active_config)
+
+    st.subheader("Editable Cloned Config")
+    st.json(st.session_state.editable_config)
+
+
 def page_example_demos() -> None:
     st.title("Example Demos")
     demo = st.radio("Demo", ["1D Bar Workflow", "2D Triangle Workflow", "Elasticity"], horizontal=True)
@@ -294,6 +403,8 @@ def main() -> None:
 
     if page == "Guided Workflow":
         page_guided_workflow()
+    elif page == "Load Preset":
+        page_load_preset()
     elif page == "Example Demos":
         page_example_demos()
     else:
