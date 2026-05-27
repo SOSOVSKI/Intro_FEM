@@ -13,6 +13,7 @@ dependencies = [
   "numpy>=1.26",
   "matplotlib>=3.8",
   "scipy>=1.12",
+  "streamlit>=1.36",
 ]
 
 [project.optional-dependencies]
