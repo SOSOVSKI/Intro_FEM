@@ -1,0 +1,15 @@
+# Streamlit Plan Task to PR Map
+
+Generated: 2026-05-27
+
+| Plan task order | Plan task | Associated PR | Evidence | Integration notes |
+| --- | --- | --- | --- | --- |
+| 1 | Create App Skeleton and Dependency Wiring | #3, "Add Streamlit entrypoint with modular FEM demo navigation" | Adds root `streamlit_app.py`, adds `streamlit>=1.36` to `pyproject.toml`, imports the planned symbolic FEM modules, sets page config, and adds sidebar navigation. | Merge first. PR #5 also adds `streamlit_app.py`, so later workflow UI must be reconciled with this skeleton rather than replacing it blindly. |
+| 2 | Build Guided Workflow Tabs | #5, "Add Streamlit sidebar FEM workflow wizard with persistent staged state" | Adds workflow stages `Problem Setup`, `FE Space`, `Form Definition`, `Assembly`, and `Results/Export`, maps state to `reference`, `fe_spaces`, `forms`, `elasticity`, `workflow`, and `assembly`, and stores artifacts in `st.session_state`. | Merge after #3 and consolidate the app entrypoint so the skeleton/navigation and staged workflow share one UI. |
+| 3 | Add Runnable Presets from Existing Examples | #6, "Add Streamlit Load Preset UI and presets adapter" | Adds `apps/presets.py` for `bar_1d`, `triangle_p1_poisson`, and `manual_assembly_square_4tri`; adds preset load/reset/clone state actions. | Merge after #5, then wire preset loading into the chosen Streamlit entrypoint/session-state model. |
+| 4 | Add Visualization and Symbolic Inspection Panels | #4, "Add tabbed notebook UI with Math/Table/Codegen tabs, visualization fallbacks, and full-precision export" | Adds symbolic text, matrix preview, full-precision CSV bytes, visualization hint, and `Math View`/`Table View`/`Codegen/Export` helpers. | Merge after presets so inspection helpers can be connected to actual preset/workflow outputs. The PR implements notebook-style helpers, so the Streamlit app may need adapter glue. |
+| 5 | Implement Export and Reproducibility Features | #8, "Add deterministic app schema and in-memory export helpers" | Adds `src/symbolic_fem_workbench/apps/schema.py`, deterministic config/session dataclasses, JSON/YAML/text/Markdown/codegen exports, metadata, and `pyyaml`. | Merge after inspection helpers and wire downloads/metadata to in-memory session state. |
+| 6 | Add Validation, Error Handling, and UX Safety Rails | #7, "Add symbolic workflow validation, error wrapping, and readiness gating helpers" | Adds validation helpers, compute-step exception wrapping, sanity-check panel data, and downstream readiness gating in `validate.py`. | Merge after export so the final app can gate downstream actions and report errors consistently across workflow, presets, and exports. |
+| 7 | Document Running and Extension Workflow | #9, "docs: add Streamlit interactive workbench section to README" | Adds README documentation for running the Streamlit workbench, environment, troubleshooting, architecture, presets, and contributor checklist. | Merge last and align documented startup path with the final app path chosen during integration. |
+
+Planned merge order: #3 -> #5 -> #6 -> #4 -> #8 -> #7 -> #9.
